@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+#IFS=: read -r -d '' -a path_array < <(printf '%s:\0' "$MANPATH")
+#
+_(){
+  echo "$*"	
+}
+CONFIG_DIRS="/etc:/opt:" #For some reason we need a caracter to end the aray. 
+for path_list_name in LD_LIBRARY_PATH PATH CONFIG_DIRS; do
+  while IFS=\0 read -r -d '' a_path; do
+    if [ -d "$a_path" ] && \
+       [ "`stat -c '%U %G' $(_ $a_path)`" = "root root"  ]; then
+      chmod 775 $a_path
+    fi
+  done < <(echo "`eval $(_ echo '$'$path_list_name)`" | tr ':' '\0' )
+done
+#exit 0

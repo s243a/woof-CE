@@ -1,0 +1,96 @@
+#!/bin/sh
+#written by mistfire
+
+[ "`whoami`" != "root" ] && exec sudo -A ${0} ${@} #110505
+
+make_kernel(){
+echo "Compiling kernel..."
+make -j$use_threads bzImage
+
+if [ -f /boot/vmlinuz ]; then
+
+echo "Backing up the existing kernel file..."
+
+kver=`uname -r`
+	if [ -f /boot/vmlinuz-$kver ]; then
+	cp -f /boot/vmlinuz /boot/vmlinuz.old
+	else
+	cp -f /boot/vmlinuz /boot/vmlinuz-$kver
+	fi
+elif [ ! -d /boot ]; then
+mkdir /boot
+fi
+
+echo "Installing the kernel file..."
+make -j$use_threads install
+echo ""
+sleep 5
+}
+
+make_modules(){
+echo "Compiling kernel modules..."
+make -j$use_threads modules
+echo "Installing kernel modules..."
+make -j$use_threads modules_install
+echo ""
+sleep 5
+}
+
+setup_include(){
+echo "Setting up include files..."
+cp -rf /usr/src/linux/usr/include/* /usr/include/
+cp -rf /usr/src/linux/include/* /usr/include/
+}
+
+show_thread(){
+echo "Using $use_threads thread(s) to compile..."
+}
+
+mode="$1"
+
+real_threads=`cat /proc/cpuinfo | grep "processor" | wc -l`
+
+if [ "$real_threads" == "" ]; then
+real_threads=2
+elif [ $real_threads -eq 1 ] || [ $real_threads -eq 0 ]; then
+real_threads=2
+fi
+
+use_threads=`expr $real_threads - 1`
+
+if [ "$use_threads" == "" ]; then
+use_threads=1
+fi
+
+if [ ! -d /usr/src/linux ]; then
+echo "Linux kernel source code not found"
+exit
+fi
+
+cd /usr/src/linux
+#echo "Configuring..."
+#./configure
+
+if [ "$mode" == "kernel" ]; then
+show_thread
+setup_include
+make_kernel
+elif [ "$mode" == "modules" ]; then
+show_thread
+setup_include
+make_modules
+elif [ "$mode" == "all" ]; then
+show_thread
+setup_include
+make_kernel
+make_modules
+elif [ "$mode" == "" ]; then
+echo "Usage: build-kernel [kernel|modules|all]"
+echo "Build a linux kernel"
+exit
+else
+echo "Invalid command"
+exit
+fi
+
+echo "Building kernel complete"

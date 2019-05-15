@@ -1,0 +1,41 @@
+#!/bin/sh
+#assign random mac address of a network card
+#written by mistfire
+
+itf1="$1"
+
+if [ "$itf1" == "" ]; then
+ echo "Usage: $(basename $0) [network interface]"
+ echo "Assign random mac address to a network card"
+ exit 
+fi
+
+if [ "$(whoami)" != "root" ]; then
+ exec sudo -A $0 $@
+ exit
+fi
+
+if [ ! -f /etc/net-random.cfg ]; then
+ exit
+fi
+
+if [ "$(which macchanger)" == "" ]; then
+ echo "macchanger not found"
+ exit
+fi
+
+. /etc/net-random.cfg
+
+if [ "$(echo "$RANDOM_MAC" | tr "[a-z]" "[A-Z]")" == "ON" ]; then
+
+ xstate="$(cat /sys/class/net/$itf1/operstate 2>/dev/null)"
+
+ if [ "$xstate" != "down" ]; then
+  ifconfig $itf1 down
+  macchanger -r $itf1
+  ifconfig $itf1 up
+ else
+  macchanger -r $itf1
+ fi
+
+fi

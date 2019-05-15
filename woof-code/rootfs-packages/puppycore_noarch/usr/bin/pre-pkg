@@ -1,0 +1,123 @@
+#!/bin/sh
+
+file1="$1"
+
+if [ "$file1" = "" ]; then
+exit 	
+fi
+
+
+yad --title="Package Handler" --fixed --text="Convert to pet package?\n\n<b>`basename $1`</b>\n\n" \
+  --text-align="center" --buttons-layout="center" --borders="10" --button="gtk-yes:1" --button="gtk-no:0" 
+  
+if [ $? -eq 0 ]; then
+exit
+fi
+
+notify "Processing package..."
+
+fname=$(echo basename "$file1")
+
+ext="${fname##*.}"
+lext=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
+
+
+if [ "$lext" = "tazpkg" ]; then
+
+FOLDR=$(echo $file1|sed 's/\.tazpkg$//')
+taz2pet "$file1"
+if [ -f $FOLDR.pet ]; then
+exec petget "$FOLDR.pet"
+fi
+
+elif [ "$lext" = "tcz" ]; then
+
+FOLDR=$(echo $file1|sed 's/\.tcz$//')
+tcz2pet "$file1"
+
+if [ -f $FOLDR.pet ]; then
+exec petget "$FOLDR.pet"
+fi
+
+elif [ "$lext" = "sb" ]; then
+
+FOLDR=$(echo $file1|sed 's/\.sb$//')
+slax2pet "$file1"
+
+if [ -f $FOLDR.pet ]; then
+exec petget "$FOLDR.pet"
+fi
+
+elif [ "$lext" = "pisi" ]; then
+
+FOLDR=$(echo $file1|sed 's/\.pisi$//')
+par2pet "$file1"
+if [ -f $FOLDR.pet ]; then
+exec petget "$FOLDR.pet"
+fi
+
+elif [ "$lext" = "apk" ]; then
+
+FOLDR=$(echo $file1|sed 's/\.apk$//')
+apk2pet "$file1"
+if [ -f $FOLDR.pet ]; then
+exec petget "$FOLDR.pet"
+fi
+
+elif [ "$lext" = "ipk" ]; then
+
+FOLDR=$(echo $file1|sed 's/\.ipk$//')
+ipk2pet "$file1"
+if [ -f $FOLDR.pet ]; then
+exec petget "$FOLDR.pet"
+fi
+
+elif [ "$lext" = "dsl" ]; then
+
+FOLDR=$(echo $file1|sed 's/\.dsl$//')
+dsl2pet "$file1"
+if [ -f $FOLDR.pet ]; then
+exec petget "$FOLDR.pet"
+fi
+
+elif [ "$lext" = "spack" ]; then
+
+FOLDR=$(echo $file1|sed 's/\.spack$//')
+spack2pet "$file1"
+if [ -f $FOLDR.pet ]; then
+exec petget "$FOLDR.pet"
+fi
+
+elif [ "$lext" = "xbps" ]; then
+
+FOLDR=$(echo $file1|sed 's/\.xbps$//')
+xbps2pet "$file1"
+if [ -f $FOLDR.pet ]; then
+exec petget "$FOLDR.pet"
+fi
+
+elif [ "$lext" = "pfs" ]; then
+
+FOLDR=$(echo $file1|sed 's/\.pfs$//')
+pfs2pet "$file1"
+if [ -f $FOLDR.pet ]; then
+exec petget "$FOLDR.pet"
+fi
+
+
+elif [ "$lext" = "slp" ]; then
+
+FOLDR=$(echo $file1|sed 's/\.slp$//')
+slp2pet "$file1"
+if [ -f $FOLDR.pet ]; then
+exec petget "$FOLDR.pet"
+fi
+
+elif [ "$lext" = "pup" ]; then
+
+exec dotpuprox2 "$file1"
+
+else
+echo "Invalid package"
+notify "Invalid package"
+fi

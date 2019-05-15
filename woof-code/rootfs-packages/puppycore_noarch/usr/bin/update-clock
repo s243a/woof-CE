@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo "Updating system clock..."
+
+/etc/init.d/pup_clock

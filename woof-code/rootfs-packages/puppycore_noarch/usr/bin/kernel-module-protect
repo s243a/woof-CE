@@ -1,0 +1,40 @@
+#!/bin/sh
+
+fullkernelver=`uname -r`
+relname=`echo $fullkernelver | cut -f 2 -d '-'`
+kernelver=`echo $fullkernelver | cut -f 1 -d '-'`
+custname=`echo $fullkernelver | grep '-'`
+
+echo $relname
+echo $kernelver
+echo $fullkernelver
+echo $custname
+
+if [ "$custname" == "" ]; then
+/usr/lib/gtkdialog/box_ok "Kernel Module Protection" error "This setting is only applicable to a custom kernel only"
+exit 
+fi
+
+if [ -L /lib/modules/$fullkernelver ]; then
+PROTECTION="OFF"
+else
+PROTECTION="ON"
+fi
+
+action=$(yad $FIXED $BUTTON_LAYOUT --width 380 --entry --title "Kernel Module Protection" \
+    --fixed\
+    --image=error \
+    --button="gtk-ok:0" --button="gtk-cancel:1"\
+    --text "WARNING: Turning OFF kernel module protection\nallows to install kernel module from other distro\nHowever it might cause instability to the system\nunless you know what you are doing\n" \
+    --entry-text "$PROTECTION" "ON" "OFF")
+
+if [ "$action" != "" ]; then
+   if [ "$action" == "OFF" ]; then
+   mv /lib/modules/$fullkernelver /lib/modules/$kernelver
+   ln -s /lib/modules/$kernelver /lib/modules/$fullkernelver
+   elif [ -d /lib/modules/$kernelver ] && [ -L /lib/modules/$fullkernelver ]; then
+   mv /lib/modules/$kernelver /lib/modules/$kernelver.new
+   rm -f /lib/modules/$fullkernelver
+   mv /lib/modules/$kernelver.new /lib/modules/$fullkernelver
+   fi
+fi

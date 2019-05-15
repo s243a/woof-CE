@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Underdog Linux Tool
+Comment=Enable underdog linux feature in puppy
+Exec=underdog
+Icon=/usr/share/pixmaps/puppy/module.svg
+Terminal=false
+StartupNotify=false
+Categories=System
+GenericName=Underdog Linux Tool

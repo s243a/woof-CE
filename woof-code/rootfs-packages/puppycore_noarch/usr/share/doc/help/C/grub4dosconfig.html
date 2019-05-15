@@ -1,0 +1,336 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1" />
+<head>
+<title>Grub4DosConfig help</title>
+<style type="text/css">
+<!--
+ p {margin-left:5%; margin-right:5%;}
+ pre {margin-left:5%; margin-right:5%;}
+-->
+</style>
+</head>
+<body>
+<div id="top" align="right"><a href="../ja/grub4dosconfig.html">Japanese</a></div>
+<h1><img src="../images/gnibbles.png" alt="gnibbles" hspace="8">Grub4DosConfig HELP</h1>
+<p>This document is for Grub4DosConfig version 1.8</p>
+<h2>Contents</h2>
+<ol>
+<li><a href="#about">What is Grub4Dos?</a></li>
+ <ul>
+ <li><a href="#online">Online resources</a></li>
+ </ul>
+<li><a href="#install">Installing Grub4Dos</a></li>
+ <ul>
+ <li><a href="#whatis">What are installed?</a></li>
+ <li><a href="#whereto">Where to install?</a></li>
+ <li><a href="#noneed">Not to install Boot Record?</a></li>
+  <li><a href="#legacy">Legacy compatible menu</a></li>
+ <li><a href="#pbsinstall">Install to the Partition Boot Sector</a></li>
+ <li><a href="#bootflag">Boot flag - when and where does it need?</a></li>
+ <li><a href="#splashimage">Splash image</a></li>
+ </ul>
+<li><a href="#bootmenu">Bootup menu</a></li>
+ <ul>
+ <li><a href="#editmenu">Editing menu</a></li>
+ <li><a href="#windows">Windows menu</a></li>
+ <li><a href="#duplicate">Duplicated folder names</a></li>
+ </ul>
+<li><a href="#editmenulst">Editing 'menu.lst'</a></li>
+ <ul>
+ <li><a href="#incase">What case we need editing?</a></li>
+ <li><a href="#classic">Classic Puppy</a></li>
+ <li><a href="#full">Full installed systems</a></li>
+ <li><a href="#oldmenulst">Looking up existing 'menu.lst'</a></li>
+ <li><a href="#options">Adding bootup options(parameters)(both Frugal/Full install)</a></li>
+ <li><a href="#order">Listing order</a></li>
+ <li><a href="#legacy">Grub4Dos specific commands</a></li>
+ </ul>
+ <li><a href="#newmenu">Advanced menu</a></li>
+ <ul>
+ <li><a href="#safemode">Safe mode</a></li>
+ <li><a href="#rammode">RAM mode</a></li>
+ <li><a href="#oldmenu">Old menus</a></li>
+ <li><a href="#chain">Chainload PBS</a></li>
+ <li><a href="#bootdrive">Boot from another drives</a></li>
+ <li><a href="#find">Find Grub menu on HDD</a></li>
+ <li><a href="#grub2">Find Grub2</a></li>
+ </ul>
+</ol>
+<h2 id="about">1. What is Grub4Dos?</h2>
+<p>Grub is well known as a bootup loader for Linux and other operating systems.
+Puppy Linux is ever using Grub as the bootup loader as well as Syslinux(for floppy disks and for USB flash memories). 
+But there is a difficulty for beginners to apply.
+Grub requires ext2/ext3 file system, which is special for Linux.
+Grub4Dos has compatibility with Grub and has a remarkable feature. It can be installed on NTFS/FAT filesystems which are more common on Windows preinstalled PC's.
+</p>
+<p>Grub4Dos supports vfat, ntfs, ext2, ext3, ext4, reiserfs(grub4dosconfig-version 1.7 and later), but the reiserfs support has some limitation.</p>
+<p>(Add for v1.6)<br>
+Supporting ext4 file system was partially as for the grub4dosconfig-0.4.4.v1.5.x.
+It required the help of grub legacy as for the etx4.
+grub4dosconfig-0.4.4.v1.6 has now ext4 full support thanks to the '<a href="http://nufans.net/grub4dos/wee/">Wee</a>' for the MBR.
+</p>
+<h3 id="online">Online resources</h3>
+<ul>
+<li><a href="http://grub4dos.sourceforge.net/">Grub4Dos Wiki</a></li>
+<li><a href="http://diddy.boot-land.net/grub4dos/Grub4dos.htm">Grub4dos Guide</a></li>
+<li><a href="http://www.murga-linux.com/puppy/viewtopic.php?t=51697">Grub4DosConfig in the Puppy Linux Discussion Forum</a></li>
+</ul>
+
+<h2 id="install">2. Installing Grub4Dos</h2>
+<div align="right"><a href="../ja/grub4dosconfig.html#install">Japanese</a></div>
+<h3 id="whatis">What are installed?</h3>
+<p>Grub4Dos installs 3 components. One is the Boot Record and other 2 is normal files, 'grldr' and 'menu.lst'.
+The 'grldr' and 'menu.lst' is usually installed on the 1st partition of the target HDD.
+</p>
+<h3 id="whereto">Where to install?</h3>
+<p>'Boot Record' is the space on a hard disk drive(HDD) special for storing bootup code.
+'MBR(Master Boot Record)' is the one at the top of a drive, and normally boots off from the one of the 1st HDD, usually 'sda' or 'hda'.
+To install on MBR(of the 1st HDD) is the common case. But you can install Grub4Dos on another drive.
+Note that the order of the HDD can differ between the one Puppy recognizes and the one BIOS/Grub4Dos recognizes at bootup stage.
+This issue will be discussed on another section of this document.
+</p>
+<p>Maybe it is more safe way if you install Grub4Dos on a USB flash memory drive rather than internal HDD.
+Note that this way is usable only in case your PC has the ability of booting up from USB drive and you know the BIOS settings to enable it. 
+</p>
+<p>If your PC has a floppy disk drive and is able to bootup from it,
+make a bootup floppy which is Grub4Dos installed.
+New disk is preferable.
+You can also use a used disk, but the data on the disk will be all erased.
+Before you use the floppy disk, make sure there are no important files on it.
+</p>
+<h3 id="noneed">Not to install Boot Record?</h3>
+<p>The existing MBR may have (the code kicking) 'ntldr' which starts up Windows.
+If so and you want to use this existing MBR, tick on &quot;<b>Do not rewrite existing Boot Record</b>&quot;.
+In this case, only 'grldr' and 'menu.lst' will be installed.
+You may need configure to chain 'grldr' from MBR.
+For example, if you use 'ntldr', add the entry which chain to 'grldr' in 'boot.ini'.
+See <a href="http://diddy.boot-land.net/grub4dos/files/install.htm">Grub4dos Guide - Loading/Installing Grub4dos</a>.</p>
+<p>
+In other case the boot record was over written by some other than Grub4Dos, you may want to recover Grub4Dos using old 'menu.lst'.
+Tick &quot;<b>Do not rewrite 'menu.lst'</b>&quot; in this case.
+</p>
+<p>The Boot Record is always installed in case a floppy disk is the target.</p>
+<h3 id="legacy">Legacy grub compatibility</a></h3>
+<p>The grub4dos is upper compatible with the legacy grub. That is, grub4dos can interpret legacy menu, but the legacy grub cannot interpret some grub4dos menu.
+</p>
+<p>If you are used to the legacy grub and want to manage the 'menu.lst' manually by yourself, you may feel difficulty with the new grub4dos commands.
+In the case, you can take the &quot;<b>Legacy compatible 'menu.lst'</b>&quot; option. Then the grub4dosconfig avoids two grub4dos commands, 'uuid' and 'find --set-root', both are introduced in the grub4dos. 
+The grub4dosconfig-version 1.8 and later has this option.
+Note that this option is only for the forks who want and can manage it. 
+</p>
+<h3 id="pbsinstall">Install to the Partition Boot Sector</h3>
+<p>The grub4dosconfig-version 1.7 and later can install the bootloader on the Partition Boot Sector(PBS), but it is not recommended.
+It works when the partition boot flag is set so that the MBR can load the PBS and execute it.
+Or you can use the PBS boot co-operating with some bootloader manager.
+It is not intended to work with the grub4dos as the bootmanager on the MBR because the grub4dos on the MBR can directly access to any drives and partitions without PBS.
+Installation on the PBS may not work properly on the PCs with multiple drives.
+Use the PBS boot only if you know what it is and you can manage it.
+</p>
+<p>
+The grub4dosconfig does not show partitions but only the drives on the list at the beginning.
+Click 'Show PBS' button if you want to install the bootloader on the PBS.
+</p>
+<p>Installing on the PBS of ext4 partitions requires extlinux-v4.x and chain.c32.
+If the version of the extlinux is less than 4.0 or lacking the 'chain.c32', you need to install them.
+To know the version of your system, type 'extlinux --version' on the terminal.
+</p>
+<p>The grub4dosconfig does not support installing on the PBS on reiserfs partitions.</P>
+<h3 id="bootflag">Boot flag, when and where does it need?</h3>
+<p>
+The boot flag on a partition is basically for the sake of indicating which partition is to be chained from the master boot record. 
+The Grub4Dos as the master boot record, it need not the boot flag because it knows what to do next by the 'menu.lst' file.
+</p>
+<p>But some BIOS does not boot up from the drive which has no boot flag.
+In such case, you need the boot flag. It can be any partition on the drive you want to boot up from.
+The boot flag is allowed at only one partition for a drive, but do not worry. You can boot up from any partition via Grub4Dos regardless the boot flag.
+</p>
+<p>It is better to set the boot flag on removable media such as USB flash/HDD drives.
+Even though it can boot up without the flag with your PC, it may fail with another PC.
+And note that some BIOS cannot handle boot flags on Linux partitions.
+it is wise to format the 1st partition with fat16(or fat32) and set the boot flag on it for the USB drives.
+</p>
+<p>The boot flag can be managed by the GParted or some other tools.</p>
+<h3 id="splashimage">Splash image</h3>
+<p>(v1.8 and later)<br />
+You can make background image behind the bootup menu.
+The image will need to be in the .xpm format and must be 640x480 pixels with a maximum of 14 colors.
+Place the image file with name 'splash.xpm' at the same place of the 'menu.lst' file.
+You can make your original splash image by using the mtpaint or the gimp.
+(<a href="http://diddy.boot-land.net/grub4dos/files/splash.htm">Grub4dos Guide - Creating a Splash Image</a>)</p>
+<p>You may need to manually edit the menu.lst to enable the splash image.
+Comment out (add '#' at the head of the line) the 'color' line, and uncomment (remove'#') the 'splashimage' line.</p>
+
+<pre><strong>#</strong>color white/blue black/cyan white/black cyan/black
+splashimage=/splash.xpm</pre>
+<p>(For distributors) You can place your original splash image at '/usr/share/grub4dos/splash.xpm' to make copy automatically associated with the 'menu.lst'.
+But the splash image for the default is not recommended because it makes trouble with chain loading another menu.lst without splash image.</p>
+<h2 id="bootmenu">3. Bootup menu</h2>
+<div align="right"><a href="../ja/grub4dosconfig.html#bootmenu">Japanese</a></div>
+<h3 id="editmenu">Editing menu</h3>
+<p>Grub4DosConfig searches in the internal HDD and connected external HDD and lists up installed Puppy's and other Linux operating systems.</p>
+<p>You can rewrite the string in the boxes which will be showed in the menu at bootup.
+Erase it (fill with blank) if you want to remove the item from the bootup menu.
+But caution! These 2 (rewrite or erase) is only you can do for this dialog.
+You cannot add new item nor arrange the order here.
+You can manually edit the 'menu.lst' after install finished.
+</p>
+<p><b>Options</b>(Add for v1.6)<br>
+You can add boot options for 'frugal' installed Puppy and for full installed Puppy/Linux.
+See the '<a href="#options">Adding bootup options</a>' section of this document.
+Keep the entry as is if you are unsure. 
+</p>
+<h3 id="windows">Windows menu</h3>
+<p>At least one item of Windows menu are displayed here no matter they are installed or not.
+Erase the items if you do not need boot up Windows.
+But the last (was 'top' before v1.8) entry is recommended to leave.
+Especially in case you install Grub4Dos on removable devices
+because they might be useful with other PC's.
+</p>
+
+<h3 id="duplicate">Duplicated folder names</h3>
+<p>If you make folders of same name, even they are on different disk drives or partitions,
+it must confuse the loader and fails the bootup as the result.
+Change names of the folders if the error noted.
+Then restart Grub4DosConfig.</p>
+<p>(Add for v1.6)<br />
+v1.6 and later can manage this case. It is not recommended but you can continue. Press 'OK'.</p>
+<h2 id="editmenulst">4. Editing 'menu.lst'</h2>
+<div align="right"><a href="../ja/grub4dosconfig.html#editmenulst">Japanese</a></div>
+<p>Refer to <a href="http://diddy.boot-land.net/grub4dos/files/menu.htm">Grub4dos Guide - Configuration File Entries</a> for the detail of writing 'menu.lst'.</p>
+<h3 id="incase">What case we need editing?</h3>
+<p>Grub4DosConfig produce 'menu.lst' automatically.
+But you might need editing 'menu.lst' in case Puppy is full installed.
+In case Puppy is frugal installed and other operating systems are only Windows,
+probably you can use the automatically produced 'menu.lst' with no problem.</p>
+<h3 id="full">Full installed systems</h3>
+<p>There is a trap in booting up full installed Puppy and/or other Linux OS.
+You need to specify the partition of the Linux kernel('vmlinuz') and the position of the root file system.
+The previous is direction to the Grub4Dos at the bootup process and the latter is direction to the Linux kernel.
+</p>
+<p>The trap is:<br>
+Drives which Grub4Dos recognizes and the drives the Linux kernel recognizes are not always the same.
+Moreover, those current running Puppy recognizes might differ from them.
+</p>
+<p>
+In most case, the first HDD is called '(hd0)' by Grub4Dos and 'sda' by (Puppy)Linux.
+The first partition is called '(hd0,0)'  by Grub4Dos and 'sda1' by (Puppy)Linux.  
+But 'sda' can be '<b>h</b>da'. And the others may be more complex.</p>
+<p>You may need to rewrite '(hd0,0)' to '(hd<b>1</b>,0)', or '/dev/sda1' to '/dev/<b>h</b>da1' on the 'menu.lst'</p>
+<p>(Add for v1.6)<br>
+The grub4dosconfig-0.4.4.v1.6 and later uses the partition UUID instead of '(hd<i>n</i>,0)', where the number <b><i>n</i></b> depends on the drive order.
+The UUID is a unique code for the partition itself, independent from the drive arrangement.
+You need to care only the issue of 'root=/dev/sda1' or something.
+</p>
+<h3 id="oldmenulst">Looking up existing 'menu.lst'</h3>
+<p>The old 'menu.list' must be exist if Grub4Dos or Grub was installed.
+They may be at top('/'), '/boot' or '/boot/grub' directory.
+They can be renamed such as like 'menu-2009-08-12-144950.lst'.
+If exists, you can copy entries from the old 'menu.list'.
+</p>
+<h3 id="options">Adding bootup options(parameters)(both Frugal/Full install)</h3>
+<p>
+Produced 'menu.lst' has normal boot options.
+You can add another options like 'acpi=off'.
+</p>
+<p>Grub4DosConfig adds 'pmedia=usbflash' or 'pmedia=usbhd' option in case the drive is connected to USB interface.
+Rewrite them if they are wrong.
+You are better to take the boot option 'pmedia=ataflash' for SSD instead of 'pmedia=atahdd', 'pmedia=usbhdd' for USB HDD rather than 'pmedia=usbflash'.
+</p>
+<p>Refer to <a href="http://puppylinux.org/wikka/BootParameters">BootParms</a>.</P>
+<h3 id="classic">Classic Puppy</h3>
+<p>Classic Puppy's (1.x-3.x) have special boot parameter than Puppy-4.x/5.x.
+You need to manually edit the boot parameters.
+As for the Classic Pup-2.x, visit <a href="http://www.murga-linux.com/puppy/viewtopic.php?t=42553">the topic on Forum</a>.
+</p>
+<h3 id="order">Listing order</h3>
+<p>
+You can change the order of the menu items.
+Cut the lines from the 'title'-line to the line before the next 'title'-line,
+and paste them to proper position.
+The default item is defined at the 'default'-line.
+the top item is numbered as '0', next is '1' and so on.
+</p>
+<h3 id="legacy">Grub4Dos specific commands</h3>
+<p>If you are used to the Grub legacy, you find strange entries in the 'menu.lst' the Grub4DosConfig' made.
+Don't worry. Grub4Dos is upper compatible with the Grub legacy.
+So, you can use the command of the Grub legacy you are used to.
+For exsample, 'find --set-root' and 'uuid xxxx-xxxx-xxxx' are the Grub4Dos specific commands to locate the partition.
+You can use classic 'root (hd0,1)' or something instead of 'find --set-root' or 'uuid xxxx-xxxx-xxxx'. 
+<br />
+For example, next 2 works almost equally.
+</p>
+<pre># for Grub4Dos only
+title Windows Vista/2008/7 (sda2:PBS)
+  uuid 6C54F6966CE8F58D
+  chainloader +1</pre>
+<pre># both Grub4dos and Grub legacy work
+title Windows Vista/2008/7 (sda2:PBS)
+  root (hd0,1)
+  chainloader +1</pre>
+<h2 id="newmenu">5. Advanced menu</h2>
+<p>
+There may be another redundant items on the menu for some OS already listed up on the preceding entries. 
+You can delete them editing the 'menu.lst' if you are sure.
+</p>
+<p>These items are on the 2nd page, appears choosing the 'Advanced menu' as for the grub4dosconfig version 1.8 and later.</p>	
+<h3 id="safemode">Safe mode</h3>
+<p>(v1.8 and later)<br />
+This mode boots up Puppy with 'pfix=ram,nox' and other concervative options.
+Normally, 'pfix=ram,nox acpi=off apm=off nosmp noapic nodma nopcmcia'.
+It is usefull if your Puppy has auto-start desktop but your hardware fails to start X automatically.
+Type 'xorgwizard' to configure X after the boot succeed.
+This menu item is available only for the frugal installation.
+</p>
+<h3 id="rammode">RAM mode</h3>
+<p>This mode boots up Puppy with 'pfix=ram'.
+Then the Puppy boots up without any pupsave.
+It is usefull when your pupsave is corrupt. Another case is you are trying new version of Puppy and do not want to update old pupsave.
+Also usefull when you do not want to mount the HDD to manipulate it, for example, to restructure the partitions.
+But note that it depends on the Puppy version if the HDD is mounted or not with this mode.  
+This menu item is available only for the frugal installation.
+</p>
+<h3 id="oldmenu">Old menus</h3>
+<p>(v1.8 and later)<br />
+The grub4dosconfig makes back up the existing old menus.
+You can go back with choosing the &quot;<b>Previous menu</b>&quot; at boot.
+</p>
+<h3 id="chain">Chainload PBS</h3>
+<p>(v1.6.3 and later)<br />
+Grub4DosConfig gives menu entries to chain-load the Partition Boot Sectors, like '(sda2:PBS)'. 
+It does not always mean you can boot up from the partition. 
+there may be cases boot flag is set but the boot loader is not there.
+These items may be redundant because the OS is already listed up on the preceding entries. 
+</p>
+<h3 id="bootdrive">Boot from another drives</h3>
+<p>(v1.8 and later)<br />
+Grub4DosConfig gives menu entries to chain-load the Master Boot Records, like 'Boot from sdb'.
+Note that the drive information associated may be wrong if the drive order is changed by the BIOS setting.
+Also note that the grub4dosconfig does not ensure any boot loaders are there.
+These items may be redundant because the OS is already listed up on the preceding entries. 
+</p>
+<h3 id="find">Find Grub menu on HDD</h3>
+<p>
+When you install the Grub4Dos on removable media, the Grub4DosConfig adds 'Find Grub menu on HDD' entry at the boot menu.
+You can bootup from the Grub4Dos installed media and switch the boot menu to the one on the HDD.
+It can be a rescue if you installed grub(legacy) or Grub4Dos on the HDD but the MBR or something corrupted.
+This menu is not available with the legacy compatible menu.
+</p>
+<h3 id="grub2">Find Grub2</h3>
+<p>(Add for v1.6)<br>
+Some of recent Linux uses 'Grub2' instead of legacy grub.
+The Grub4Dos and Grub2 can coexist.
+If your Linux installed Grub2, and you are not contented with bootup directly from the Grub4Dos,
+you can chain load the Grub2 from the Grub4Dos by selecting 'Find Grub2' from the boot menu.
+This menu is not available with the legacy compatible menu.
+</p>
+<p>That's all. Take care!<br/>Sep 2009 <i>Shinobar</i><br>
+<br>
+Nov 2010: Add for v1.6<br>
+Jan 2011: Add for v1.7</br>
+Oct 2011: Add for v1.7.1</br>
+Jun 2012: Add for v1.8</br>
+</p>
+<div align="center"><a href="#top">Top of this page</a></div>
+</body>
+</html>

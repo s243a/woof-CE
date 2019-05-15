@@ -1,0 +1,45 @@
+#!/bin/sh
+
+PLIST="
+xfwm
+xfwm4
+jwm
+icewm
+twm
+pekwm
+kwin
+icewm
+xfdesktop
+kdesktop
+mate-desktop
+gnome-desktop
+ROX-Filer
+rox
+rox-filer
+openbox
+lxpanel
+lxqtpanel
+xfpanel
+gnome-panel
+kpanel
+fbpanel
+thunar
+Thunar
+nautilus
+konqueror
+nemo
+pcmanfm
+spacefm
+caja
+pekwm
+dolphin
+"
+
+for process in $PLIST
+do
+
+if [ "$(which $process)" != "" ]; then
+killall $process
+fi
+
+done

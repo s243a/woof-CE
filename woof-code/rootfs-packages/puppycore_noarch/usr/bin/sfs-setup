@@ -1,0 +1,249 @@
+#!/bin/bash -x
+#Simple File Sharing v3.0
+#June 5 2013 by rg66 and Geoffrey
+#Feb 18 2016 rg66 edit for Samba 4
+
+if [ "$(which smbd)" == "" ]; then
+/usr/lib/gtkdialog/box_ok "Simple File Sharing" error "Install samba first to use this application"
+exit
+fi
+
+if [ "$(whoami)" != "root" ]; then
+exec sudo -A $0 $@
+exit
+fi
+     
+if [ ! -f /etc/simple-filesharing-setup.conf ]; then
+
+mkdir -p /etc/samba/private 2> /dev/null
+
+cp -rf /usr/share/sfs-share/private/* /etc/samba/private/
+
+  echo 'Welcome to Simple file Sharing
+
+File sharing is disabled by default.
+Run Simple File Sharing setup from Network in the 
+start menu to enable it.
+
+Right click on a folder and  select
+"Share this folder" to share a 
+directory or edit a previous share.
+
+The default user is "root"
+The default password is "woofwoof"' > /tmp/sfs-welcome.txt
+  
+  yad --center --title="Simple File Sharing" --fixed --window-icon="/usr/share/pixmaps/publicshare.png" \
+  --width="320" --height="285" --text-info --filename="/tmp/sfs-welcome.txt" \
+  --justify="center" --back="#DCDCDC" --buttons-layout="center" --button="gtk-ok"
+  rm -f /tmp/sfs-welcome.txt
+  
+fi
+
+[ ! -f /etc/simple-filesharing-setup.conf ] && echo "SERVER='`hostname`'
+WORKGROUP='Workgroup'
+USERLOGIN='false'
+PRINTSHARE='false'
+FILESHARING='false'
+AUTOSTART='false'" > /etc/simple-filesharing-setup.conf
+
+  if  [ "`iptables-save | grep dport | grep 137 | grep ACCEPT`" = "" ]; then
+    if [ "`iptables -L -n |wc -l`" -gt 10 ];then
+    notify-send -t 10000 -i publicshare 'Simple File Sharing' 'The firewall is blocking file sharing\n\nRun firewall setup and select "Samba - Share files with Windows"' 
+    fi
+  fi
+
+
+. /etc/simple-filesharing-setup.conf
+
+HOST=`hostname`
+
+if [ "$SERVER" != "$HOST" ]; then
+  sed -i "s/SERVER='$SERVER'/SERVER='$HOST'/" /etc/simple-filesharing-setup.conf 
+  sed -i 's/netbios name = '$SERVER'/netbios name = '$HOST'/' /etc/samba/smb.conf
+fi 
+
+PID=`busybox pidof smbd`
+
+#Just in case
+[ "$PID" -a "$FILESHARING" = "false" ] && sed -i "s/FILESHARING='false'/FILESHARING='true'/" /etc/simple-filesharing-setup.conf
+[ ! "$PID" -a "$FILESHARING" = "true" ] && sed -i "s/FILESHARING='true'/FILESHARING='false'/" /etc/simple-filesharing-setup.conf
+
+if [ "$PID" = "" ]; then
+  ICON="gtk-no"
+  TEXT="File Sharing is OFF"
+else
+  ICON="gtk-yes"
+  TEXT="File Sharing is ON"
+fi
+
+SHARES(){
+grep -F '[' /etc/samba/smb.conf  | grep -v "global\|printers" | tr -d ';[]' > /tmp/sh-name
+grep path /etc/samba/smb.conf | grep -v var | awk '{print $3}' > /tmp/sh-dir	
+grep "enabled\|disabled" /etc/samba/smb.conf | tr -d '#' > /tmp/sh-stat
+paste /tmp/sh-name /tmp/sh-dir /tmp/sh-stat > /tmp/sfs-shares
+	
+LIST=`cat /tmp/sfs-shares`	
+SHARES=`yad --center --title="SFS Shares" --fixed --window-icon="/usr/share/pixmaps/publicshare.png" --height="200" \
+--width="320" --list --column="Share" --column="Directory" --column="Status" $LIST --expand-column="2" \
+--separator=" " --button="gtk-edit:0" --button="gtk-remove:2" --button="gtk-close:1"`
+case $? in
+   0) echo $SHARES | awk '{print $2}' > /tmp/sfs-path
+      [ "$SHARES" = "" ] && exit
+      sfs-edit ;; 
+   1) exit 0 ;;     
+   2) RMSHARE=`echo $SHARES | awk '{print $1}'`
+      sed -i '/^.*'$RMSHARE'/,/^$/d' /etc/samba/smb.conf
+      echo "`cat -s /etc/samba/smb.conf`" > /etc/samba/smb.conf
+      DIR=`cat /tmp/sfs-path`
+      gvfs-set-attribute -t unset "$DIR" metadata::emblems
+      touch -c "$DIR" ;;    
+   esac
+}
+export -f SHARES  
+   	
+APPLY(){	
+echo "SERVER='$ENTRY1'" > /etc/simple-filesharing-setup.conf
+echo "WORKGROUP='$ENTRY2'" >> /etc/simple-filesharing-setup.conf	
+echo "USERLOGIN='$CB1'" >> /etc/simple-filesharing-setup.conf
+echo "PRINTSHARE='$CB2'" >> /etc/simple-filesharing-setup.conf
+echo "FILESHARING='$CB3'" >> /etc/simple-filesharing-setup.conf
+echo "AUTOSTART='$CB4'" >> /etc/simple-filesharing-setup.conf
+}
+export -f APPLY
+
+. /etc/simple-filesharing-setup.conf
+
+GTKDIALOG="gtkdialog"
+
+export MAIN_DIALOG='
+<window title="Simple File Sharing Setup" image-name="/usr/share/pixmaps/publicshare.png" allow-grow="false" width-request="290">  
+<vbox>
+  <hbox space-expand="true">
+  <hbox>
+    <pixmap icon_size="4">
+      <input file stock="'$ICON'"></input>
+    </pixmap>
+    <text use-markup="true"><label>"<b>'$TEXT'</b>"</label></text>
+  </hbox>
+  </hbox>
+  <frame>
+  <hbox>
+  	<text xalign="1" use-markup="true" width-chars="11"><label>Server Name</label></text>
+     <entry editable="false">
+	  <default>'$SERVER'</default>
+	  <variable>ENTRY1</variable>
+	</entry>
+  </hbox>
+  <hbox>
+  	<text xalign="1" width-chars="11"><label>Work Group</label></text>
+    <entry>
+	  <default>"'$WORKGROUP'"</default>
+	  <variable>ENTRY2</variable>
+	</entry>
+  </hbox> 
+  <hbox>
+  <vbox width-request="240">
+    <checkbox active="'$USERLOGIN'">
+      <label>Do not require users to log in</label>
+      <variable>CB1</variable>
+    </checkbox>
+    <checkbox active="'$PRINTSHARE'">
+      <label>Enable printer sharing</label>
+      <variable>CB2</variable>
+    </checkbox>
+    <checkbox active="'$FILESHARING'">
+      <label>Enable file sharing service</label>
+      <variable>CB3</variable>
+    </checkbox>
+    <checkbox active="'$AUTOSTART'">
+      <label>Autostart file sharing at boot</label>
+      <variable>CB4</variable>
+    </checkbox>
+  </vbox>  
+  </hbox>
+  <hseparator></hseparator>
+  <hbox homogeneous="True">
+   <button>
+    <label>Change Password</label>
+    <input file icon="dialog-password"></input>
+    <action>sfs-chpwd &</action>
+   </button>  
+  </hbox>
+  </frame>
+  <hbox homogeneous="True" space-fill="true">
+    <button use-underline="true">
+      <label>'_Apply'</label>
+	  <input file stock="gtk-apply"></input>
+	  <action>APPLY</action>
+	  <action>exit:ok</action>
+    </button>
+    <button  tooltip-text="View, edit; or delete shares" use-underline="true">
+      <label>'_Shares'</label>
+      <input file icon="emblem-shared"></input>
+      <action>SHARES</action>
+    </button>  
+    <button use-underline="true">
+      <label>'_Close'</label>      
+	  <input file stock="gtk-close"></input>
+	  <action>exit:cancel</action>
+    </button>
+  </hbox>  
+</vbox>
+</window>
+'    
+I=$IFS; IFS=""
+  for STATEMENTS in  $($GTKDIALOG --center --program MAIN_DIALOG); do
+    eval $STATEMENTS
+  done
+IFS=$I
+
+[ "$EXIT" = "cancel" -o "$EXIT" = "abort" ] && exit
+
+. /etc/simple-filesharing-setup.conf
+
+WG=`grep workgroup /etc/samba/smb.conf | awk '{print $3}'`
+[ "$WG" != "$ENTRY2" ] && sed -i 's/workgroup = '$WG'/workgroup = '$ENTRY2'/' /etc/samba/smb.conf
+
+LNUM=`grep -n map /etc/samba/smb.conf | awk -F':' '{print $1}'`
+if [ "$USERLOGIN" = false ]; then
+  sed -i ''$LNUM's/.*/;map to guest = Bad Password/' /etc/samba/smb.conf
+else 
+  sed -i ''$LNUM's/.*/map to guest = Bad Password/' /etc/samba/smb.conf
+fi
+
+if [ "$PRINTSHARE" = "true" ]; then
+  sed -i 's/load printers = no/load printers = yes/' /etc/samba/smb.conf
+  sed -i 's/printing = bsd/printing = cups/' /etc/samba/smb.conf
+  sed -i 's/printcap name = \/dev\/null/printcap name = cups/' /etc/samba/smb.conf
+  sed -i 's/disable spoolss = yes/disable spoolss = no/' /etc/samba/smb.conf
+  /etc/init.d/cups restart
+else
+  sed -i 's/load printers = yes/load printers = no/' /etc/samba/smb.conf
+  sed -i 's/printing = cups/printing = bsd/' /etc/samba/smb.conf
+  sed -i 's/printcap name = cups/printcap name = \/dev\/null/' /etc/samba/smb.conf
+  sed -i 's/disable spoolss = no/disable spoolss = yes/' /etc/samba/smb.conf
+/etc/init.d/cups restart
+fi
+
+. /etc/simple-filesharing-setup.conf
+
+PID="$(busybox pidof smbd)"
+
+if [ "$FILESHARING" = "true" -a "$PID" = "" ]; then
+  sfs-start-samba
+  notify -i publicshare -t 5000 "Simple File Sharing" "The file sharing service has started"
+fi
+if [ "$FILESHARING" = "false" -a "$PID" != "" ]; then
+  killall smbd nmbd
+  notify -i publicshare -t 5000 "Simple File Sharing" "The file sharing service has stopped"
+fi 
+
+if [ "$FILESHARING" = "true" ]; then
+  killall smbd nmbd
+  sleep 1
+  sfs-start-samba
+fi
+    
+echo "`cat -s /etc/samba/smb.conf`" > /etc/samba/smb.conf
+
+exit 0

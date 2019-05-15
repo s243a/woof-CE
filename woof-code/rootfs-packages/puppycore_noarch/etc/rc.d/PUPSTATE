@@ -1,0 +1,26 @@
+PUPMODE=5
+PDEV1='sda1'
+DEV1FS='ntfs'
+PUPSFS='sda1,ntfs,/linux/puppy_xslacko_4.4.sfs'
+PUPSAVE=''
+PMEDIA=''
+#ATADRIVES is all internal ide/pata/sata drives, excluding optical, excluding usb...
+ATADRIVES='sda '
+#ATAOPTICALDRIVES is list of non-usb optical drives...
+ATAOPTICALDRIVES=''
+#these directories are unionfs/aufs layers in /initrd...
+SAVE_LAYER=''
+PUP_LAYER='/pup_ro2'
+#The partition that has the xslackosave file is mounted here...
+PUP_HOME=''
+#(in /initrd) ...note, /mnt/home is a link to it.
+#this file has extra kernel drivers and firmware...
+ZDRV=''
+FDRV='sda1,ntfs,/linux/fdrv_xslacko_4.4.sfs'
+ADRV=''
+YDRV=''
+#complete set of modules in the initrd (moved to main f.s.)...
+ZDRVINIT='no'
+#Partition no. override on boot drive to which session is (or will be) saved...
+PSAVEMARK=''
+PSUBDIR='/linux'

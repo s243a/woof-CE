@@ -1,0 +1,6 @@
+#!/bin/sh
+
+DSL="$1"
+
+tar -zxf $DSL
+

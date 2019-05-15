@@ -1,0 +1,29 @@
+#!/bin/bash -x
+#Simple File Sharing v3.0
+#June 5 2013 by rg66 and Geoffrey
+#Feb 18 2016 rg66 edit for Samba 4
+
+if [ "$(whoami)" != "root" ]; then
+exec sudo -A $0 $@
+exit
+fi
+
+PASSWD=$(yad --center --title="SFS Change Password" --fixed --window-icon="/usr/share/pixmaps/publicshare.png" \
+--form --field="Old password:H" --field="New password:H" --separator=" " --buttons-layout="center" --button="gtk-apply:0" --button="gtk-cancel:1")
+case $? in
+0) OLD=`echo $PASSWD | awk '{print $1}' | sha1sum`
+   OLD2=`cat /etc/samba/private/.passwd`
+   NEW=`echo $PASSWD | awk '{print $2}'`
+   if [ "$OLD" = "" ] || [ "$NEW" = "" ]; then
+     notify-send -t 5000 -i /usr/share/pixmaps/publicshare.png "Simple File Sharing" "You must enter old and new password" && sfs-chpwd && exit 0
+   elif [ "$OLD" != "$OLD2" ]; then
+     notify-send -t 5000 -i /usr/share/pixmaps/publicshare.png "Simple File Sharing" "Old password does not match" && sfs-chpwd && exit 0
+   else     
+     echo -e "$NEW\n$NEW" | smbpasswd
+     echo $NEW | sha1sum > /etc/samba/private/.passwd
+     notify-send -t 5000 -i /usr/share/pixmaps/publicshare.png "Simple File Sharing" "Password has been changed"
+   fi ;;
+*) exit 0 ;;
+esac   
+
+exit 0

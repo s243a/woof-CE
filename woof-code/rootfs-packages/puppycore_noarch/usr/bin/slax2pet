@@ -1,0 +1,35 @@
+#!/bin/sh
+
+#if [ $# -eq 0 ]; then
+#DEB=`$(Xdialog --title "Select file" --wrap --fselect *.SB 0 0 2>&1)`
+#else
+SB=$1
+#fi
+
+
+echo "Converting SB to PET..."
+
+if [ -e "$SB" ]; then
+for i in "$SB"
+do
+FOLDR=$(echo $i|sed 's/\.sb$//')
+done
+mkdir "$FOLDR"
+cp "$SB" "$FOLDR"
+cd "$FOLDR"
+SB=`ls | grep ".sb"`
+unslax "$SB"
+rm "$SB"
+FOLDR=`basename "$FOLDR"`
+echo "PETMENUDESCR=''" > "$FOLDR.pet.specs"
+echo "PETOFFICIALDEPS=''" >> "$FOLDR.pet.specs"
+echo "PETREGISTER='yes'" >> "$FOLDR.pet.specs"
+cd ..
+tar -cf "$FOLDR.tar" "$FOLDR"
+gzip "$FOLDR.tar"
+tgz2pet "$FOLDR.tar.gz"
+rm -R -f "$FOLDR"
+rm "$FOLDR.sb"
+#petget "$FOLDR.pet"
+#rox
+fi

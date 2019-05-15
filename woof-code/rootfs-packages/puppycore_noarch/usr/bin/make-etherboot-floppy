@@ -1,0 +1,19 @@
+#!/bin/sh
+
+info="Please insert a floppy to continue
+
+WARNING: The existing data on floppy will be deleted"
+
+gxmessage "$info" --title "Make Network Bootable Floppy" --buttons "OK:255","Cancel:2"
+
+retval=$?
+
+echo $retval
+
+if [ $retval -eq 2 ] || [ $retval -eq 1 ]; then
+exit
+fi
+
+dd if=/usr/lib/etherboot.dsk of=/dev/fd0
+
+gxmessage "Network boot floppy is now created   " --title "Make Network Bootable Floppy"

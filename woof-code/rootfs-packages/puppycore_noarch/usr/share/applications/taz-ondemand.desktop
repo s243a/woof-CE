@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=On-Demand Features
+Comment=Download and install features
+Exec=/usr/bin/tazpup-ondemand
+Icon=/usr/share/pixmaps/puppy/install_options.svg
+Terminal=false
+StartupNotify=false
+Categories=System

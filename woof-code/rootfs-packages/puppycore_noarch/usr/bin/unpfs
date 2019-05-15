@@ -1,0 +1,25 @@
+#!/bin/sh
+
+
+if [ $# -eq 0 ]; then
+
+echo "usage: unpfs <filename>"
+echo "Extracts Puppyrus packages"
+
+else
+
+pfs=$1
+
+if [ ! -d /mnt/pfs ]; then
+mkdir /mnt/pfs
+fi
+
+mount -o loop "$pfs" /mnt/pfs
+cp -r /mnt/pfs/* ./
+umount /mnt/pfs
+
+if [ -d /mnt/pfs ]; then
+rmdir /mnt/pfs
+fi
+
+fi

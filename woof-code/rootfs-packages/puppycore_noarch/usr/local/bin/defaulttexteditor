@@ -1,0 +1,10 @@
+#!/bin/sh
+if [ ! -z "`which geany`" ]; then 
+  exec geany "$@"
+elif [ ! -z "`which beaver`" ]; then   
+  exec beaver "$@"  
+elif [ ! -z "`which leafpad`" ]; then 
+  exec leafpad "$@"
+elif [ ! -z "`which leafpad`" ]; then
+  exec defaultterminal nano "$@"
+fi   

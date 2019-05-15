@@ -1,0 +1,75 @@
+#!/bin/sh
+
+mode="$1"
+
+if [ -f /tmp/bt-manage-lock ]; then
+exit
+fi
+
+touch /tmp/bt-manage-lock
+
+if [ "$(rfkill list | grep "luetooth")" == "" ]; then
+echo "BT disabled" >> /tmp/bt-device.log
+udevadm trigger --subsystem-match=bluetooth --action=remove
+killall bluetoothd
+killall bluetooth-applet
+killall obexd
+killall hidd
+killall pand
+killall rfcomm
+rm -f /tmp/bt-manage-lock
+exit
+fi
+
+echo "BT enabled" >> /tmp/bt-device.log
+
+btd=`ps | grep "bluetoothd" | grep -v "grep"`
+hid=`ps | grep "hidd" | grep -v "grep"`
+obd=`ps | grep "obexd" | grep -v "grep"`
+bta=`ps | grep "bluetooth-applet" | grep -v "grep"`
+xrun=`ps | grep "X" | grep -v "grep"`
+
+if [ "$xrun" != "" ]; then
+export DISPLAY=:0.0
+fi 
+
+if [ "$btd" == "" ]; then
+bluetoothd
+sleep 1
+fi
+
+if [ "$hid" == "" ]; then
+hidd --server
+sleep 1
+fi
+
+if [ "$bta" == "" ]; then
+ if [ "$xrun" != "" ]; then
+ bluetooth-applet &
+ fi
+elif [ "$mode" == "refresh-tray" ] && [ "$bta" != "" ]; then
+ if [ "$xrun" != "" ]; then
+ killall bluetooth-applet
+ bluetooth-applet &
+ fi
+fi
+
+sleep 1
+
+if [ "$obd" == "" ]; then
+
+	if [ ! -d /root/bluetooth-share ]; then
+	mkdir /root/bluetooth-share
+	fi
+
+	/usr/libexec/obexd --ftp --opp -a -r /root/bluetooth-share
+	
+	sleep 1
+	
+	if [ "$(pidof obexd)" != "" ] && [ "$xrun" != "" ]; then
+	notify "Ready to receive files if the bluetooth is enabled and discoverable"
+	fi
+		
+fi
+
+rm -f /tmp/bt-manage-lock

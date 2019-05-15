@@ -1,0 +1,34 @@
+#!/bin/sh
+
+#if [ $# -eq 0 ]; then
+#DEB=`$(Xdialog --title "Select file" --wrap --fselect *.XBPS 0 0 2>&1)`
+#else
+XBPS=$1
+#fi
+
+echo "Converting XBPS to PET..."
+
+if [ -e "$XBPS" ]; then
+for i in "$XBPS"
+do
+FOLDR=$(echo $i|sed 's/\.xbps$//')
+done
+mkdir "$FOLDR"
+cp "$XBPS" "$FOLDR"
+cd "$FOLDR"
+XBPS=`ls | grep ".xbps"`
+unxbps "$XBPS"
+rm "$XBPS"
+FOLDR=`basename "$FOLDR"`
+echo "PETMENUDESCR=''" > "$FOLDR.pet.specs"
+echo "PETOFFICIALDEPS=''" >> "$FOLDR.pet.specs"
+echo "PETREGISTER='yes'" >> "$FOLDR.pet.specs"
+cd ..
+tar -cf "$FOLDR.tar" "$FOLDR"
+gzip "$FOLDR.tar"
+tgz2pet "$FOLDR.tar.gz"
+rm -R -f "$FOLDR"
+rm "$FOLDR.xbps"
+#petget "$FOLDR.pet"
+#rox
+fi

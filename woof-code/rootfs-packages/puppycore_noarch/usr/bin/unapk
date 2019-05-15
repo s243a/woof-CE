@@ -1,0 +1,14 @@
+#!/bin/sh
+
+if [ $# -eq 0 ]; then
+echo "Usage: unapk <filename>"
+echo "Extracts Alpine Linux Packages"
+else
+
+APK1=$1
+APK2=$(echo $i|sed 's/\.apk$//')
+cp $APK1 "$APK2.tar.gz"
+tar -zxvf "$APK2.tar.gz"
+rm "$APK2.tar.gz"
+
+fi

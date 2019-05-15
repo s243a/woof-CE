@@ -1,0 +1,14 @@
+#!/bin/sh
+
+LAST_ACTION=`cat /root/.device-notif`
+
+action=$(yad $FIXED $BUTTON_LAYOUT --width 300 --entry --title "Device Notification Sound" \
+   --window-icon=info --fixed\
+    --image=audio \
+    --button="gtk-ok:0" --button="gtk-cancel:1"\
+    --text "Choose action:" \
+    --entry-text "$LAST_ACTION" "ON" "OFF")
+
+if [ "$action" != "" ]; then
+echo $action > /root/.device-notif
+fi

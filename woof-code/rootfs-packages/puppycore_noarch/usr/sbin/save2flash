@@ -1,0 +1,28 @@
+#!/bin/sh
+#2007 Lesser GPL licence v2 (http://www.fsf.org/licensing/licenses/lgpl.html)
+#v411 /tmp/snapmergepuppyrequest is processed in /sbin/pup_event_frontend_d. (from v403 i think)
+
+[ "`whoami`" != "root" ] && exec sudo ${0} ${@} #110505
+
+. /etc/rc.d/PUPSTATE
+if [ $PUPMODE -ne 3 -a $PUPMODE -ne 7 -a $PUPMODE -ne 13 ] ; then
+  echo "save2flash: Wrong PUPMODE ($PUPMODE)"
+  exit 1
+fi
+
+export DISPLAY=':0'
+
+/usr/lib/gtkdialog/box_splash -bg yellow -close never -text "NOTICE:
+Request to save current session is queued. Please wait, another message will popup when the saving occurs..." &
+RETVAL=$?
+YAFPID=$!
+
+touch /tmp/snapmergepuppyrequest
+
+while [ -f /tmp/snapmergepuppyrequest ];do
+ sleep 1
+done
+
+[ $RETVAL -eq 0 ] && kill $YAFPID
+
+### END ###

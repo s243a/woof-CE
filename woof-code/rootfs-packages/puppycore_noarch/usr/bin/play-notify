@@ -1,0 +1,57 @@
+#!/bin/sh
+
+mode="$1"
+
+if [ "$mode" == "add" ]; then
+
+if [ -f /usr/share/audio/hw-add.wav ]; then
+ if [ -c /dev/mixer ];then #test for audio ready.
+  # See if /dev/dsp is in use. If it is then do not play the sound file.
+  fuser /dev/dsp
+  if [ $? -ne 0 ];then #=0 if found.
+   aplay "/usr/share/audio/hw-add.wav"
+  fi
+ fi
+sleep 0.5
+fi
+
+elif [ "$mode" == "remove" ]; then
+
+if [ -f /usr/share/audio/hw-remove.wav ]; then
+ if [ -c /dev/mixer ];then #test for audio ready.
+  # See if /dev/dsp is in use. If it is then do not play the sound file.
+  fuser /dev/dsp
+  if [ $? -ne 0 ];then #=0 if found.
+   aplay "/usr/share/audio/hw-remove.wav"
+  fi
+ fi
+sleep 0.5
+fi
+
+elif [ "$mode" == "bark" ]; then
+
+if [ -f /usr/share/audio/bark.au ]; then
+ if [ -c /dev/mixer ];then #test for audio ready.
+  # See if /dev/dsp is in use. If it is then do not play the sound file.
+  fuser /dev/dsp
+  if [ $? -ne 0 ];then #=0 if found.
+   aplay "/usr/share/audio/bark.au"
+  fi
+ fi
+sleep 0.5
+fi
+
+elif [ "$mode" == "bark2" ]; then
+
+if [ -f /usr/share/audio/2barks.wav ]; then
+ if [ -c /dev/mixer ];then #test for audio ready.
+  # See if /dev/dsp is in use. If it is then do not play the sound file.
+  fuser /dev/dsp
+  if [ $? -ne 0 ];then #=0 if found.
+   aplay "/usr/share/audio/2barks.wav"
+  fi
+ fi
+sleep 0.5
+fi
+
+fi

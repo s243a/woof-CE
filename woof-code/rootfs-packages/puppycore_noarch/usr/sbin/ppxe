@@ -1,0 +1,37 @@
+#!/bin/sh
+# MagicZaurus January 2009 for Puppy Linux GPL.
+# Based on script from SLAX.
+# Enhanced by Ecomoney August 2009
+# Code by phLe modified and included by jrb 13jan2011
+
+PXE_IP=$(ifconfig "$(ls -1 /sys/class/net | grep eth | head -n 1)" | grep "inet ad" | cut -d : -f 2 | cut -d " " -f 1)
+IP_BASE=$(echo $PXE_IP | cut -d "." -f 1-3)
+if [ "$PXE_IP" != "" ]; then
+	case "$1" in
+		start)
+		    killall dnsmasq 2>/dev/null 
+                    mkdir -p /var/lib/misc/ 
+                    dnsmasq --port=0 --dhcp-vendorclass=set:PXE,PXEClient --tag-if=set:notPXE,tag:!PXE --dhcp-ignore=tag:notPXE --dhcp-range=tag:PXE,$IP_BASE.110,$IP_BASE.200 --no-ping --dhcp-boot=/root/tftpboot/pxelinux.0 --dhcp-option-force=tag:PXE,208,F1:00:74:7E --dhcp-option-force=tag:PXE,209,"default" --dhcp-option-force=tag:PXE,210,"/root/tftpboot/" --dhcp-option-force=tag:PXE,211,30 --enable-tftp --tftp-root=/root/tftpboot
+                    $* 
+                    # --test 
+                    # -k, --keep-in-foreground 
+                    # -d, --no-daemon
+			echo            "DHCP and TFTP server started, start your other computers via the network."
+			gxmessage "DHCP and TFTP server started, start your other computers via the network."
+			;;
+		stop)
+			killall dnsmasq 2>/dev/null
+			echo            "DHCP and TFPT server stopped."
+			gxmessage "DHCP and TFPT server stopped."
+			;;
+		restart)
+			$0 stop
+			$0 start
+			echo            "TFTP Server Restarted"
+			gxmessage "TFTP Server Restarted"
+			;;
+	esac
+else
+	echo "No IP assigned to network interface. Cannot start DHCP and TFTP server."
+	gxmessage "No IP assigned to network interface. Cannot start DHCP and TFTP server. Please use the network connection wizard to connect to via Ethernet/LAN"
+fi

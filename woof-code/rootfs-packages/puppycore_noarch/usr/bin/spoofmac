@@ -1,0 +1,35 @@
+#!/bin/sh
+#assign random mac address of a network card
+#written by mistfire
+
+if [ "$(whoami)" != "root" ]; then
+ exec sudo -A $0 $@
+ exit
+fi
+
+if [ ! -f /etc/net-random.cfg ]; then
+ exit
+fi
+
+if [ "$(which macchanger)" == "" ]; then
+ echo "macchanger not found"
+ exit
+fi
+
+. /etc/net-random.cfg
+
+
+for itf1 in $(ls -1 /sys/class/net | grep -vE "^lo" | tr '\n' ' ')
+do
+
+ xstate="$(cat /sys/class/net/$itf1/operstate 2>/dev/null)"
+
+ if [ "$xstate" != "down" ]; then
+  ifconfig $itf1 down
+  macchanger -r $itf1
+  ifconfig $itf1 up
+ else
+  macchanger -r $itf1
+ fi
+
+done

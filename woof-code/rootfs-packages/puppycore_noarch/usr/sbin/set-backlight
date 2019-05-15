@@ -1,0 +1,38 @@
+#!/bin/sh
+#set backlight of the display from 0 to 100 percent
+
+BR=$1
+DISP1="$2"
+
+if [ "$BR" == "" ]; then
+ echo "Usage: $(basename $0) [0-100] [device name]"
+ echo "Set screen brightness from 0 to 100"
+ echo "Look for available device names at /sys/class/backlight"
+ exit
+fi
+
+if [ "$DISP1" == "" ]; then
+ echo "Enter the device name for setting screen brightness"
+ exit
+fi
+
+if [ "`whoami`" != "root" ]; then
+	exec sudo -A ${0} ${@} #110505
+	exit
+fi
+
+if [ ! -d "/sys/class/backlight/$DISP1" ]; then
+ echo "Device not found: $DISP1"
+ exit
+fi
+
+MAXBR=`cat "/sys/class/backlight/$DISP1/max_brightness"`
+
+if [ $BR -gt 100 ]; then
+ BR=100
+fi
+
+xNEWBR=`expr $MAXBR \* $BR`
+NEWBR=`expr $xNEWBR / 100`
+
+echo $NEWBR > "/sys/class/backlight/$DISP1/brightness"

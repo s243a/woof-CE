@@ -1,0 +1,39 @@
+#!/bin/sh
+
+IXO=`cat /sys/class/dmi/id/product_name`
+
+echo "Checking if the computer is OLPC..."
+
+if [ "$IXO" == "OLPC" ] || [ "$IXO" == "XO" ]; then
+
+echo "OLPC computer detected"
+
+	if [ ! -f  /usr/share/applications/xo-touchpad.desktop ]; then
+	
+	echo "Show XO touchpad settings..."
+	
+	echo "
+	[Desktop Entry]
+		Encoding=UTF-8
+		Exec=XOpad_conf.sh
+		GenericName=XO Touchpad Setup
+		Icon=configuration48
+		MimeType=
+		Path=
+		StartupNotify=false
+		Terminal=false
+		Type=Application
+		Name=XO Touchpad Setup
+		Comment=Touchpad Setup for OLPC XO laptop
+		Categories=System " > /usr/share/applications/xo-touchpad.desktop
+		chmod 777 /usr/share/applications/xo-touchpad.desktop
+	fi	
+else
+   
+   echo "Not an OLPC computer"
+
+	if [ -f  /usr/share/applications/xo-touchpad.desktop ]; then
+	echo "Hiding XO touchpad settings..."
+	rm -f /usr/share/applications/xo-touchpad.desktop
+	fi
+fi

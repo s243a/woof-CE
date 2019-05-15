@@ -1,0 +1,88 @@
+#!/bin/sh
+#Barry Kauler 2008.
+#Lesser GPL licence v2 (http://www.fsf.org/licensing/licenses/lgpl.html). 2007 www.puppylinux.com
+#a gui to provide choices for "events" -- things that occur at a systems level,
+#110505 support sudo for non-root user.
+#120201 BK: internationalized.
+#131123 zigbert: gui (gtkdialog) improvements.
+#141123 rg66: use save interval tab only.
+
+[ "`whoami`" != "root" ] && exec sudo -A ${0} ${@} #110505
+
+export TEXTDOMAIN=eventmanager
+export OUTPUT_CHARSET=UTF-8
+
+. /etc/rc.d/PUPSTATE
+
+[ -f /etc/eventmanager ] && . /etc/eventmanager
+[ ! $RAMSAVEINTERVAL ] && RAMSAVEINTERVAL=30
+NEWRAMSAVEINTERVAL=$RAMSAVEINTERVAL
+
+export Puppy_Event_Manager='
+<window title="'$(gettext 'Puppy Save Manager')'" icon-name="gtk-execute" resizable="false">
+<vbox space-expand="true" space-fill="true">
+<vbox width-request="510" height-request="370">
+<vbox scrollable="true">
+    <frame '$(gettext 'Periodic save from RAM')'>
+      <vbox space-expand="true" space-fill="true">
+        '"`/usr/lib/gtkdialog/xml_info scale puppy_save.svg 35 "$(gettext "Puppy runs in a particular 'state' that we call the PUPMODE. This depends on the type of installation and the type of hardware. Currently, <b>PUPMODE=")${PUPMODE}</b>. $(gettext "If it is an odd number, for example 13, then Puppy is doing everything in RAM and saving the current session to a drive periodically -- this is done in the case of Flash memory to make it last longer. When Puppy runs in an odd PUPMODE, there will be a 'save' icon on the desktop, also a save occurs at shutdown. You can also specify a periodic save here")" " " "<b>$(gettext 'Note!')</b> $(gettext 'PUPMODE=77 (multisession DVD) excluded, only manual save with desktop icon and at shutdown.')" "<b>$(gettext 'Note!')</b> $(gettext 'PUPMODE=5 there are no saves, below value ignored.')"`"'
+        <vbox space-expand="false" space-fill="false">
+          <text height-request="5"><label>""</label></text>
+          <hbox>
+            <text space-expand="true" space-fill="true"><label>""</label></text>
+            <text space-expand="false" space-fill="false"><label>"'$(gettext 'Save interval:')'  "</label></text>
+            <entry max_length="4" width-request="40" space-expand="false" space-fill="false">
+              <default>'${RAMSAVEINTERVAL}'</default>
+              <variable>NEWRAMSAVEINTERVAL</variable>
+            </entry>
+            <text><label>"'$(gettext 'minutes')'  "</label></text>
+          </hbox>
+          <hbox>     
+            <text space-expand="false" space-fill="false"><label>""</label></text>
+          </hbox>
+          <hbox>     
+            <text space-expand="false" space-fill="false"><label>"'$(gettext '\-0=Never, 0=At shutdown, +0=Ask at shutdown')'  "</label></text>
+          </hbox>
+          <text height-request="3"><label>""</label></text>
+        </vbox>
+      </vbox>
+    </frame>
+    </vbox>
+    </vbox>
+    <hbox space-expand="false" space-fill="false">
+      <text space-expand="true" space-fill="true"><label>""</label></text>
+      <button space-expand="false" space-fill="false">
+      <label>'$(gettext "Ok")'</label>
+      '"`/usr/lib/gtkdialog/xml_button-icon ok`"'
+      <action>exit:OK</action>
+    </button>
+      <button space-expand="false" space-fill="false">
+      <label>'$(gettext "Cancel")'</label>
+      '"`/usr/lib/gtkdialog/xml_button-icon cancel`"'
+      <action>exit:Cancel</action>
+    </button>
+  </hbox>
+  </vbox>    
+</window>'
+
+. /usr/lib/gtkdialog/xml_info gtk #build bg_pixmap for gtk-theme
+RETSTRING="`gtkdialog -p Puppy_Event_Manager`"
+[ $? -ne 0 ] && exit
+
+eval "$RETSTRING"
+
+#echo "$RETSTRING" #TEST
+
+[ "$EXIT" = "abort" ] && exit
+[ "$EXIT" = "Cancel" ] && exit
+[ "$EXIT" = "" ] && exit
+
+#make sure that RAMSAVEINTERVAL is an integer only...
+[ "$NEWRAMSAVEINTERVAL" = "" ] && NEWRAMSAVEINTERVAL=30 #412
+NEWRAMSAVEINTERVAL=`echo -n "$NEWRAMSAVEINTERVAL" | sed -e 's/[^0-9 +-]//g'`
+#do not allow too-frequent saves...
+[ $NEWRAMSAVEINTERVAL -gt 0 -a $NEWRAMSAVEINTERVAL -lt 5 ] && NEWRAMSAVEINTERVAL=5
+
+sed -i 's/RAMSAVEINTERVAL='$RAMSAVEINTERVAL'/RAMSAVEINTERVAL='$NEWRAMSAVEINTERVAL'/' /etc/eventmanager
+
+###END###

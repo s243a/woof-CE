@@ -1,0 +1,151 @@
+#!/bin/bash
+#v2.14 Puppy now has XDG menus.
+#this script builds the menus from template files.
+#Any templates can be placed into /etc/xdg/templates, and the file must be
+#named to show its final destination. For example, the template for JWM:
+# _root_.jwmrc
+#...the '_' will be converted to a '/', so the generated JWM config file is:
+# /root/.jwmrc
+# 5jan2008: fbpanel,lxpanel support developed by plinej.
+#100404 BK added 'variconlinks' for my fbpanel pkg.
+#100427 when called via /etc/rc.d/rc.update, HOME is '/' (needed by some of the menu generating apps).
+#120207 translation of some SSS strings. refer /usr/share/sss/menu_strings/
+#120208 fix in case this script gets called with LANG=C
+#120209 this script now called from /usr/sbin/quicksetup, whenever locale is changed.
+#120216 sss translation file now uses simple sed expressions.
+#120524 bug fix.
+#100427
+
+rebuild_template(){
+
+TEMPLATES="`ls -1 /etc/xdg/templates | tr '\n' ' '`"
+	
+if [ "$1" != "" ]; then
+xhome="$1"
+elif [ "$1" == "/" ]; then
+xhome="/root"
+else
+xhome="/root"
+fi
+
+[ -f $xhome/.jwm/menuheights ] && . $xhome/.jwm/menuheights
+
+for ONETPL in $TEMPLATES #ex: _root_.jwmrc
+do
+
+ [ "$ONETPL" = "README.txt" ] && continue
+ 
+ if [ "$1" == "" ]; then
+ 
+  ONEDEST="`echo -n "$ONETPL" | sed -e 's/_/\//g'`"
+ 
+ else
+ 
+  tmppath="$(echo "$xhome" | sed -e 's#\/#_#g')"
+  
+  if [ "$(echo "$tmppath" | rev | cut -c 1)" != "_" ]; then
+   tmppath="${tmppath}_"
+  fi
+  
+   x3="s/_root_/$tmppath/g"
+   
+   #echo $ONETPL
+   #echo $x3
+   
+  ONEDEST="`echo "$ONETPL" | sed -e "$x3" | sed -e 's/_/\//g'`"
+ fi
+ 
+ #echo "---- $ONEDEST"
+ 
+ ONESRC="/etc/xdg/templates/$ONETPL"
+ ONEPATH="`dirname $ONEDEST`"
+ echo "Generating $ONEDEST..."
+ 
+ [ -f $ONEDEST ] && mv -f $ONEDEST ${ONEDEST}-previous
+
+ if [ -d $ONEPATH ]; then
+	 cat $ONESRC |
+	 while read ONELINE
+	 do
+	  EXECMENU="`echo -n "$ONELINE" | grep -o 'PUPPYMENU.*' | cut -f 2-5 -d ' '`"
+	  if echo "$ONELINE" | grep -q "MENHEIGHT" ;then #131213 designed to be backward compatible
+	   [ "$MENHEIGHT" ] && echo $ONELINE | sed "s%MENHEIGHT%$MENHEIGHT%" >> $ONEDEST \
+	   || echo $ONELINE | sed "s%MENHEIGHT%24%" >> $ONEDEST
+	  elif [ "$EXECMENU" = "" ];then
+	   echo "$ONELINE" >> $ONEDEST
+	  else
+		   if [ "$(which $(basename $EXECMENU))" != "" ]; then
+		   ${EXECMENU} >> ${ONEDEST}
+		   fi
+	  fi
+	 done
+ fi
+ 
+  #120207 translate some strings... 120216...
+ if [ "$LANG1" != "en" ];then
+  if [ -f /usr/share/sss/menu_strings/menu_strings.${LANG1} ];then
+   sPTN="/^\[${ONETPL}\]/,/^$/p" #this is a multi-line block find expression.
+   CODEBLOCK="`sed -n "$sPTN" /usr/share/sss/menu_strings/menu_strings.${LANG1} | sed -e '/^#/d' -e '/%%/d' -e '/^$/d' -e '/^\[/d'`" #extracts just the relevant block of lines.
+   if [ "$CODEBLOCK" ];then
+    echo "$CODEBLOCK" > /tmp/fixmenus-translationblock
+    #121124 ensure that all [ ] are escaped... 121125 revert... 121126 restore, plus escape '.' chars...
+    sed -i -e 's%\[%\\[%g' -e 's$\]$\\]$g' -e 's%\\\\\[%\\[%g' -e 's%\\\\\]%\\]%g' /tmp/fixmenus-translationblock
+    sed -i -e 's%\.%\\.%g' -e 's%\\\\\.%\\.%g' /tmp/fixmenus-translationblock #note: 2nd ptn gets rid of prior escape char, so there remains just one.
+    sed -i -f /tmp/fixmenus-translationblock ${ONEDEST}
+   fi
+  fi
+ fi
+
+done
+ 	
+	
+	
+}
+
+# remove csh shell files #precaution
+CSH=$(find /etc/profile.d -name *.csh)
+[ "$CSH" ] && rm /etc/profile.d/*.csh
+
+if [ "$LANG" = "C" ];then #120208
+ LANG="`grep '^LANG=' /etc/profile | cut -f 2 -d '=' | cut -f 1 -d ' '`"
+ export LANG
+fi
+LANG1="`echo -n $LANG | cut -f 1 -d '_'`"  #120207 ex: de
+
+rebuild_template
+
+if [ -d /home ]; then
+USERLIST=`find /home -maxdepth 1 -mindepth 1 -type d | rev | cut -f 1 -d '/' | rev`
+
+	if [ "$USERLIST" != "" ]; then
+		for USERNAME in $USERLIST
+		do
+		 rebuild_template "/home/$USERNAME"
+		done
+	fi
+fi
+
+
+gtk-update-icon-cache -f -i /usr/share/icons/hicolor
+touch --no-create /usr/share/applications/
+
+#w001 support for fbpanel, lxpanel, openbox, fluxbox, pekwm, xfce4-panel...
+
+if [ "$(pidof X)" == "" ] && [ "$(pidof Xorg)" == "" ]; then
+ exit
+fi
+
+[ `which variconlinks` ] && variconlinks #100404 for my fbpanel pkg.
+[ `which tempicons` ] && tempicons
+[ `which fbpanel_menu_refresh` ] && fbpanel_menu_refresh
+[ `which lxpanel_menu_refresh` ] && lxpanel_menu_refresh
+[ `which jwm2fluxbox` ] && jwm2fluxbox  ##current fluxbox_menu_refresh doesn't support menu icons while this does
+[ `which obmenu-refresh` ] && obmenu-refresh
+[ `which jwm2pekwm` ] && jwm2pekwm
+[ `pidof icewm` ] && icewm --restart
+
+if [ `pidof xfce4-panel` ] && [ "$(ps | grep "whisker" | grep -v "grep")" == "" ]; then
+ xfce4-panel -r
+fi
+
+###END###

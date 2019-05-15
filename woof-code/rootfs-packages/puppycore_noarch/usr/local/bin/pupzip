@@ -1,0 +1,60 @@
+#!/bin/bash -x
+#rg66: PupZip for X-slacko-4.0 / file-roller
+
+EXT="`echo "$1" | tr [:upper:] [:lower:]`"
+FILE1="$1"
+curdir=`pwd`
+
+for i in xarchive xarchiver file-roller arc; do
+  [ "`which $i`" ] && ARCHIVER="$i" 
+done
+[ "$ARCHIVER" = "" ] && notify-send -i gnome-mime-application-x-archive "PupZip" "No suitable archiver found" && exit
+[ "$1" = "" ] && exec $ARCHIVER && exit
+
+case $EXT in
+  *.tgz|*.txz|*.pkg.tar.xz|*.rpm|*.deb) 
+  yad --title="PupZip" --window-icon="application-pet" --text="Do you want to install?\n\n<b>`basename $1`</b>\n\nClick No to open with the Archive Manager" \
+  --text-align="center" --fixed --buttons-layout="center" --borders="10" --button="gtk-yes:1" --button="gtk-no:0" 
+  
+  case $? in
+    0) exec $ARCHIVER "$1" ;;
+    1) exec petget "$1" ;;   
+    *) exit ;;
+  esac
+  ;;
+  
+  *.tar.gz|*.tar.bz|*.tar.bz2)
+  
+  alienpkg1="$(tar -tvf "$1" | grep "/keyword")"
+  
+  if [ "$alienpkg1" != "" ]; then
+    yad --title="PupZip" --window-icon="application-pet" --text="It seems that this tarball is a legacy puppy package.\nDo you want to convert and install?\n\n<b>`basename $1`</b>\n\nClick No to open with the Archive Manager" \
+  --text-align="center" --fixed --buttons-layout="center" --borders="10" --button="gtk-yes:1" --button="gtk-no:0" 
+  
+  case $? in
+    0) exec $ARCHIVER "$1" ;;
+    1) 
+    
+  if [ ! "`basename "$1" | grep --extended-regexp "\.tgz|\.tar\.gz"`" = "" ];then
+	tarball="gz"
+    APKGNAME="`basename "$1" | sed -e 's/.tgz//g' | sed -e 's/.tar.gz//g'`"
+  elif [ ! "`echo "$1" | grep --extended-regexp "\.tbz2|\.tar\.bz2"`" = "" ];then
+    APKGNAME="`basename "$1" | sed -e 's/.tbz2//g' | sed -e 's/.tar.bz2//g'`"
+  fi
+    
+    cd $curdir
+    
+    newpath=`dirname $FILE1`
+    alienpkg2pet $FILE1
+    exec petget "$newpath/$APKGNAME.pet";;   
+    *) exit ;;
+  esac
+  else
+  exec $ARCHIVER "$1"
+  fi
+  
+  ;;
+  *)  exec $ARCHIVER "$1" ;; 
+esac  
+            
+            

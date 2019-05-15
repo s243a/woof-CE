@@ -1,0 +1,26 @@
+#!/bin/sh
+
+
+if [ $# -eq 0 ]; then
+
+echo "usage: unslax <filename>"
+echo "Extracts Slax modules"
+
+else
+
+SB=$1
+
+unsquashfs "$SB"
+
+echo "Extracting contents..."
+cp -rf ./squashfs-root/* ./
+
+echo "Deleting uncesssary files..."
+
+if [ -d ./squashfs-root ]; then
+rm -rf ./squashfs-root
+fi
+
+echo "Done"
+
+fi

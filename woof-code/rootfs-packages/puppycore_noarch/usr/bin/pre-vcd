@@ -1,0 +1,39 @@
+#!/bin/sh
+
+set -x
+export DISPLAY=:0.0
+
+if [ "$1" == "" ]; then
+exit
+fi
+
+drv="$1"
+mnt1=0
+
+echo "new drive: $drv"
+
+if [ $(mount | grep -c /mnt/$drv) != 1 ]; then
+
+	if [ ! -d /mnt/$drv ]; then
+	mkdir "/mnt/$drv"
+	fi
+	
+	mount "/dev/$drv" "/mnt/$drv"
+	mnt1=1
+	
+fi
+
+if [ -d /mnt/$drv/mpegav ] && [ -d /mnt/$drv/ext ] && [ -d /mnt/$drv/vcd ]; then
+echo "Video CD Found"
+umount "/mnt/$drv"
+rmdir "/mnt/$drv"
+echo "playing parole"
+exec xfmedia -c -p vcd:///dev/$drv --vwin-geometry=600x400
+else
+
+if [ $mnt1 -gt 0 ]; then
+umount "/mnt/$drv"
+rmdir "/mnt/$drv"
+fi
+
+fi

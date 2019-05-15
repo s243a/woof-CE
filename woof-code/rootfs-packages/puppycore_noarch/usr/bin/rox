@@ -1,0 +1,49 @@
+#!/bin/sh
+# redirect rox calls to thunar
+
+CURRENTWM="`cat /etc/windowmanager`"
+
+if [ "$(which exo-open)" != "" ]; then 
+  if [ $# -eq 0 ];then
+    exo-open $HOME
+    exit
+  fi
+  if [ "$1" = "-D" ];then
+    exit
+  fi
+  if [ "$3" = "-d" ] || [ "$3" = "-x" ];then
+   exo-open "$2"
+   exit
+  fi
+  if [ "$1" = "-d" ];then
+    shift 
+    exo-open "$@" 
+    exit
+  fi  
+  if [ -d "$1" ];then
+    exo-open "$@"
+    exit
+  fi
+elif [ "$(which pcmanfm)" != "" ]; then 
+  if [ $# -eq 0 ];then
+    pcmanfm $HOME
+    exit
+  fi
+  if [ "$1" = "-D" ];then
+    exit
+  fi
+  if [ "$3" = "-d" ] || [ "$3" = "-x" ];then
+   pcmanfm "$2"
+   exit
+  fi
+  if [ "$1" = "-d" ];then
+    shift 
+    pcmanfm "$@" 
+    exit
+  fi  
+  if [ -d "$1" ];then
+    pcmanfm "$@"
+    exit
+  fi
+fi
+

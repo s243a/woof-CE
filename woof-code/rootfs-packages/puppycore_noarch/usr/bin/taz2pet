@@ -1,0 +1,75 @@
+#!/bin/sh
+
+#if [ $# -eq 0 ]; then
+#DEB=`$(Xdialog --title "Select file" --wrap --fselect *.tazpkg 0 0 2>&1)`
+#else
+TAZ=$1
+#fi
+
+
+echo "Converting TAZPKG to PET..."
+if [ -e "$TAZ" ]; then
+for i in "$TAZ"
+do
+FOLDR=$(echo $i|sed 's/\.tazpkg$//')
+done
+mkdir "$FOLDR"
+cp "$TAZ" "$FOLDR"
+cd "$FOLDR"
+TAZ=`ls | grep ".tazpkg"`
+untaz "$TAZ"
+
+
+
+
+#undeb "$TAZ"
+rm "$TAZ"
+FOLDR=`basename "$FOLDR"`
+
+if [ -f ./receipt ]; then
+
+#pkgname|nameonly|version|pkgrelease|category|size|path|fullfilename|dependencies|description|
+
+. ./receipt
+
+pkgname="$FOLDR"
+nameonly="$PACKAGE"
+version="$VERSION"
+pkgrelease=""
+category="$CATEGORY"
+size="$PACKED_SIZE"
+path=""
+fullfilename="$TAZ"
+dependencies=""
+
+for dep1 in $DEPENDS
+do
+ if [ "$dependencies" == "" ]; then
+ dependencies="+$dep1"
+ else
+ dependencies="$dependencies,+$dep1"
+ fi
+done 
+
+description="$SHORT_DESC"
+
+echo "$pkgname|$nameonly|$version|$pkgrelease|$category|$size|$path|$fullfilename|$dependencies|$description|" > pet.specs
+ 
+else
+echo "PETMENUDESCR=''" > "$FOLDR.pet.specs"
+echo "PETOFFICIALDEPS=''" >> "$FOLDR.pet.specs"
+echo "PETREGISTER='yes'" >> "$FOLDR.pet.specs"
+fi
+
+
+rm -f ./receipt
+
+cd ..
+tar -cf "$FOLDR.tar" "$FOLDR"
+gzip "$FOLDR.tar"
+tgz2pet "$FOLDR.tar.gz"
+rm -R -f "$FOLDR"
+rm "$FOLDR.tazpkg"
+#petget "$FOLDR.pet"
+#rox
+fi

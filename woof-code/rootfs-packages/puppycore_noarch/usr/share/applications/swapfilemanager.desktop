@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Swap File Manager
+Icon=/usr/share/pixmaps/puppy/execute.svg
+Comment=
+Exec=pupswap
+Terminal=false
+Type=Application
+Categories=System

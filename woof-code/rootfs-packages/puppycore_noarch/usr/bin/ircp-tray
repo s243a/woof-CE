@@ -1,0 +1,29 @@
+#!/bin/sh
+
+opt="$1"
+
+killall ircp-tray-main
+
+res=`pidof irattach`
+
+if [ "$res" == "" ]; then
+
+exec /etc/init.d/irda-setup start
+exec /etc/init.d/irda-utilsd start
+
+if [ "$opt" != "" ]; then
+sleep 5
+fi
+
+res=`pidof irattach`
+
+if [ "$res" == "" ]; then
+	if [ "$opt" == "" ]; then
+	/usr/lib/gtkdialog/box_ok "Error" error "No infrared devices found"
+	fi
+exit
+fi
+
+fi
+
+exec ircp-tray-main

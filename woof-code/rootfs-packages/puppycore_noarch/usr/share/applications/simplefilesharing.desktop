@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Simple File Sharing Setup
+Icon=publicshare
+Comment=Simple File Sharing Setup
+Exec=sfs-setup
+Terminal=false
+Type=Application
+Categories=System;Network
+GenericName=Simple File Sharing

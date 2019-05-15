@@ -1,0 +1,97 @@
+grep: /root/Choices/ROX-Filer/PuppyPin: No such file or directory
+/sbin/clean_desk_icons: line 24: /root/Choices/ROX-Filer/PuppyPin: No such file or directory
+/sbin/clean_desk_icons: line 25: /root/Choices/ROX-Filer/PuppyPin: No such file or directory
+
+X.Org X Server 1.20.1
+X Protocol Version 11, Revision 0
+Build Operating System: SliTaz GNU/Linux 
+Current Operating System: Linux TazPuppy 4.9.30 #1 SMP Sun May 28 11:48:56 AEST 2017 x86_64
+Kernel command line: screen=text pmedia=atahd pfix=fsck pdrv=a10f9972-24d0-4f49-8174-b57b66492e36 psubdir=/TazPup/64/a1/ psave=a10f9972-24d0-4f49-8174-b57b66492e36:/TazPup/64/a1/tazpupsave-b23/ 
+Build Date: 03 September 2018  06:01:18AM
+ 
+Current version of pixman: 0.34.0
+	Before reporting problems, check http://www.slitaz.org/
+	to make sure that you have the latest version.
+Markers: (--) probed, (**) from config file, (==) default setting,
+	(++) from command line, (!!) notice, (II) informational,
+	(WW) warning, (EE) error, (NI) not implemented, (??) unknown.
+(==) Log file: "/var/log/Xorg.0.log", Time: Thu Mar  7 02:02:24 2019
+(==) Using config directory: "/etc/X11/xorg.conf.d"
+(==) Using system config directory "/usr/share/X11/xorg.conf.d"
+(EE) intel: module ABI major version (23) doesn't match the server's version (24)
+(EE) fbdev: module ABI major version (23) doesn't match the server's version (24)
+(EE) vesa: module ABI major version (23) doesn't match the server's version (24)
+(II) modeset(0): Initializing kms color map for depth 24, 8 bpc.
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported high keycode 372 for name <I372> ignored
+>                   X11 cannot support keycodes above 255.
+>                   This warning only shows for the first high keycode.
+Errors from xkbcomp are not fatal to the X server
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported high keycode 372 for name <I372> ignored
+>                   X11 cannot support keycodes above 255.
+>                   This warning only shows for the first high keycode.
+Errors from xkbcomp are not fatal to the X server
+(II) modeset(0): Initializing kms color map for depth 24, 8 bpc.
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported high keycode 372 for name <I372> ignored
+>                   X11 cannot support keycodes above 255.
+>                   This warning only shows for the first high keycode.
+Errors from xkbcomp are not fatal to the X server
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported high keycode 372 for name <I372> ignored
+>                   X11 cannot support keycodes above 255.
+>                   This warning only shows for the first high keycode.
+Errors from xkbcomp are not fatal to the X server
+xwininfo: can not set locale properly
+(II) modeset(0): Initializing kms color map for depth 24, 8 bpc.
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported high keycode 372 for name <I372> ignored
+>                   X11 cannot support keycodes above 255.
+>                   This warning only shows for the first high keycode.
+Errors from xkbcomp are not fatal to the X server
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported high keycode 372 for name <I372> ignored
+>                   X11 cannot support keycodes above 255.
+>                   This warning only shows for the first high keycode.
+Errors from xkbcomp are not fatal to the X server
+grep: /root/Choices/ROX-Filer/PuppyPin: No such file or directory
+grep: /root/Choices/ROX-Filer/PuppyPin: No such file or directory
+(II) modeset(0): Initializing kms color map for depth 24, 8 bpc.
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported high keycode 372 for name <I372> ignored
+>                   X11 cannot support keycodes above 255.
+>                   This warning only shows for the first high keycode.
+Errors from xkbcomp are not fatal to the X server
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported high keycode 372 for name <I372> ignored
+>                   X11 cannot support keycodes above 255.
+>                   This warning only shows for the first high keycode.
+Errors from xkbcomp are not fatal to the X server
+/root/.xinitrc_puppy2: line 132: roxfiler: command not found
+/root/.xinitrc_puppy2: line 140: /usr/sbin/delayedrun: No such file or directory
+
+Command line: which 
+
+BusyBox v1.27.2 (2018-05-26 11:35:36 UTC) multi-call binary.
+
+Usage: which [COMMAND]...
+
+Locate a COMMAND
+JWM: warning: /root/.jwmrc[73]: could not open included file: /root/.jwmrc-tray
+JWM: warning: /root/.jwmrc[80]: invalid tag in Active: Text
+JWM: warning: /root/.jwmrc[81]: invalid tag in Active: Title
+JWM: warning: /root/.jwmrc[168]: could not open included file: /root/.jwm/jwmrc-theme
+JWM: warning: /root/.jwmrc[169]: could not open included file: /root/.jwm/jwmrc-personal
+
+(process:12494): Gtk-WARNING **: 02:02:26.924: Locale not supported by C library.
+	Using the fallback 'C' locale.
+/sbin/pup_event_frontend_d: line 14: /usr/local/pup_event/pup_event_frontend_d: No such file or directory
+
+** (lxpanel:12494): WARNING **: 02:02:26.981: terminal terminal isn't known, consider report it to LibFM developers
+
+** (lxpanel:12494): WARNING **: 02:02:26.984: The directory '~/Templates' doesn't exist, ignoring it
+/root/.xinitrc_puppy2: line 173: 12494 Segmentation fault      lxpanel
+XIO:  fatal IO error 11 (Resource temporarily unavailable) on X server ":0.0"
+      after 468 requests (468 known processed) with 0 events remaining.
+(II) Server terminated successfully (0). Closing log file.

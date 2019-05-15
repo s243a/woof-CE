@@ -1,0 +1,29 @@
+#!/bin/sh
+#written by mistfire
+#Convert pet.spec into package desc
+
+line="$1"
+
+if [ "$line" != "" ]; then
+
+pkg1="$(echo $line | cut -f 2 -d '|')"
+dep1=`echo $line | cut -f 9 -d '|' | sed -e "s#,+#,#g" | sed -e "s#^+##g"`
+echo "Creating desc: $pkg1"
+echo "pkgname=\"$(echo $line | cut -f 1 -d '|')\"
+nameonly=\"$(echo $line | cut -f 2 -d '|')\"
+version=\"$(echo $line | cut -f 3 -d '|')\"
+pkgrelease=\"$(echo $line | cut -f 4 -d '|')\"
+category=\"$(echo $line | cut -f 5 -d '|')\"
+size=\"$(echo $line | cut -f 6 -d '|')\"
+path=\"$(echo $line | cut -f 7 -d '|')\"
+fullfilename=\"$(echo $line | cut -f 8 -d '|')\"
+dependencies=\"$dep1\"
+description=\"$(echo $line | cut -f 10 -d '|')\"
+compileddistro=\"$(echo $line | cut -f 11 -d '|')\"
+compiledrelease=\"$(echo $line | cut -f 12 -d '|')\"
+repo=\"$(echo $line | cut -f 13 -d '|')\"
+" > $(pwd)/${pkg1}.desc
+
+else
+echo "pet.spec string not found"
+fi

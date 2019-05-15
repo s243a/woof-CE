@@ -1,0 +1,10 @@
+#!/bin/sh
+
+XBPS="$1"
+
+tar -xf $XBPS
+
+rm ./files.plist
+rm ./props.plist
+mv ./INSTALL ./pinstall.sh
+mv ./REMOVE ./puninstall.sh

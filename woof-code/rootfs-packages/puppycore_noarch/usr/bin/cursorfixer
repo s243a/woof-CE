@@ -1,0 +1,5 @@
+#!/bin/sh
+
+if [ "$(which xsetroot)" != "" ]; then
+ xsetroot -cursor_name left_ptr
+fi

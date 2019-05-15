@@ -1,0 +1,16 @@
+#!/bin/sh
+
+if [ ! -e /usr/bin/cupsd ] && [ ! -e /usr/sbin/cupsd ]; then
+ /usr/lib/gtkdialog/box_ok "Configure CUPS" error "CUPS is not installed"
+ exit
+fi
+
+if [ "$(pidof cupsd)" == "" ]; then
+ if [ -e /etc/init.d/cupsd ]; then
+  /etc/init.d/cupsd start
+ elif [ -e /etc/init.d/cups ]; then
+  /etc/init.d/cups start
+ fi
+fi
+
+tazweb --notoolbar "http://localhost:631"

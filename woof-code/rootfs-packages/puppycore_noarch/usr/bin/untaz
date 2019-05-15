@@ -1,0 +1,112 @@
+#!/bin/sh
+
+PKG=$1
+#mv "$PKG" "$PKG.gz"
+cpio -idm < "$PKG"
+
+if [ -f description.txt ]; then
+rm description.txt
+fi
+
+if [ -f md5sum ]; then
+rm md5sum
+fi
+
+if [ -f files.list ]; then
+rm files.list
+fi
+
+#if [ -f receipt ]; then
+#rm receipt
+#fi
+
+if [ -f fs.cpio.lzma ]; then
+echo "lzma found"
+lzma -d fs.cpio.lzma | cpio -idm && rm fs.cpio.lzma
+elif [ -f fs.cpio ]; then
+echo "cpio found"
+cpio -idm < fs.cpio
+rm fs.cpio
+elif [ -f fs.cpio.gz ]; then
+echo "gz found"
+zcat fs.cpio.gz | cpio -idm && rm fs.cpio.gz
+elif [ -f fs.cpio.xz ]; then
+echo "xz found"
+unxz fs.cpio.xz | cpio -idm && rm fs.cpio.xz
+elif [ -f fs.cpio.tar.gz ]; then
+echo "gz found"
+tar -zxvf fs.cpio.tar.gz | cpio -idm && rm fs.cpio.tar.gz
+elif [ -f fs.cpio.tar.xz ]; then
+echo "xz found"
+unxz fs.cpio.tar.xz | cpio -idm && rm fs.cpio.tar.xz
+elif [ -f fs.cpio.tar.bz ]; then
+echo "bz found"
+tar -xjf  fs.cpio.tar.bz | cpio -idm && rm fs.cpio.tar.bz
+elif [ -f fs.cpio.tar.bz2 ]; then
+echo "bz2 found"
+tar -xjf  fs.cpio.tar.bz2 | cpio -idm && rm fs.cpio.tar.bz2
+elif [ -f fs.cpio.tbz ]; then
+echo "tbz found"
+tar -xjf  fs.cpio.tbz  | cpio -idm && rm fs.cpio.tbz 
+elif [ -f fs.cpio.bz ]; then
+echo "bz found"
+tar -xjf  fs.cpio.bz  | cpio -idm && rm fs.cpio.bz 
+elif [ -f fs.cpio.bz2 ]; then
+echo "bz2 found"
+tar -xjf  fs.cpio.bz2  | cpio -idm && rm fs.cpio.bz2 
+elif [ -f fs.cpio.tgz ]; then
+echo "tgz found"
+tar -zxvf fs.cpio.tgz  | cpio -idm && rm fs.cpio.tgz
+elif [ -f fs.cpio.txz ]; then
+echo "txz found"
+unxz fs.cpio.txz  | cpio -idm && rm fs.cpio.txz
+fi
+
+if [ -f fs.cpio.lzma ]; then
+echo "lzma found"
+lzma -d fs.cpio.lzma | cpio -idm && rm fs.cpio.lzma
+elif [ -f fs.cpio ]; then
+echo "cpio found"
+cpio -idm < fs.cpio
+rm fs.cpio
+elif [ -f fs.cpio.gz ]; then
+echo "gz found"
+zcat fs.cpio.gz | cpio -idm && rm fs.cpio.gz
+elif [ -f fs.cpio.xz ]; then
+echo "xz found"
+unxz fs.cpio.xz | cpio -idm && rm fs.cpio.xz
+elif [ -f fs.cpio.tar.gz ]; then
+echo "gz found"
+tar -zxvf fs.cpio.tar.gz | cpio -idm && rm fs.cpio.tar.gz
+elif [ -f fs.cpio.tar.xz ]; then
+echo "xz found"
+unxz fs.cpio.tar.xz | cpio -idm && rm fs.cpio.tar.xz
+elif [ -f fs.cpio.tar.bz ]; then
+echo "bz found"
+tar -xjf  fs.cpio.tar.bz | cpio -idm && rm fs.cpio.tar.bz
+elif [ -f fs.cpio.tar.bz2 ]; then
+echo "bz2 found"
+tar -xjf  fs.cpio.tar.bz2 | cpio -idm && rm fs.cpio.tar.bz2
+elif [ -f fs.cpio.tbz ]; then
+echo "tbz found"
+tar -xjf  fs.cpio.tbz  | cpio -idm && rm fs.cpio.tbz 
+elif [ -f fs.cpio.bz ]; then
+echo "bz found"
+tar -xjf  fs.cpio.bz  | cpio -idm && rm fs.cpio.bz 
+elif [ -f fs.cpio.bz2 ]; then
+echo "bz2 found"
+tar -xjf  fs.cpio.bz2  | cpio -idm && rm fs.cpio.bz2 
+elif [ -f fs.cpio.tgz ]; then
+echo "tgz found"
+tar -zxvf fs.cpio.tgz  | cpio -idm && rm fs.cpio.tgz
+elif [ -f fs.cpio.txz ]; then
+echo "txz found"
+unxz fs.cpio.txz  | cpio -idm && rm fs.cpio.txz
+fi
+
+if [ -d fs ]; then
+cd fs
+mv * ..
+cd ..
+rmdir fs
+fi

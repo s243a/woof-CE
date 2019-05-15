@@ -1,0 +1,5 @@
+#!/bin/sh
+#generate ids of installed devices
+busybox lspci
+echo "----------"
+busybox lsusb

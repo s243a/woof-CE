@@ -1,0 +1,50 @@
+#!/bin/bash -x
+
+if [ ! -f /etc/simple-filesharing-setup.conf ]; then
+ exit
+fi
+
+. /etc/simple-filesharing-setup.conf
+
+if [ "$AUTOSTART" == "false" ]; then
+ exit
+fi 
+
+if [ "$(which smbd)" == "" ]; then
+notify-send -i publicshare -t 5000 "Simple File Sharing" "Samba is not yet installed"
+  exit 1
+fi
+
+if [ "$(whoami)" != "root" ]; then
+exec sudo -A $0 $@
+exit
+fi
+
+#Wait until the network is active
+WAIT=20
+while [ "$WAIT" -gt 0 ]; do
+  NETWORK=$(route -n | awk '/^[0-9]/ && ($1 !~ /^0.0/) && ($1 !~ /^127.0/) && ($1 !~ /^169.254/) {print $1}')
+  [ "$NETWORK" ] && break
+  sleep 1
+  ((WAIT--))
+done
+
+if [ -z "$NETWORK" ]; then
+  notify-send -i publicshare -t 5000 "Simple File Sharing" "No network detected"
+  exit 1
+fi
+
+#Check if hostname has changed
+. /etc/simple-filesharing-setup.conf
+HOST=`hostname`
+[ "$SERVER" != "$HOST" ] && sed -i "s/SERVER='$SERVER'/SERVER='$HOST'/" /etc/simple-filesharing-setup.conf \
+&& sed -i 's/netbios name = '$SERVER'/netbios name = '$HOST'/' /etc/samba/smb.conf
+
+/usr/bin/sfs-start-samba
+
+#Check to see if samba is running
+sleep 3
+[ "`pidof smbd`" != "" ] && \
+notify-send -i publicshare -t 5000 "Simple File Sharing" "The file sharing service has started"
+
+exit 0

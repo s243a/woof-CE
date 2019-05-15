@@ -1,0 +1,75 @@
+#!/bin/sh
+#Sleep and hibernate timer by mistfire
+
+OPT="$1"
+SEC=60
+. /etc/rc.d/PUPSTATE
+
+if [ $PUPMODE -eq 5 ] || [ $PUPMODE -eq 77 ]; then
+VALID=0
+else
+VALID=1
+fi
+
+
+kill_timers()
+{
+	
+	xPID=`ps -ef | grep 'watch' | grep '/etc/acpi/sb_timer' | grep -v grep | awk '{print $2}'`
+
+	if [ "$xPID" != "" ]; then
+	echo "Sleep timer stopped"
+	kill $xPID
+	fi
+
+	xPID=`ps -ef | grep 'watch' | grep '/etc/acpi/hb_timer' | grep -v grep | awk '{print $2}'`
+
+	if [ "$xPID" != "" ]; then
+	echo "Hibernate timer stopped"
+	kill $xPID
+	fi	
+}
+
+export -f kill_timers
+
+
+if [ "$OPT" == "start" ]; then 
+
+	kill_timers
+	
+	SB=`cat /root/.power | awk -F'|' '{print $6}'`
+    HB=`cat /root/.power | awk -F'|' '{print $7}'`
+
+	PART=`fdisk -l |grep swap |head -n 1|cut -f1 -d\ `
+	
+	SWAPSIZE=`expr $(cat /proc/swaps | grep -e '/dev/[h|s]d[a-z][0-9]' | head -n 1 | awk '{ print $3 }')`
+
+	if [ "$SWAPSIZE" != "" ]; then
+	SWAPSIZE=`expr $(cat /proc/swaps | grep -e '/dev/[h|s]d[a-z][0-9]' | head -n 1 | awk '{ print $3 }') / 1024`
+	else
+	SWAPSIZE=0
+	fi
+
+	RAMSIZE=$(free | grep -o 'Mem: .*' | tr -s ' ' | cut -f 2 -d ' ')
+
+	if [ "$RAMSIZE" != "" ]; then
+	RAMSIZE=`expr $(free | grep -o 'Mem: .*' | tr -s ' ' | cut -f 2 -d ' ') / 1024`
+	else
+	RAMSIZE=0
+	fi
+
+	if [ "$SB" != "Never" ]; then
+	watch -n $SEC /etc/acpi/sb_timer > /dev/null &
+	fi
+	
+	if [ "$HB" != "Never" ] && [ -e /sys/power/resume ] && [ "$PART" != "" ] && [ $VALID -eq 1 ] && [ $SWAPSIZE -ge $RAMSIZE ]; then
+	watch -n $SEC /etc/acpi/hb_timer > /dev/null &
+	fi
+	
+elif [ "$OPT" == "stop" ]; then 
+
+	kill_timers
+
+else
+	echo "Usage $0 start|stop"
+fi

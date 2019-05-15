@@ -1,0 +1,114 @@
+#!/bin/sh
+#(c) Copyright Barry Kauler 2012, bkhome.org
+#License GPL3 (/usr/share/doc/legal)
+#shared-mime-info pkg has assigned initrd.gz mime-type application/initramfs-gz (by me).
+#Click on initrd.gz in ROX-Filer, this script will run (see $HOME/Choices/MIME-types/application_initramfs-gz).
+#note: script not internationalized, as this is a developer's tool.
+
+[ "`whoami`" != "root" ] && exec sudo -A ${0} ${@}
+
+[ ! $1 ] && exit 1
+[ ! -f "$1" ] && exit 1
+BASEFILE="`basename "$1"`"
+
+if [ "$BASEFILE" != "initrd.gz" ] && [ "$BASEFILE" != "initrd.xz" ] && [ "$BASEFILE" != "initrd.bz2" ]; then 
+exit 1
+fi
+
+compr_func() {
+#find out compression type...
+UNCOMPREXE=gunzip; COMPREXE=gzip; EXT=gz
+gunzip -t "$1"
+if [ $? -ne 0 ];then
+ UNCOMPREXE=bunzip2; COMPREXE=bzip2; EXT=bz2
+ bunzip2 -t "$1"
+ if [ $? -ne 0 ];then
+  UNCOMPREXE=unxz; COMPREXE=xz; EXT=xz
+  unxz -t "$1"
+  if [ $? -ne 0 ];then
+   return 1
+  fi
+ fi
+fi
+return 0
+}
+
+cd $HOME
+[ -f initrd ] && rm -f initrd
+[ -f /tmp/$BASEFILE ] && rm -f /tmp/$BASEFILE
+[ "$1" = "$HOME/$BASEFILE" ] && cp -f $HOME/$BASEFILE /tmp/
+
+if [ -d initrd-expanded ];then
+ 
+ pupdialog --title "$BASEFILE: update?" --yesno "An $BASEFILE is already expanded at $HOME/initrd-expanded. Is this correct, do you want to use $HOME/initrd-expanded to update ${1}?" 0 0
+ if [ $? -eq 0 ];then
+  
+  compr_func "$1"
+  if [ $? -ne 0 ];then
+   pupdialog --title "$BASEFILE: fail" --msgbox "Sorry, could not recognise compression type, unable to update $BASEFILE." 0 0
+  else
+   cd initrd-expanded
+   find . | cpio -o -H newc > ../initrd
+   sync
+   cd ..
+   
+   if [ "$COMPREXE" != "xz" ]; then
+   gxmessage -center -name "Edit Initrd" -buttons "NORMAL:10,HIGH XZ:11" "Select compression method for initrd"
+   RETVAL=$?
+   else
+   RETVAL=10
+   fi
+   
+   if [ $RETVAL -eq 10 ]; then
+	   if [ "$EXT" == "xz" ]; then
+	   xz --check=crc32 --x86 --lzma2=dict=1MB initrd
+	   else
+	   ${COMPREXE} initrd
+	   fi
+   sync
+   mv -f initrd.${EXT} "$1"
+   fname="$1"
+   else
+   xz --check=crc32 --x86 --lzma2=dict=1MB initrd
+   sync
+   mv -f initrd.xz "$1.xz"
+   fname="$1.xz"
+   fi
+   
+   pupdialog --title "$BASEFILE: success" --msgbox "File ${fname} has been updated with the contents of $HOME/initrd-expanded." 0 0
+  fi
+   
+ fi
+ pupdialog --title "$BASEFILE: finished" --yesno "Do you want to delete $HOME/initrd-expanded? If in doubt, please choose Yes" 0 0
+ if [ $? -eq 0 ];then
+  rox -D $HOME/initrd-expanded 2>/dev/null
+  rm -rf $HOME/initrd-expanded
+ fi
+  
+else
+ 
+ pupdialog --title "$BASEFILE: expand?"  --yesno "Do you want to open up $BASEFILE, and optionally edit it?" 0 0
+ if [ $? -eq 0 ];then
+  compr_func "$1"
+  if [ $? -ne 0 ];then
+   pupdialog --title "$BASEFILE: fail" --msgbox "Sorry, could not recognise compression type of ${1}, unable to expand it." 0 0
+  else
+   [ "$1" != "$HOME/$BASEFILE" ] && cp -f "$1" $HOME/
+   #mv -f initrd.${EXT} initrd.${EXT}
+   ${UNCOMPREXE} initrd.${EXT}
+   [ -f /tmp/$BASEFILE ] && mv -f /tmp/$BASEFILE $HOME/
+   mkdir initrd-expanded
+   cd initrd-expanded
+   cat ../initrd | cpio -i -d -m
+   sync
+   rm -f ../initrd
+   cd ..
+   pupdialog --colors --title "$BASEFILE: expanded" --msgbox "File $BASEFILE has been expanded at \Zb$HOME/initrd-expanded\ZB. You may edit the contents if you wish. \Zb\Z1\n\nAfterward, if you click on ${1} again\Zn\ZB, it will be updated with the contents of $HOME/initrd-expanded." 0 0
+   rox -d $HOME/initrd-expanded -x $HOME/initrd-expanded
+  fi
+ fi
+
+fi
+
+[ -f /tmp/$BASEFILE ] && rm -f /tmp/$BASEFILE
+###END###

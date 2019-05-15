@@ -1,0 +1,108 @@
+#!/bin/sh
+
+list_net()
+{
+for dev1 in `ls /sys/class/net | head`
+do
+devitem="$devitem<item>$dev1</item>"
+if [ ! -f /var/lib/vnstat/$dev1 ]; then
+vnstat -u -i $dev1
+fi
+
+done
+}
+
+if [ ! -d /var/lib/vnstat ]; then
+mkdir /var/lib/vnstat
+fi
+
+
+export -f list_net
+
+list_net
+
+export WINDOW="<window title=\"vnStat Traffic Monitor\" image-name=\"/usr/share/pixmaps/puppy/preferences.svg\" resizable=\"false\">
+<vbox>
+  <hbox>
+   <text><label>Select network interface:</label></text>
+	<combobox>
+     <variable>TARGET_DEV</variable>
+      $devitem
+     </combobox>
+   </hbox>
+   
+   <frame Report options>
+   <hbox>
+   <vbox>
+    <hbox>
+		<text><label>$(gettext 'Real-time')</label></text>
+		<button>
+			<input file icon=\"gtk-print-report\"></input>
+			<action>exec rxvt -title \"Data Usage on \$TARGET_DEV\" -e vnstat -l -i \$TARGET_DEV &</action>
+		</button>
+	</hbox>
+	
+	<hbox>
+		<text><label>$(gettext 'Top 10')</label></text>
+		<button>
+			<input file icon=\"gtk-print-report\"></input>
+			    <action>vnstat -t -i \$TARGET_DEV > /tmp/vnstat_top10.info &</action>
+				<action>Xdialog --title \"Top 10 Usage Report on \$TARGET_DEV\" --fixed-font --textbox /tmp/vnstat_top10.info 640x400 &</action>
+		</button>
+	    </hbox> 
+	</vbox>    
+
+	<vbox>
+    <hbox>
+		<text><label>$(gettext 'Hourly')</label></text>
+		<button>
+			<input file icon=\"gtk-print-report\"></input>
+			     <action>vnstat -h -i \$TARGET_DEV > /tmp/vnstat_hourly.info &</action>
+				 <action>Xdialog --title \"Hourly Usage Report on \$TARGET_DEV\" --fixed-font --textbox /tmp/vnstat_hourly.info 640x420 &</action>
+		</button>
+	</hbox>
+	
+	<hbox>
+		<text><label>$(gettext 'Daily')</label></text>
+		<button>
+			<input file icon=\"gtk-print-report\"></input>
+			     <action>vnstat -d -i \$TARGET_DEV > /tmp/vnstat_daily.info &</action>
+				 <action>Xdialog --title \"Daily Usage Report on \$TARGET_DEV\" --fixed-font --textbox /tmp/vnstat_daily.info 620x400 &</action>
+		</button>
+	</hbox>
+	</vbox>
+
+    <vbox>
+   	<hbox>
+		<text><label>$(gettext 'Weekly')</label></text>
+		<button>
+			<input file icon=\"gtk-print-report\"></input>
+			    <action>vnstat -w -i \$TARGET_DEV > /tmp/vnstat_weekly.info &</action>
+				<action>Xdialog --title \"Weekly Usage Report on \$TARGET_DEV\" --fixed-font --textbox /tmp/vnstat_weekly.info 620x400 &</action>
+		</button>
+	</hbox>
+   
+      	<hbox>
+		<text><label>$(gettext 'Monthly')</label></text>
+		<button>
+			<input file icon=\"gtk-print-report\"></input>
+			    <action>vnstat -m -i \$TARGET_DEV > /tmp/vnstat_monthly.info &</action>
+				<action>Xdialog --title \"Monthly Usage Report on \$TARGET_DEV\" --fixed-font --textbox /tmp/vnstat_monthly.info 620x400 &</action>
+		</button>
+	    </hbox>
+	    
+	  </vbox> 
+	 </hbox>     
+   </frame>
+</vbox>
+</window>"
+
+
+#. /usr/lib/gtkdialog/xml_info gtk #build bg_pixmap for gtk-theme
+gtkdialog --center --program=WINDOW
+
+rm /tmp/vnstat_hourly.info
+rm /tmp/vnstat_daily.info
+rm /tmp/vnstat_weekly.info
+rm /tmp/vnstat_monthly.info
+rm /tmp/vnstat_top10.info

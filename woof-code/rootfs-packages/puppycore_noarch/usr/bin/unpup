@@ -1,0 +1,85 @@
+#!/bin/sh
+
+extract_tarball()
+{
+	
+if [ -f "$1" ]; then 
+
+if [ ! -d ./tempdir ]; then
+mkdir ./tempdir
+fi
+
+mv -f "$1" ./tempdir
+cd tempdir
+tar "-$2" "$1"
+#xjvf
+rm $1
+cd ..
+
+fi
+
+}
+
+unzip -o "$1"
+
+
+if [ -f FILESYSTEM.tbz ]; then 
+PRM="xjvf"
+FZ="FILESYSTEM.tbz"
+FF=1
+elif [ -f FILESYSTEM.tlz ]; then 
+PRM="xvf --lzip"
+FZ="FILESYSTEM.tlz"
+FF=1
+elif [ -f FILESYSTEM.tar ]; then 
+PRM="xvf"
+FZ="FILESYSTEM.tar"
+FF=1
+elif [ -f FILESYSTEM.tgz ]; then 
+PRM="xzvf"
+FZ="FILESYSTEM.tgz"
+FF=1
+elif [ -f FILESYSTEM.tar.gz ]; then 
+PRM="xzvf"
+FZ="FILESYSTEM.tar.gz"
+FF=1
+elif [ -f FILESYSTEM.txz ]; then 
+PRM="xjvf"
+FZ="FILESYSTEM.txz"
+FF=1
+elif [ -f FILESYSTEM.tar.bzip ]; then 
+PRM="xjvf"
+FZ="FILESYSTEM.tar.bzip"
+FF=1
+elif [ -f FILESYSTEM.tar.bzip2 ]; then 
+PRM="xjvf"
+FZ="FILESYSTEM.tar.bzip2"
+elif [ -f FILESYSTEM.tar.bz ]; then 
+PRM="xjvf"
+FZ="FILESYSTEM.tar.bz"
+FF=1
+elif [ -f FILESYSTEM.tar.bz2 ]; then 
+PRM="xjvf"
+FZ="FILESYSTEM.tar.bz2"
+elif [ -f FILESYSTEM.tar.lz ]; then 
+PRM="xvf --lzip"
+FZ="FILESYSTEM.tar.lz"
+FF=1
+else
+FF=0
+fi
+
+if [ "$PRM" != "" ] && [ "$FZ" != "" ]; then
+extract_tarball $FZ $PRM
+fi
+
+rm -f ./*
+
+if [ -d ./tempdir ]; then
+cp -f -R ./tempdir/* ./
+rm -f -R ./tempdir/*
+rmdir ./tempdir
+else
+echo "" > ./error-pup
+fi
+

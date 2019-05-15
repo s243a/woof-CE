@@ -1,0 +1,35 @@
+#!/bin/sh
+#Hibernate if possible if not just sleep
+
+. /etc/rc.d/PUPSTATE
+
+if [ $PUPMODE -eq 5 ] || [ $PUPMODE -eq 77 ]  ; then
+VALID=0
+else
+VALID=1
+fi
+
+#Look for swap partition
+PART=`fdisk -l |grep swap |head -n 1|cut -f1 -d\ `
+
+SWAPSIZE=`expr $(cat /proc/swaps | grep -e '/dev/[h|s]d[a-z][0-9]' | head -n 1 | awk '{ print $3 }')`
+
+if [ "$SWAPSIZE" != "" ]; then
+SWAPSIZE=`expr $(cat /proc/swaps | grep -e '/dev/[h|s]d[a-z][0-9]' | head -n 1 | awk '{ print $3 }') / 1024`
+else
+SWAPSIZE=0
+fi
+
+RAMSIZE=$(free | grep -o 'Mem: .*' | tr -s ' ' | cut -f 2 -d ' ')
+
+if [ "$RAMSIZE" != "" ]; then
+RAMSIZE=`expr $(free | grep -o 'Mem: .*' | tr -s ' ' | cut -f 2 -d ' ') / 1024`
+else
+RAMSIZE=0
+fi
+
+if [ -e /sys/power/resume ] && [ "$PART" != "" ] && [ $VALID -eq 1 ] && [ $SWAPSIZE -ge $RAMSIZE ]; then
+/etc/acpi/actions/hibernate.sh
+else
+/etc/acpi/actions/suspend.sh
+fi

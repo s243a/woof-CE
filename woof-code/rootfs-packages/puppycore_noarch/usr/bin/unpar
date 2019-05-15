@@ -1,0 +1,39 @@
+#!/bin/sh
+if [ $# -eq 0 ]; then
+
+echo "usage: unpar <filename>"
+echo "Extracts Pardus packages"
+
+else
+
+PAR=$1
+unzip "$PAR"
+
+if [ -f files.xml ]; then
+rm files.xml
+fi
+
+#if [ -f metadata.xml ]; then
+#rm metadata.xml
+#fi
+
+if [ -f install.tar.lzma ]; then
+tar --lzma -xvf install.tar.lzma
+rm install.tar.lzma
+elif [ -f install.tar.xz ]; then
+unxz install.tar.xz
+tar -xvf install.tar
+rm install.tar
+rm install.tar.xz
+elif [ -f install.tar.gz ]; then
+tar -zxvf install.tar.gz
+rm install.tar.gz
+elif [ -f install.tar.bz ]; then
+tar -xjf install.tar.bz
+rm install.tar.bz
+elif [ -f install.tar.bz2 ]; then
+tar -xjf install.tar.bz2
+rm install.tar.bz2
+fi
+
+fi

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Change Linux Kernel
+Icon=/usr/share/pixmaps/puppy/puppy_config.svg
+Comment=Change Power Settings
+Exec=change_kernels
+Terminal=false
+Type=Application
+Categories=X-SetupWizard
+GenericName=Power Options

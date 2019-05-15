@@ -1,0 +1,398 @@
+#!/bin/bash
+#(c) Copyright Barry Kauler, October 2017. License: GPL v3 (/usr/share/doc/legal)
+#gui for 'dd' utility.
+#optional cli mode: source-file target-drive
+#171004 first release.
+#171008 cli mode, do not use any X apps, run dd in same terminal.
+#171009 MODE variable =gui =cli =dlg (latter uses dialog, NOT YET IMPLEMENTED)
+
+export TEXTDOMAIN=easydd
+export OUTPUT_CHARSET=UTF-8
+
+MODE='gui'
+ERRTITLE="$(gettext 'ERROR')"
+err_exit() {
+ case $MODE in
+  gui) ${MSGEXE} -wrap -bg '#ffa0a0' -title "EasyDD: ${ERRTITLE}" "$@" ;;
+  dlg) dialog --cr-wrap --colors --title "${ERRTITLE}" --msgbox "\Z1${@}\Zn" 0 0 ;;
+  *)   echo -e "\\033[1;31m${ERRTITLE}: ${@}\\033[0;39m" ;; #red
+ esac
+ exit 1
+}
+
+#import 'probedisk' code into here...
+probedisk_func() {
+ ALLDRVS="$(ls -1 /sys/block | grep -E '^sd|^mmcblk[0-9]$' | tr '\n' ' ')"
+ for ONEDRV in $ALLDRVS
+ do
+  case $ONEDRV in
+   sd*)
+    MEDIA="ata"
+    [ "$(readlink /sys/block/${ONEDRV} | grep '/usb[0-9]')" != "" ] && MEDIA="usb"
+    VENDOR="$(cat /sys/block/$ONEDRV/device/vendor | tr -s ' ')"
+    MODEL="$(cat /sys/block/$ONEDRV/device/model | tr -s ' ')"
+    INFO="${VENDOR}${MODEL}"
+   ;;
+   mmc*) #/dev/mmcblk0
+    MEDIA="card"
+    INFO="MMC/SD: $(cat /sys/block/$ONEDRV/device/name)"
+   ;;
+  esac
+  echo "/dev/$ONEDRV|$MEDIA|$INFO"
+ done
+}
+
+FILESOURCE=''; DRVTARGET=''
+if [ $1 ];then
+ if [ -f "$1" ];then
+  FILESOURCE="$1"
+  MODE='cli'
+  if [ ! $2 ];then
+   #err_exit "Target drive not specified"
+   DRVTARGET='ask'
+  else
+   DRVTARGET="${2/*\//}" #dump /dev/ if exists
+   DRVVERIFY="$(ls -1 /sys/block | grep "^${DRVTARGET}$")"
+   [ ! "$DRVVERIFY" ] && echo -e "\\033[1;31m$(gettext 'This drive does not exist:')
+${DRVTARGET}
+$(gettext 'Specify an existing drive, and not a partition')\\033[0;39m" #red
+   exit
+  fi
+ else
+  case "$1" in
+   -d|--d*)
+    MODE='dlg'
+    E1a="$(gettext 'dialog mode not currently supported')"
+    echo -e "\\033[1;31m${E1a}\\033[0;39m" #31=red
+    exit
+   ;;
+   *)
+    echo "EasyDD is a GUI frontend for the 'dd' utility.
+easydd                No parameters, runs in full X GUI mode.
+NOT CURRENTLY SUPPORTED easydd -d Runs in textmode GUI, using 'dialog' utility.
+easydd <file>         CLI mode, source-file, will ask for target-drive.
+easydd <file> <drive> CLI mode, source-file and target-drive parameters.
+                      Source file must be format *.img[.gz|.bzip2|.xz]
+                      Target must be an entire drive, not a partition. ex: sda
+easydd -h             Displays this help message.
+                      --dialog, --help  Long parameters supported."
+    exit
+   ;;
+  esac
+ fi
+fi
+[ "$MODE" == "gui" ] && [ ! $DISPLAY ] && exit
+
+ERR=''; RXVTEXE=''; MSGEXE=''
+if ! which dd >/dev/null ;then ERR="${ERR} dd"; fi
+if ! which gunzip >/dev/null ;then ERR="${ERR} gunzip"; fi
+if [ "$MODE" == "gui" ];then
+
+ if which rxvt >/dev/null ;then RXVTEXE='rxvt' ; fi
+
+ if [ ! "$RXVTEXE" ];then
+  if which urxvt >/dev/null ;then RXVTEXE='urxvt' ; fi
+ fi
+ 
+ if [ "$(which pupmessage)" != "" ]; then 
+ MSGEXE='pupmessage'
+ fi
+ 
+ if [ ! "$MSGEXE" ];then
+  if [ "$(which gxmessage)" != "" ];then
+  MSGEXE='gxmessage'
+  fi
+ fi
+ 
+ #echo $MSGEXE
+ 
+ #if [ ! "$MSGEXE" ];then
+ # if which xmessage; then xmessage "$(gettext "Need 'pupmessage' or 'gxmessage' utilities")" ; fi
+ # exit
+ #fi
+ 
+ if ! which gtkdialog >/dev/null ;then ERR="${ERR} gtkdialog"; fi
+ [ ! "$RXVTEXE" ] && ERR="${ERR} urxvt"
+fi
+if [ "$MODE" == "dlg" ];then
+ if ! which dialog >/dev/null ;then ERR="${ERR} dialog"; fi
+fi
+if [ "$ERR" ];then
+ err_exit "$(gettext 'These utilities are missing:')
+${ERR}"
+fi
+#the full dd is required...
+DDTEST="$(dd --help | grep 'periodic transfer statistics')"
+[ ! "$DDTEST" ] && err_exit "$(gettext "dd utility does not support 'status=progress' cli option")"
+
+INTERFACE="$(gettext 'Interface:')"
+DESCRIPTION="$(gettext 'Description:')"
+if [ "$DRVTARGET" == "ask" ];then #MODE=cli only
+ echo -e "\\033[1;35m" #35=purple
+ echo "$(gettext 'Please plugin the drive that you want to write to, if not already.')"
+ echo "$(gettext 'DO IT RIGHT NOW, before hitting ENTER key.')"
+ echo -e "\\033[0;39m"
+ echo -n "$(gettext 'Then, press ENTER key to continue:') "
+ read keepgoing
+ echo
+ echo "$(gettext 'You need to choose which drive to write to.')"
+ echo "$(gettext 'Here is information about the drives:')"
+ echo
+ acnt=1
+ echo -n '' > /tmp/easydd-drvs
+ while read aline
+ do
+  echo -e "\\033[1;35m${acnt}\\033[0;39m ${aline}" #35=purple
+  echo "$aline" >> /tmp/easydd-drvs
+  acnt=`expr $acnt + 1`
+ done <<_EOF
+$(probedisk_func | cut -f 3- -d '/' | sed -e "s%|% (${INTERFACE} %" | sed -e "s%|% ${DESCRIPTION} %" | sed -e 's%$%)%')
+_EOF
+ echo
+ echo -n "$(gettext 'Type a number from left column: ')"
+ read anumber
+ DRVTARGET="$(head -n ${anumber} /tmp/easydd-drvs | tail -n 1 | cut -f 1 -d ' ')"
+ echo "$(gettext 'Chosen drive:') ${DRVTARGET}"
+fi
+
+D1b="$(gettext 'Continue')"
+D1c="$(gettext 'Cancel')"
+D1d="$(gettext 'This first version of EasyDD will write an image file to a drive.')"
+D1e="$(gettext 'Please plugin the target drive right now, if not already.')"
+D1f="$(gettext "Then, click the 'Continue' button...")"
+D1g="$(gettext '(Note, there will be further sanity checks before writing to the drive)')"
+while [ ! "$DRVTARGET" ];do ###start gui-1###
+ 
+ pupdialog --background '#ffff80' --backtitle "EasyDD" --yes-label "${D1b}" --no-label "${D1c}" --colors --yesno "${D1d}
+\Zb${D1e}\ZB
+${D1f}
+
+${D1g}" 0 0
+ [ $? -ne 0 ] && exit
+ sleep 0.5
+ 
+ DISKS="$(probedisk_func | cut -f 3- -d '/' | sed -e "s%|% (${INTERFACE} %" | sed -e "s%|% ${DESCRIPTION} %" | sed -e 's%$%)%')"
+ CNT=1; RADIOXML=""
+ while read adisk
+ do
+  adev="$(echo -n "$adisk" | cut -f 1 -d ' ')" #ex: sda
+  RADIOXML="${RADIOXML}
+ <radiobutton><variable>DISK_${adev}</variable><label>${adisk}</label></radiobutton>"
+  CNT=`expr $CNT + 1`
+ done <<_EOF
+$(echo "$DISKS")
+_EOF
+
+ [ ! "$RADIOXML" ] && err_exit "$(gettext 'Cannot find any drives')"
+
+ export EASYDD_DLG1="
+<window title=\"EasyDD $(gettext 'frontend for dd')\" icon-name=\"gtk-harddisk\" resizable=\"false\">
+ <vbox>
+  <text use-markup=\"true\">
+   <label>\"<b>$(gettext 'Simple GUI for dd')</b>\"</label>
+  </text>
+  <text><label>$(gettext 'This first version has only one purpose, to write an image file to an entire drive.')</label></text>
+  <text use-markup=\"true\"><label>\"$(gettext 'An example would be a downloaded release of Easy OS, with a name like:')
+<b>easy-0.6-and64.img.gz</b>\"</label></text>
+
+  <frame $(gettext 'Source')>
+   <text><label>$(gettext 'Choose the image file:')</label></text>
+   <hbox>
+    <entry accept=\"savefilename\">
+     <variable>FILESOURCE</variable>
+    </entry>
+    <button>
+     <input file stock=\"gtk-open\"></input>
+     <variable>FILE_BROWSE_SAVEFILENAME</variable>
+     <action function=\"fileselect\">FILESOURCE</action>
+    </button>
+   </hbox>
+  </frame>
+  
+  <frame $(gettext 'Destination')>
+   <text><label>$(gettext 'Choose the target drive:')</label></text>
+   ${RADIOXML}
+  </frame>
+  <hbox>
+   <button><label>$(gettext 'Go back to previous window')</label><action>exit:goback</action></button>
+   <button cancel></button>
+   <button ok></button>
+  </hbox>
+ </vbox>
+</window>"
+
+ RETVARS="`gtkdialog --program=EASYDD_DLG1 --center`"
+ [ $? -ne 0 ] && exit
+ eval "$RETVARS"
+
+ #echo "$RETVARS" #TEST
+ if [ "$EXIT" == "goback" ];then
+  DRVTARGET=''
+  continue
+ fi
+ [ "$EXIT" != "OK" ] && exit
+
+ DRVTARGET="$(echo "$RETVARS" | grep '^DISK_' | grep '"true"' | cut -f 2 -d '_' | cut -f 1 -d '=')"
+ break
+done ###end gui-1###
+
+if [ "$MODE" == "dlg" ];then
+ Dmain="${D1d}
+\Zb${D1e}\ZB
+${D1f}
+
+${D1g}"
+ dialog --cr-wrap --colors --no-label "${D1c}" --yes-label "${D1b}" --title "EasyDD" --yesno "${Dmain}" 0 0
+ 
+fi
+
+#check source
+if [ "$(echo -n "$FILESOURCE" | grep -E '\.img\.gz$|\.img\.xz$|\.img\.bzip2$|\.img$')" == "" ];then
+ err_exit "For sanity-check, the source filename must end in '.img', '.img.gz', 'img.xz' or '.img.bzip2'"
+fi
+
+#check dest
+MNTD="$(grep "^/dev/$DRVTARGET" /proc/mounts | cut -f 1 -d ' ')"
+for amntd in $MNTD
+do
+ sync
+ umount $amntd
+done
+MNTD="$(grep "^/dev/$DRVTARGET" /proc/mounts | cut -f 1 -d ' ')"
+if [ "$MNTD" ];then
+ err_exit "$(gettext 'A partition in target drive cannot be unmounted:')
+${MNTD}"
+fi
+
+M2b="$(gettext 'Ready to write!')"
+M2c="$(gettext 'Source file:')"
+M2d="$(gettext 'Target drive:')"
+M2e="$(gettext 'Check very carefully that target drive is correct, as it will be entirely rewritten, and all pre-existing partitions wiped. Only click the OK button if you know what you are doing!')"
+M2ex="$(gettext 'Check very carefully that target drive is correct, as it will be entirely rewritten, and all pre-existing partitions wiped. Only press ENTER if you know what you are doing!')"
+M2f="$(gettext 'IMPORTANT: This will be an opportunity to observe the write-speed of your drive. Some cheap USB-sticks are extremely slow, and will give a very poor experience when running EasyOS. If the write speed is less than 7MB/sec, you have one of those awful drives, and it is recommended that you use a faster drive.')"
+#M2g="$(gettext 'NOTE: due to internal caching, the drive-speed may be faster initially, toward the end of the write you will see its true write-speed.')"
+export EASYDD_DLG2="
+<window title=\"EasyDD $(gettext 'frontend for dd')\" icon-name=\"gtk-harddisk\">
+ <vbox>
+  <text use-markup=\"true\"><label>\"<b>${M2b}</b>\"</label></text>
+  
+  <text use-markup=\"true\"><label>\"${M2c}
+<b>${FILESOURCE}</b>
+${M2d}
+<b>${DRVTARGET}</b>\"</label></text>
+  
+  <text use-markup=\"true\"><label>\"<span fgcolor='red'>${M2e}</span>\"</label></text>
+  <text use-markup=\"true\"><label>\"<span fgcolor='red'>${M2f}</span>\"</label></text>
+
+  <hbox>
+   <button cancel></button>
+   <button ok></button>
+  </hbox>
+ </vbox>
+</window>"
+
+if [ "$MODE" == "gui" ];then
+ #echo "$EASYDD_DLG2" #TEST
+ RETVARS="`gtkdialog --program=EASYDD_DLG2 --center`"
+ [ $? -ne 0 ] && exit
+ eval "$RETVARS"
+ [ "$EXIT" != "OK" ] && exit
+fi
+if [ "$MODE" == "cli" ];then
+ echo -e "\\033[1;35m" #35=purple
+ echo "${M2b}"
+ echo "${M2c}  ${FILESOURCE}"
+ echo "${M2d} ${DRVTARGET}"
+ echo -e "\\033[0;39m"
+ echo -e "\\033[1;31m${M2ex}\\033[0;39m" #31=red
+ echo
+ echo -e "\\033[1;31m${M2f}\\033[0;39m" #red
+ echo
+ echo -n "$(gettext 'Press ENTER to continue, CTRL-C to quit:') "
+ read willigoon
+ [ "$willigoon" != "" ] && exit
+fi
+
+EXEC=''; MSGID=''
+EXT="${FILESOURCE/*./}"
+W1b="$(gettext 'Please wait, testing integrity of file...')"
+case $MODE in
+ gui)
+  ${MSGEXE} -bg '#fabc30' "${W1b}" &
+  MSGID="$!"
+ ;;
+ *) echo -e "\n${W1b}" ;;
+esac
+case "$EXT" in
+ gz)
+  if ! which gunzip >/dev/null ;then err_exit "$(gettext 'Utility gunzip does not exist')"; fi
+  EXEC="gunzip --stdout"
+  gunzip --test $FILESOURCE > /dev/null 2>&1
+  [ $? -ne 0 ] && err_exit "$(gettext 'Source file appears to be corrupted:')
+${FILESOURCE}"
+ ;;
+ bzip2)
+  if ! which bunzip2 >/dev/null ;then err_exit "$(gettext 'Uility bunzip2 does not exist')"; fi
+  EXEC="bunzip2 --stdout"
+  bunzip2 --test $FILESOURCE > /dev/null 2>&1
+  [ $? -ne 0 ] && err_exit "$(gettext 'Source file appears to be corrupted:')
+${FILESOURCE}"
+ ;;
+ xz)
+  if ! which unxz >/dev/null ;then err_exit "$(gettext 'Utility unxz does not exist')"; fi
+  EXEC="unxz --stdout"
+  unxz --test $FILESOURCE > /dev/null 2>&1
+  [ $? -ne 0 ] && err_exit "$(gettext 'Source file appears to be corrupted:')
+${FILESOURCE}"
+ ;;
+ img)
+  EXEC=''
+ ;;
+ *)
+  err_exit "$(gettext 'Filename is wrong')"
+ ;;
+esac
+[ "$MSGID" ] && pupkill ${MSGID}
+
+M3b="$(gettext 'Executing:')"
+M3c="$(gettext 'Please wait...')"
+if [ "$EXEC" ];then
+ echo "#!/bin/bash
+echo \"${M3b}\"
+echo \"${EXEC} \"${FILESOURCE}\" | dd of=/dev/${DRVTARGET} bs=1M conv=fsync status=progress oflag=sync\"
+echo ''
+echo \"${M3c}\"
+${EXEC} \"${FILESOURCE}\" | dd of=/dev/${DRVTARGET} bs=1M conv=fsync status=progress oflag=sync" > /tmp/easydd-exec
+ chmod 755 /tmp/easydd-exec
+ if [ "$MODE" == "gui" ];then
+  ${RXVTEXE} -title 'EasyDD' -background '#ffff80' -geometry '80x8' -e /tmp/easydd-exec
+ else
+  echo
+  /tmp/easydd-exec
+ fi
+else
+ if [ "$MODE" == "gui" ];then
+  ${RXVTEXE} -title "EasyDD: $(gettext 'writing to') ${DRVTARGET}" -background '#ffff80' -geometry '80x2' -e dd if="${FILESOURCE}" of=/dev/${DRVTARGET} bs=1M conv=fsync status=progress oflag=sync
+ else
+  echo
+  echo "${M3b}"
+  echo "dd if=\"${FILESOURCE}\" of=/dev/${DRVTARGET} bs=1M conv=fsync status=progress oflag=sync"
+  echo ''
+  echo "${M3c}"
+  dd if="${FILESOURCE}" of=/dev/${DRVTARGET} bs=1M conv=fsync status=progress oflag=sync
+ fi
+fi
+sync
+
+sleep 2 #need sleep before next line...
+echo 'change' > /sys/block/${DRVTARGET}/uevent
+M4b="$(gettext 'Write finished')"
+M4c="$(gettext 'You may unplug the drive')"
+if [ "$MODE" == "gui" ];then
+ ${MSGEXE} -wrap -bg '#a0ffa0' -title "EasyDD: ${M4b}" "${M4c}"
+else
+ echo
+ echo -e "\\033[1;32m${M4b}\\033[0;39m" #green
+ echo -e "\\033[1;32m${M4c}\\033[0;39m" #green
+fi
+###END###

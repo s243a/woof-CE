@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Device Notification Sound
+Icon=/usr/share/pixmaps/puppy/audio.svg
+Comment=Counfigure device notification
+Exec=config-device-notif
+Terminal=false
+Type=Application
+Categories=System
+GenericName=Device Notification Sound

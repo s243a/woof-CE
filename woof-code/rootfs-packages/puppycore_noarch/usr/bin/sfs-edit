@@ -1,0 +1,81 @@
+#!/bin/bash -x
+#Simple File Sharing v3.0
+#June 5 2013 by rg66 and Geoffrey
+#Feb 18 2016 rg66 edit for Samba 4
+
+if [ "$(whoami)" != "root" ]; then
+exec sudo -A $0 $@
+exit
+fi
+     
+DIR=`cat /tmp/sfs-path`
+SHARENAME=`grep -xB1 "path = $DIR\|;path = $DIR" /etc/samba/smb.conf | grep -v = | tr -d ';[]'`
+[ "`sed -n '/^.*\['$SHARENAME'\]/,/^$/p' /etc/samba/smb.conf | awk NR==3 | grep yes`" ] \
+&& MAKEWRITE="TRUE" || MAKEWRITE="FALSE"
+[ "`sed -n '/^.*\['$SHARENAME'\]/,/^$/p' /etc/samba/smb.conf | awk NR==4 | grep no`" ] \
+&& SHOWHIDDEN="TRUE" || SHOWHIDDEN="FALSE"
+[ "`sed -n '/^.*\['$SHARENAME'\]/,/^$/p' /etc/samba/smb.conf | awk NR==5 | grep yes`" ] \
+&& NOLOGIN="TRUE" || NOLOGIN="FALSE"
+[ "`sed -n '/^.*\['$SHARENAME'\]/,/^$/p' /etc/samba/smb.conf | awk NR==7 | grep disabled`" ] \
+&& DISABLE="TRUE" || DISABLE="FALSE"
+
+CONFIG=$(yad --center --title="SFS Edit Share" --fixed --window-icon="/usr/share/pixmaps/publicshare.png" --form  \
+--field="Shared Folder:EB" "$DIR"  --field="Share Name:EB" "$SHARENAME" $BUTTON_LAYOUT \
+--field="Make shared folder writable:CHK" "$MAKEWRITE" --field="Show hidden files and folders:CHK" "$SHOWHIDDEN" \
+--field="Do not require users to login:CHK" "$NOLOGIN" --field="Disable shared folder:CHK" "$DISABLE" \
+--separator=" " --button="gtk-apply:0" --button="gtk-remove:1" --button="gtk-close:2")
+
+case $? in
+0) SHARENAME2=`echo $CONFIG | awk '{print $2}'`
+   SHARENAMELN=`sed -n '/\['"$SHARENAME"'\]/=' /etc/samba/smb.conf`
+   sed -i ''"$SHARENAMELN"'s/'"$SHARENAME"'/'"$SHARENAME2"'/' /etc/samba/smb.conf
+   
+   MAKEWRITE=`echo $CONFIG | awk '{print $3}'`
+   MAKEWRITELN=$(( $SHARENAMELN + 2 ))
+   [ "$MAKEWRITE" = TRUE ] && MKWRITE="writable = yes" || MKWRITE="writable = no"  
+   sed -i ''"$MAKEWRITELN"'s/.*/'"$MKWRITE"'/' /etc/samba/smb.conf
+   
+   SHOWHIDDEN=`echo $CONFIG | awk '{print $4}'`
+   SHOWHIDDENLN=$(( $SHARENAMELN + 3 ))
+   [ "$SHOWHIDDEN" = TRUE ] && SHWHIDDEN="hide dot files = no" || SHWHIDDEN="hide dot files = yes"
+   sed -i ''"$SHOWHIDDENLN"'s/.*/'"$SHWHIDDEN"'/' /etc/samba/smb.conf
+   
+   NOLOGIN=`echo $CONFIG | awk '{print $5}'`
+   NOLOGINLN=$(( $SHARENAMELN + 4 ))
+   [ "$NOLOGIN" = TRUE ] && NLOGIN="guest ok = yes" || NLOGIN="guest ok = no" 
+   sed -i ''"$NOLOGINLN"'s/.*/'"$NLOGIN"'/' /etc/samba/smb.conf 
+   
+   [ "$MAKEWRITE" = TRUE -a "$NOLOGIN" = TRUE ] && FORCE="force user = root" || FORCE=";force user = root"
+   FORCELN=$(( $SHARENAMELN + 5 ))
+   sed -i ''"$FORCELN"'s/.*/'"$FORCE"'/' /etc/samba/smb.conf 
+     
+   DISABLE=`echo $CONFIG | awk '{print $6}'`
+   DISABLELN=$(( $SHARENAMELN + 6 ))
+   if [ "$DISABLE" = TRUE ]; then   
+     sed -i ''"$DISABLELN"'s/.*/\#disabled/' /etc/samba/smb.conf
+     [ ! "`sed -n ''$SHARENAMELN',+1p' /etc/samba/smb.conf | grep ";"`" ] && sed -i ''$SHARENAMELN',+1 s/^/;/' /etc/samba/smb.conf
+     gvfs-set-attribute -t stringv "$DIR" metadata::emblems emblem-unreadable
+     touch "$DIR"
+   else 
+     sed -i ''"$DISABLELN"'s/.*/\#enabled/' /etc/samba/smb.conf
+     sed -i ''$SHARENAMELN',+1 s/^;//' /etc/samba/smb.conf
+     gvfs-set-attribute -t stringv "$DIR" metadata::emblems emblem-shared
+     touch -c "$DIR"
+   fi ;; 
+       
+1) sed -i '/^.*\['$SHARENAME'\]/,/^$/d' /etc/samba/smb.conf
+   echo "`cat -s /etc/samba/smb.conf`" > /etc/samba/smb.conf
+   gvfs-set-attribute -t unset "$DIR" metadata::emblems
+   touch -c "$DIR" ;;
+   
+*) exit 0 ;;
+esac 
+
+PID="$(pidof smbd)"
+if [ "$PID" ]; then
+  killall smbd nmbd
+  smbd -D
+  nmbd -D
+fi
+
+exit 0

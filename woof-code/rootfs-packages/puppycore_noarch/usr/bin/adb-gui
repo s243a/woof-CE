@@ -1,0 +1,88 @@
+#!/bin/sh
+/usr/lib/gtkdialog/box_splash -close never -text "Starting ADB server..." &
+xPID=$!
+adb start-server
+kill $xPID
+
+list_device()
+{
+for dev1 in `adb devices | grep -v 'List of devices attached'`
+do
+if [ "$dev1" != "" ] && [ "$dev1" != "offline" ] && [ "$dev1" != "device" ] && [ "$dev1" != "emulator" ] && [ "$dev1" != "unauthorized" ] && [ "$dev1" != "remote" ] && [ "$dev1" != "sideload" ]; then
+devitem="$devitem<item>$dev1</item>"
+fi
+
+done
+}
+
+export -f list_device
+
+list_device
+
+export WINDOW="<window title=\"Simple ADB Tool\" image-name=\"/usr/share/pixmaps/puppy/preferences.svg\" resizable=\"false\">
+<vbox>
+  <hbox>
+   <text><label>Select android device:</label></text>
+	<combobox>
+     <variable>TARGET_DEV</variable>
+      $devitem
+     </combobox>
+   </hbox>
+   
+   <frame Device options>
+
+    <hbox>
+		<text><label>$(gettext 'Launch ADB shell')</label></text>
+		<button>
+			<input file icon=\"gtk-execute\"></input>
+			<action>exec rxvt -title \"ADB Shell on \$TARGET_DEV\" -e adb -s \$TARGET_DEV shell &</action>
+		</button>
+	</hbox>
+	
+	<hbox>
+		<text><label>$(gettext 'Get device properties')</label></text>
+		<button>
+			<input file icon=\"gtk-dialog-info\"></input>
+			<action>exec gxmessage \"\$(adb -s \$TARGET_DEV shell getprop)\" -title \"\$TARGET_DEV Information\" -geometry 500x400 &</action>
+		</button>
+	</hbox>
+   
+   	<hbox>
+		<text><label>$(gettext 'View device log')</label></text>
+		<button>
+			<input file icon=\"gtk-print-report\"></input>
+			<action>exec rxvt -title \"Device log on \$TARGET_DEV\" -e adb -s \$TARGET_DEV logcat &</action>
+		</button>
+	</hbox>
+   
+   </frame>
+   
+   <frame Reboot device>
+   
+       <hbox>
+		<text><label>$(gettext 'To recovery')</label></text>
+		<button>
+			     <input file icon=\"gtk-execute\"></input>
+			     <action>exec adb -s \$TARGET_DEV reboot recovery &</action>
+				 <action>gxmessage \"Reboot to recovery signal is sent to \$TARGET_DEV\" -title \"Info\"</action>
+		</button>
+	    </hbox>
+	    
+	    <hbox>
+		<text><label>$(gettext 'To bootloader')</label></text>
+		<button>
+			     <input file icon=\"gtk-execute\"></input>
+				 <action>exec adb -s \$TARGET_DEV reboot bootloader &</action>
+				 <action>gxmessage \"Reboot to bootloader signal is sent to \$TARGET_DEV\" -title \"Info\"</action>
+		</button>
+	    </hbox>
+ 
+   </frame>
+</vbox>
+</window>"
+
+
+#. /usr/lib/gtkdialog/xml_info gtk #build bg_pixmap for gtk-theme
+gtkdialog --center --program=WINDOW
+
+adb kill-server

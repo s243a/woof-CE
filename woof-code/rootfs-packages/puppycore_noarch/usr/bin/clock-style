@@ -1,0 +1,81 @@
+#! /bin/bash -x
+# Clock-style-2.1
+# rg66 and Geoffrey
+# modified by Geoffrey 05/02/2013
+# re-written 09/12/2014 by rg66 for multi distro compatibility
+
+if [ ! -e ~/.config/clock-style.conf ]; then
+echo "FONT='Sans 12'
+COLOR='#ffffff'
+FORMAT='12 h 2:22'" > ~/.config/clock-style.conf
+fi
+. ~/.config/clock-style.conf
+
+APPLY(){
+echo "FONT='$NEW_FONT'" > ~/.config/clock-style.conf
+echo "COLOR='$NEW_COLOR'" >> ~/.config/clock-style.conf
+echo "FORMAT='$NEW_FORMAT'" >> ~/.config/clock-style.conf
+
+[ "$NEW_FORMAT" = "12 h 2:22" ] && NEW_FORMAT="%l:%M %p" 
+[ "$NEW_FORMAT" = "12 h 02:22" ] && NEW_FORMAT="%I:%M %p" 
+[ "$NEW_FORMAT" = "12 h 02:22:22" ] && NEW_FORMAT="%r" 
+[ "$NEW_FORMAT" = "12 h Day 2:22" ] && NEW_FORMAT="%a %l:%M %p" 
+[ "$NEW_FORMAT" = "12 h Day 02 Month 2:22" ] && NEW_FORMAT="%a %d %b %l:%M %p"
+[ "$NEW_FORMAT" = "24 h 02:22" ] && NEW_FORMAT="%R" 
+[ "$NEW_FORMAT" = "24 h 02:22:22" ] && NEW_FORMAT="%T" 
+[ "$NEW_FORMAT" = "24 h Day 02:22" ] && NEW_FORMAT="%a %H:%M" 
+[ "$NEW_FORMAT" = "24 h Day 02 Month 02:22" ] && NEW_FORMAT="%a %d %b %H:%M" 
+
+CUSTOM="<span font="'"'$NEW_FONT'"'" color="'"'$NEW_COLOR'"'">${NEW_FORMAT%|} </span>" 
+PLUGIN=`cat ~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml | grep clock | awk -F'"' '{print $2}'`
+xfconf-query -c xfce4-panel -p /plugins/$PLUGIN/digital-format -n -t string -s "$CUSTOM"
+}
+export -f APPLY
+
+export MAIN_DIALOG='
+<window title="Clock style" image-name="/usr/share/pixmaps/xfce4-clock.png" resizable="false">
+<vbox>
+<text justify="2" use-markup="true"><label>"<b><span>Digital Clock Custom Format</span></b>"</label></text>
+    <frame>
+    <hbox space-fill="true" space-expand="true" homogeneous="true">
+      <fontbutton label="gtk-select-font" use-stock="true">
+        <default>'$FONT'</default>
+        <variable>NEW_FONT</variable>
+	  </fontbutton>	  
+	  <colorbutton label="gtk-select-color" use-stock="true">
+	    <default>'$COLOR'</default>
+        <variable>NEW_COLOR</variable>    
+	  </colorbutton>
+	</hbox> 
+	<hbox space-fill="true" expand="true" homogeneous="true">  
+	  <comboboxtext>
+	    <default>'$FORMAT'</default>
+	    <variable>NEW_FORMAT</variable>
+	    <item>12 h 2:22</item>
+        <item>12 h 02:22</item>
+        <item>12 h 02:22:22</item>
+        <item>12 h Day 2:22</item>
+        <item>12 h Day 02 Month 2:22</item>
+        <item>24 h 02:22</item>
+        <item>24 h 02:22:22</item>
+        <item>24 h Day 02:22</item>
+        <item>24 h Day 02 Month 02:22</item>
+     </comboboxtext>
+    </hbox>
+    </frame>
+    <hbox space-fill="true" expand="true" homogeneous="true"> 
+      <button use-underline="true">
+      <label>_Apply</label>
+	  <input file stock="gtk-apply"></input>
+      <action>APPLY</action>
+      </button>
+      <button use-underline="true">
+	  <label>_Close</label>
+	  <input file stock="gtk-close"></input>	
+	  </button>
+    </hbox>  
+  </vbox>
+</window>'
+
+gtkdialog --program=MAIN_DIALOG
+

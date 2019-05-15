@@ -1,0 +1,213 @@
+#!/bin/bash
+
+# simple sfs manager for slacko
+# 01micko 2012-2016, GPL2, see /usr/share/doc/legal
+
+MYPATH=$0
+MYNAME=$(basename "$0") 
+v=0.13
+export TEXTDOMAIN=sfs_mgr
+export OUTPUT_CHARSET=UTF-8
+TITLE=$(gettext "Sfs Manager")
+
+SFSLOAD=$(which sfs_load)
+[ ! "$SFSLOAD" ]&& echo "missing sfs_load" && exit 
+. /etc/DISTRO_SPECS
+. /etc/rc.d/PUPSTATE
+ARCH=`uname -m`
+case $ARCH in
+	*64)arch=64;;
+	*)  arch=32;;
+esac
+
+# check pupmode, exit on 5
+[ "$PUPMODE" = "5" ] && /usr/lib/gtkdialog/box_ok "Error" error "$(gettext "You must install Puppy before using this tool")" && exit
+case $PUPMODE in
+	12|13)DDIR=/initrd/mnt/dev_save ;;
+	2|3|5|6|77)DDIR=/ ;;
+	*)DDIR=/tmp ;;
+esac
+export MGRDIR=$HOME/.sfs_mgr
+[ ! -d $MGRDIR ] && mkdir -p $MGRDIR
+REPO=http://distro.ibiblio.org/puppylinux/pet_packages-${DISTRO_DB_SUBNAME}
+KVER=$(uname -r)
+KVER=${KVER%%-*}
+
+if [ -f $MGRDIR/.sfs_mgrrc ];then . $MGRDIR/.sfs_mgrrc #contains alternate repos
+  case $REPO in
+  *ibilio*)export RB1=true RB2=false RB3=false RB4=false RB5=false ;;
+  *aarnet*)export RB1=false RB2=true RB3=false RB4=false RB5=false ;;
+  *nluug*)export RB1=false RB2=false RB3=true RB4=false RB5=false ;;
+  *uoc*)export RB1=false RB2=false RB3=false RB4=true RB5=false ;;
+  *smokey*)export RB1=false RB2=false RB3=false RB4=false RB5=true ;;
+  esac
+fi
+
+install_sfs()
+{
+	. /etc/rc.d/PUPSTATE
+	case $PUPMODE in
+	12|13)DDIR=/initrd/mnt/dev_save ;;
+	2|3|5|6|77)DDIR=/ ;;
+	*)DDIR=/tmp ;;
+	esac
+	[ -f $MGRDIR/.sfs_mgrrc ] && . $MGRDIR/.sfs_mgrrc
+	# download
+	cd $DDIR
+	PKGINST=$1
+	case $PKGINST in
+	torcs*|compiz*|openshot*|blender*)
+	  REPO=http://smokey01.com/01micko/pet_packages-${DISTRO_DB_SUBNAME}
+	  gtkdialog-splash -timeout 5 -bg yellow -close never -text \
+	  "The package ${PKGINST} will be downloaded from the $REPO repository"
+	  ;;
+	devx*)REPO="${REPO%/*}/puppy-slacko-${DISTRO_VERSION}/$arch/"
+	  ;;
+	*)REPO=$REPO
+	  ;;
+	esac
+	download_file ${REPO}/"${PKGINST}"
+	[ "$?" -ne 0 ] && echo failed && exit
+	# install
+	sfs_load +${PKGINST}
+	cd -
+}
+
+# 20160619
+grab_new_sfs_list()
+{
+	wget -N ${REPO}/sfslist${arch} -P /tmp 
+	[ $? -ne 0 ] && echo "failed to update list" && return
+	NEW=`md5sum /tmp/sfslist${arch}`
+	OLD=`md5sum $HOME/.packages/sfslist${arch}`
+	if [ "${NEW% *}" = "${OLD% *}" ];then 
+		echo "up to date"
+		return
+	else
+		echo "renewing list"
+		cp -f /tmp/sfslist${arch} $HOME/.packages/sfslist${arch}
+	fi
+}
+
+repofunc()
+{
+	. /etc/DISTRO_SPECS
+	case $1 in
+	1)echo "REPO=http://distro.ibiblio.org/puppylinux/pet_packages-${DISTRO_DB_SUBNAME}" >$MGRDIR/.sfs_mgrrc
+	export REPO=http://distro.ibiblio.org/puppylinux/pet_packages-${DISTRO_DB_SUBNAME} ;;
+	2)echo "REPO=http://mirror.aarnet.edu.au/pub/puppylinux/pet_packages-${DISTRO_DB_SUBNAME}" >$MGRDIR/.sfs_mgrrc
+	export REPO=http://mirror.aarnet.edu.au/pub/puppylinux/pet_packages-${DISTRO_DB_SUBNAME} ;;
+	3)echo "REPO=http://ftp.nluug.nl/ftp/pub/os/Linux/distr/puppylinux/pet_packages-${DISTRO_DB_SUBNAME}" >$MGRDIR/.sfs_mgrrc 
+	export REPO=http://ftp.nluug.nl/ftp/pub/os/Linux/distr/puppylinux/pet_packages-${DISTRO_DB_SUBNAME} ;;
+	4)echo "REPO=http://ftp.cc.uoc.gr/mirrors/linux/puppylinux/pet_packages-${DISTRO_DB_SUBNAME}" >$MGRDIR/.sfs_mgrrc
+	export REPO=http://ftp.cc.uoc.gr/mirrors/linux/puppylinux/pet_packages-${DISTRO_DB_SUBNAME} ;;
+	5)echo "REPO=http://smokey01.com/01micko/pet_packages-${DISTRO_DB_SUBNAME}" >$MGRDIR/.sfs_mgrrc
+	export REPO=http://smokey01.com/01micko/pet_packages-${DISTRO_DB_SUBNAME} ;;
+	esac
+}
+export -f repofunc
+
+# help
+echo "$(gettext "This is the help for 'Sfs Manager'
+Choose a repository from File > Preferences > Repositories.
+Your setting is saved. 
+Just click an Sfs file in the list and it will be downloaded
+and installed automatically.")" > /tmp/sfs_mgrHELP
+# grab latest list if there
+grab_new_sfs_list
+# fix list
+cp $HOME/.packages/sfslist${arch} /tmp/sfs_mgr_input0
+echo $DDIR
+ls $DDIR|grep 'sfs$' > /tmp/sfs_mgr_sfs.lst
+cat /tmp/sfs_mgr_input0|while read A
+  do S=`echo "$A"|cut -d '|' -f4`
+  echo $S
+     grep -q $S /tmp/sfs_mgr_sfs.lst
+     if [ "$?" = 0 ];then
+     #remove from list
+     grep -v $S /tmp/sfs_mgr_input0 >/tmp/sfs_mgr_input
+     cp -f /tmp/sfs_mgr_input /tmp/sfs_mgr_input0
+     fi
+   done
+grep -v -E "kernel|krn" /tmp/sfs_mgr_input0 > /tmp/sfs_mgr_input1
+#grep -v -E "devx" /tmp/sfs_mgr_input0 > /tmp/sfs_mgr_input1
+grep $KVER /tmp/sfs_mgr_input0 >> /tmp/sfs_mgr_input1
+cat /tmp/sfs_mgr_input1|sort -u > /tmp/sfs_mgr_input
+# fix devx version
+sed -i "s%devx.*%devx_${DISTRO_FILE_PREFIX}_${DISTRO_VERSION}.sfs\|${DISTRO_VERSION}%" /tmp/sfs_mgr_input 
+# main gui
+export MAIN_DIALOG='<window title="'$TITLE' '$v'">
+<vbox space-fill="true">
+ <vbox>
+  <menubar>
+    <menu>
+     <menu stock-id="gtk-preferences" icon="gtk-preferences">
+       <menu label="Repository">
+         <menuitem radiobutton="'$RB1'">
+           <variable>RB1</variable>
+           <label>'$(gettext "Ibiblio (USA)")'</label>
+           <action>if true repofunc 1</action>
+         </menuitem> 
+	     <menuitem radiobutton="'$RB2'">
+	       <variable>RB2</variable>
+           <label>'$(gettext "Aarnet (Australia)")'</label>
+           <action>if true repofunc 2</action>
+         </menuitem>
+	     <menuitem radiobutton="'$RB3'">
+	       <variable>RB3</variable>
+           <label>'$(gettext "NLUUG (Netherlands)")'</label>
+           <action>if true repofunc 3</action>
+         </menuitem>
+         <menuitem radiobutton="'$RB4'">
+	       <variable>RB4</variable>
+           <label>'$(gettext "UOC (Greece)")'</label>
+           <action>if true repofunc 4</action>
+         </menuitem>
+         <menuitem radiobutton="'$RB5'">
+	       <variable>RB5</variable>
+           <label>'$(gettext "Smokey01 (USA)")'</label>
+           <action>if true repofunc 5</action>
+         </menuitem>
+       </menu>
+     </menu>
+     <menuitem stock-id="gtk-quit" accel-key="0x51" accel-mods="4">
+	   <action>exit:Quit</action>
+	 </menuitem>
+        <label>'$(gettext "File")'</label>
+    </menu>    
+    <menu>
+      <menuitem stock-id="gtk-help">
+        <action>cat /tmp/sfs_mgrHELP|defaulttextviewer &</action>
+      </menuitem>
+      <menuitem label="_Legal" use-underline="true" icon="gtk-file">
+        <action>defaultbrowser /usr/share/doc/legal/gpl-3.0.htm &</action>
+      </menuitem>
+     <label>'$(gettext "Help")'</label>
+    </menu>    
+  </menubar> 
+  </vbox>
+  <vbox space-fill="true">
+  '"`/usr/lib/gtkdialog/xml_info fixed package_sfs.svg 40 "$(gettext "Choose the sfs file you wish to install. <i>Note: SFS already downloaded to /mnt/home are not shown</i>.")"`"'
+  </vbox>
+    <tree column-header-active="false|false|false" column-resizeable="false|false|false" space-fill="true">
+		<label>Package|Size|Description|Package|Version</label>
+		<variable>SELECTION</variable>
+		<width>500</width>
+		<height>250</height>
+		<input>cat /tmp/sfs_mgr_input</input>
+		<action signal="button-release-event">exit:chosen</action>
+	</tree>
+   <vbox space-fill="true">
+	   <hbox>
+		  <button cancel></button>
+		</hbox>
+	</vbox>	
+  </vbox>		
+</window>'
+eval `gtkdialog --program=MAIN_DIALOG`
+case $EXIT in
+chosen)SELECTED=$(grep "$SELECTION" /tmp/sfs_mgr_input|cut -d '|' -f4)
+install_sfs "$SELECTED";;
+*)exit ;;
+esac
+

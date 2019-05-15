@@ -1,0 +1,42 @@
+#!/bin/sh
+
+#if [ $# -eq 0 ]; then
+#DEB=`$(Xdialog --title "Select file" --wrap --fselect *.PFS 0 0 2>&1)`
+#else
+PFS=$1
+#fi
+
+
+echo "Converting PFS to PET..."
+
+if [ -e "$PFS" ]; then
+
+for i in "$PFS"
+do
+FOLDR=$(echo $i|sed 's/\.pfs$//')
+done
+
+mkdir "$FOLDR"
+cp "$PFS" "$FOLDR"
+cd "$FOLDR"
+PFS=`ls | grep ".pfs"`
+unpfs "$PFS"
+rm "$PFS"
+
+if [ -f ./start.sh ]; then
+mv ./start.sh ./pinstall.sh
+fi
+
+FOLDR=`basename "$FOLDR"`
+echo "PETMENUDESCR=''" > "$FOLDR.pet.specs"
+echo "PETOFFICIALDEPS=''" >> "$FOLDR.pet.specs"
+echo "PETREGISTER='yes'" >> "$FOLDR.pet.specs"
+cd ..
+tar -cf "$FOLDR.tar" "$FOLDR"
+gzip "$FOLDR.tar"
+tgz2pet "$FOLDR.tar.gz"
+rm -R -f "$FOLDR"
+rm "$FOLDR.pfs"
+#petget "$FOLDR.pet"
+#rox
+fi

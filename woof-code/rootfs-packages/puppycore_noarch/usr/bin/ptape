@@ -1,0 +1,456 @@
+#!/bin/sh
+
+
+check_tape()
+{
+	
+TAPEFOUND=0
+
+mt-st -f $TARGET_DRV bsf 1
+res=$?
+pos=0
+
+if [ $res -ne 0 ]; then
+mt-st -f $TARGET_DRV fsf 1
+res=$?
+pos=1
+fi
+
+
+if [ $res -ne 0 ]; then
+TAPEFOUND=0
+else
+	if [ $pos -eq 0 ]; then
+	mt-st -f $TARGET_DRV fsf 1
+	else
+	mt-st -f $TARGET_DRV bsf 1
+	fi
+TAPEFOUND=1
+fi
+
+}
+
+tape_task()
+{
+	
+if [ "$TARGET_DRV" == "" ]; then
+
+/usr/lib/gtkdialog/box_ok "Tape drive manager" error "Select tape drive first" 
+
+else
+
+
+check_tape
+
+	if [ $TAPEFOUND -eq 1 ]; then
+
+	/usr/lib/gtkdialog/box_splash -close never -text "Processing tape drive..." &
+	xPID=$!
+
+	mt-st -f $TARGET_DRV $1
+
+	kill $xPID
+
+	/usr/lib/gtkdialog/box_ok "Tape drive manager" info "Tape drive task complete!" 
+
+	else
+	
+	/usr/lib/gtkdialog/box_ok "Tape drive manager" error "Please load the tape or check the tape drive!" 
+	
+	fi
+
+fi
+
+}
+
+erase_tape()
+{
+
+if [ "$TARGET_DRV" == "" ]; then
+
+/usr/lib/gtkdialog/box_ok "Tape drive manager" error "Select tape drive first" 
+
+else
+
+check_tape
+
+	if [ $TAPEFOUND -eq 1 ]; then
+
+		. /usr/lib/gtkdialog/box_yesno "Tape drive manager" "Delete the contents on the tape?" "This cannot be undone"
+		
+		if [ "$EXIT" == "yes" ]; then
+		
+			echo "#!/bin/sh" > /tmp/exec-tape.sh	
+				
+			 . /usr/lib/gtkdialog/box_yesno "Tape drive manager" "Do you want to rewind the tape first?"
+			 if [ "$EXIT" == "yes" ]; then
+			  echo "Rewinding the tape...." >> /tmp/exec-tape.sh
+			  echo "mt-st -f $TARGET_DRV rewind" >> /tmp/exec-tape.sh	
+			 fi	
+				
+			echo "Erasing the contents on tape..." >> /tmp/exec-tape.sh	
+			echo "mt-st -f $TARGET_DRV erase" >> /tmp/exec-tape.sh	
+			
+			rxvt -bg blue -fg white -title "Restoring from tape... DO NOT CLOSE" -geometry 80x18+50+50 -e sh /tmp/exec-tape.sh
+			rm -f /tmp/exec-tape.sh
+
+
+			/usr/lib/gtkdialog/box_ok "Tape drive manager" info "Erase tape complete!" 
+		fi
+		
+	else
+	
+	/usr/lib/gtkdialog/box_ok "Tape drive manager" error "Please load the tape or check the tape drive!" 
+	
+	fi
+	
+fi
+
+}
+
+view_contents()
+{
+
+if [ "$TARGET_DRV" == "" ]; then
+
+/usr/lib/gtkdialog/box_ok "Tape drive manager" error "Select tape drive first" 
+
+else
+
+check_tape
+
+  if [ $TAPEFOUND -eq 1 ]; then	
+
+	/usr/lib/gtkdialog/box_splash -close never -text "Reading the tape..." &
+	xPID=$!
+
+	tar -tzf $TARGET_DRV > /tmp/tape-contents	
+
+	kill $xPID
+		
+	gxmessage "$(cat /tmp/tape-contents)" -title "$TARGET_DRV Contents" -geometry 500x400
+ 
+  else	
+	/usr/lib/gtkdialog/box_ok "Tape drive manager" error "Please load the tape or check the tape drive!" 
+  fi
+
+fi
+
+}
+
+view_status()
+{
+
+if [ "$TARGET_DRV" == "" ]; then
+
+/usr/lib/gtkdialog/box_ok "Tape drive manager" error "Select tape drive first" 
+
+else
+
+mt-st -f $TARGET_DRV status > /tmp/tape-stat
+res=$?
+
+	if [ res -eq 0 ]; then
+	gxmessage "$(cat /tmp/tape-stat)" -title "$TARGET_DRV Status" -geometry 500x400	
+	else
+	/usr/lib/gtkdialog/box_ok "Tape drive manager" error "Please load the tape or check the tape drive!" 
+	fi
+
+fi
+
+}
+
+backup_data()
+{
+
+if [ "$TARGET_DRV" == "" ]; then
+
+/usr/lib/gtkdialog/box_ok "Tape drive manager" error "Select tape drive first" 	
+
+else	
+
+check_tape
+
+  if [ $TAPEFOUND -eq 1 ]; then	
+	echo "#!/bin/sh" > /tmp/exec-tape.sh	
+		
+	 . /usr/lib/gtkdialog/box_yesno "Tape drive manager" "Do you want to rewind the tape first?" "If not, the data to be written on tape will be appended."
+	 if [ "$EXIT" == "yes" ]; then
+	  echo "Rewinding the tape...." >> /tmp/exec-tape.sh
+	  echo "mt-st -f $TARGET_DRV rewind" >> /tmp/exec-tape.sh
+	 else
+	  echo "Preparing to append on tape...." >> /tmp/exec-tape.sh
+	  echo "mt-st -f $TARGET_DRV eod" >> /tmp/exec-tape.sh	 
+	 fi	
+		
+	echo "tar -clpMzvf $TARGET_DRV $BKDIR" >> /tmp/exec-tape.sh
+	rxvt -bg blue -fg white -title "Saving to tape... DO NOT CLOSE" -geometry 80x18+50+50 -e sh /tmp/exec-tape.sh
+	rm -f /tmp/exec-tape.sh
+
+	/usr/lib/gtkdialog/box_ok "Tape drive manager" info "Tape drive task complete!" 
+  else
+  /usr/lib/gtkdialog/box_ok "Tape drive manager" error "Please load the tape or check the tape drive!" 
+  fi 
+
+fi
+
+}
+
+restore_data()
+{
+
+if [ "$TARGET_DRV" == "" ]; then
+
+/usr/lib/gtkdialog/box_ok "Tape drive manager" error "Select tape drive first" 	
+
+else	
+
+
+check_tape
+
+  if [ $TAPEFOUND -eq 1 ]; then	
+		echo "#!/bin/sh" > /tmp/exec-tape.sh	
+		
+		 . /usr/lib/gtkdialog/box_yesno "Tape drive manager" "Do you want to rewind the tape first?"
+		 if [ "$EXIT" == "yes" ]; then
+		  echo "Rewinding the tape...." >> /tmp/exec-tape.sh
+		  echo "mt-st -f $TARGET_DRV rewind" >> /tmp/exec-tape.sh	
+		 fi		
+			
+		echo "tar -xlpMzvf $TARGET_DRV $RSDIR" >> /tmp/exec-tape.sh
+
+		rxvt -bg blue -fg white -title "Restoring from tape... DO NOT CLOSE" -geometry 80x18+50+50 -e sh /tmp/exec-tape.sh
+		rm -f /tmp/exec-tape.sh
+
+		/usr/lib/gtkdialog/box_ok "Tape drive manager" info "Tape drive task complete!" 
+  else
+  /usr/lib/gtkdialog/box_ok "Tape drive manager" error "Please load the tape or check the tape drive!" 
+  fi
+
+fi
+
+}
+
+rewind_tape()
+{
+	
+if [ "$TARGET_DRV" == "" ]; then
+
+/usr/lib/gtkdialog/box_ok "Tape drive manager" error "Select tape drive first" 	
+
+else		
+
+check_tape
+
+  if [ $TAPEFOUND -eq 1 ]; then	
+	
+  /usr/lib/gtkdialog/box_splash -close never -text "Rewinding the tape..." &
+  xPID=$!
+  mt-st -f $TARGET_DRV rewind
+  kill $xPID
+  
+  /usr/lib/gtkdialog/box_ok "Tape drive manager" info "Rewind tape complete!" 
+  
+  else
+
+  /usr/lib/gtkdialog/box_ok "Tape drive manager" error "Please load the tape or check the tape drive!" 
+	
+  fi
+  
+fi
+  	
+}
+
+eod_tape()
+{
+	
+if [ "$TARGET_DRV" == "" ]; then
+
+/usr/lib/gtkdialog/box_ok "Tape drive manager" error "Select tape drive first" 	
+
+else	
+
+check_tape
+
+  if [ $TAPEFOUND -eq 1 ]; then	
+	
+  /usr/lib/gtkdialog/box_splash -close never -text "Forwarding the tape..." &
+  xPID=$!
+  mt-st -f $TARGET_DRV eod
+  kill $xPID
+  
+  /usr/lib/gtkdialog/box_ok "Tape drive manager" info "Forward tape complete!" 
+  
+  else
+
+  /usr/lib/gtkdialog/box_ok "Tape drive manager" error "Please load the tape or check the tape drive!" 
+	
+  fi
+  
+fi
+  	
+}
+
+export -f tape_task
+export -f view_contents
+export -f view_status 
+export -f backup_data
+export -f restore_data
+export -f erase_tape
+export -f rewind_tape
+export -f eod_tape
+export -f check_tape
+
+drvitem=""
+
+/usr/lib/gtkdialog/box_splash -close never -text "Probing tape drive..." &
+xPID=$!
+
+for drv1 in `ls /dev | grep -E "[s|n|h|ns|nh]t[0-9]"`
+do
+drvitem="$drvitem<item>/dev/$drv1</item>"
+done
+
+sleep 5
+
+kill $xPID
+
+if [ "$drvitem" == "" ]; then
+/usr/lib/gtkdialog/box_ok "Tape drive manager" error "No tape drives found" 
+exit
+fi
+
+
+export DIALOG="<window title=\"Tape Drive Manager\" image-name=\"/usr/share/pixmaps/puppy/preferences.svg\" resizable=\"false\">
+<vbox>
+
+  <hbox>
+   <text><label>Tape Drive:</label></text>
+   <combobox>
+     <variable>TARGET_DRV</variable>
+     <sensitive>\"$combobox\"</sensitive>
+      $drvitem
+     </combobox>
+   </hbox>
+
+<notebook labels=\"Operation|Backup|Restore\">
+  <vbox margin=\"8\">
+	  <hbox space-fill=\"true\" space-expand=\"true\">
+		<vbox>
+			<hbox>
+				   <text><label>Contents</label></text>
+				   <button>
+					 $(/usr/lib/gtkdialog/xml_button-icon info)
+					 <action>view_contents</action>
+				   </button>
+			</hbox>
+			
+			<hbox>
+				   <text><label>Status</label></text>
+				   <button>
+					 $(/usr/lib/gtkdialog/xml_button-icon info)
+					 <action>view_status</action>
+				   </button>
+			</hbox>
+	  
+	        <hbox>
+				  <text><label>Retension</label></text>
+			      <button>
+				 $(/usr/lib/gtkdialog/xml_button-icon execute)
+				 <action>tape_task retension</action>
+				 </button>
+			</hbox>
+				
+	  
+	  
+	     </vbox>
+	  
+	   <vbox>
+	   
+	   	     <hbox>
+				  <text><label>Rewind</label></text>
+				   <button>
+					 $(/usr/lib/gtkdialog/xml_button-icon media-rewind)
+					 <action>rewind_tape</action>
+				   </button>
+			</hbox>
+			
+		    <hbox>
+				  <text><label>Forward to EOD</label></text>
+				   <button>
+					 $(/usr/lib/gtkdialog/xml_button-icon media-forward)
+					 <action>forward_tape</action>
+				   </button>
+			</hbox>
+
+
+		    <hbox>
+				  <text><label>Erase</label></text>
+				   <button>
+					 $(/usr/lib/gtkdialog/xml_button-icon delete)
+					 <action>erase_tape</action>
+				   </button>
+			</hbox>
+			
+		  <hbox>
+		      <text><label>Eject</label></text>
+			  <button>
+			  $(/usr/lib/gtkdialog/xml_button-icon quit.svg)
+			  <action>tape_task offline</action>
+			  </button>
+		  </hbox>
+
+	   </vbox>
+	   </hbox>
+ </vbox>
+ 
+ <vbox space-expand=\"true\" margin=\"8\">
+ <hbox>
+ <text><label>Directory to backup:</label></text>
+   <entry accept=\"directory\">
+   <input>echo /root</input>
+   <variable>BKDIR</variable>
+   </entry>
+   <button>
+     <input file icon=\"gtk-open\"></input>
+     <action type=\"fileselect\">BKDIR</action>
+    </button>
+  </hbox>
+        <hbox>
+         <text><label>Backup</label></text>
+  	     <button>
+		 $(/usr/lib/gtkdialog/xml_button-icon execute)
+		  <action>backup_data</action>
+		 </button>
+		</hbox>
+ </vbox>
+ 
+ <vbox space-expand=\"true\" margin=\"8\">
+ <hbox>
+ <text><label>Target directory:</label></text>
+   <entry accept=\"directory\">
+   <input>echo /root</input>
+   <variable>RSDIR</variable>
+   </entry>
+   <button>
+     <input file icon=\"gtk-open\"></input>
+     <action type=\"fileselect\">RSDIR</action>
+    </button>
+  </hbox>
+		 <hbox>
+		 <text><label>Restore</label></text>
+  	     <button>
+		 $(/usr/lib/gtkdialog/xml_button-icon execute)
+		  <action>restore_data</action>
+		 </button>
+		</hbox>		
+ </vbox>
+ 
+ </notebook>
+</vbox>
+</window>"
+
+. /usr/lib/gtkdialog/xml_info gtk #build bg_pixmap for gtk-theme
+gtkdialog --center --program=DIALOG
+
+### END ###

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=List Dependencies
+Comment=Dependency Sniffer
+Exec=listdd_wrapper
+Icon=system-software-install
+Path=
+Terminal=false
+StartupNotify=false
+Categories=System

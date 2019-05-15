@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!-- Windows-specific mime info -->
+
+<mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+	
+  <mime-type type="application/x-phone-theme">
+    <comment>Mobile phone theme</comment>
+    <glob pattern="*.thm"/>
+    <glob pattern="*.nth"/>
+  </mime-type>
+  
+  <mime-type type="application/x-mpn">
+    <comment>Mophun files</comment>
+    <glob pattern="*.mpn"/>
+    <glob pattern="*.mpc"/>
+  </mime-type>
+ 
+  <mime-type type="application/x-phone-ringtone">
+    <comment>Mobile ringtone</comment>
+    <glob pattern="*.nrt"/>
+    <glob pattern="*.imy"/>
+  </mime-type>
+  
+</mime-info>
+
+
+
+
+
+
+
+
+

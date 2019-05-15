@@ -1,0 +1,22 @@
+#!/bin/sh
+
+PKG=$1
+#mv "$PKG" "$PKG.gz"
+cpio -idm < "$PKG"
+
+if [ -f about.txt ]; then
+rm ./about.txt
+fi
+
+if [ -f pre-install.sh ]; then
+rm ./pre-install.sh
+fi
+
+if [ -f post-install.sh ]; then
+mv ./post-install.sh ./pinstall.sh
+fi
+
+unxz ./files.xz
+#rm ./files.xz
+cpio -idm < ./files
+rm ./files

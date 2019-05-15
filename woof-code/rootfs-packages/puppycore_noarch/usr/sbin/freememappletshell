@@ -1,0 +1,12 @@
+#!/bin/sh
+#try prevent freememapplet escaping tray when jwm restarted.
+
+killall freememapplet
+killall freememapplet_tray
+sleep 2
+
+if [ "$(which freememapplet)" != "" ]; then
+exec freememapplet
+elif [ "$(which freememapplet_tray)" != "" ]; then
+exec freememapplet_tray
+fi

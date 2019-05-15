@@ -1,0 +1,20 @@
+#!/bin/sh
+
+drv="$1"
+
+if [ "$drv" == "" ]; then
+exit
+fi
+
+if [ "$(readlink /sys/block/$drv | grep "usb")" == "" ]; then
+exit
+fi
+
+if [ "$(pidof pup-volume-monitor)" == "" ]; then
+exit
+fi
+
+#disktype /dev/$ONEUSBDRV > /dev/null 2>&1
+
+dd if=/dev/$drv of=/dev/null bs=512 count=1 >/dev/null 2>&1 #v4.01 faster.
+

@@ -1,0 +1,21 @@
+#!/bin/sh
+
+msg="usage: $0 on|off"
+
+if [ "$1" == "" ]; then
+echo "$msg"
+elif [ "$1" != "on" ] && [ "$1" != "off" ]; then
+echo "$msg"
+fi
+
+mode1="$1"
+
+sync
+
+if [ "$mode1" == "on" ]; then
+echo 3 > /proc/sys/vm/drop_caches
+elif [ "$mode1" == "off" ]; then
+echo 1 > /proc/sys/vm/drop_caches
+fi
+
+exit

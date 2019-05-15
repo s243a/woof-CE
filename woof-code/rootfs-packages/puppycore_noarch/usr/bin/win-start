@@ -1,0 +1,163 @@
+#!/bin/sh
+
+search_f()
+{
+#if no / is defined --> search
+#if [ "`echo "$DIR" | grep -v '/'`" ]; then
+#	$APPDIR/func -search
+#	exit
+#fi
+#---
+
+#DIR="`echo "/$DIR/" | sed -e "s%///%/%g" | sed -e "s%//%/%g"`" #ensure that $DIR has the leading and trailing /
+
+if [ ! -f /tmp/start-profile ]; then
+profile="root"
+echo "root" > /tmp/start-profile
+fi
+
+profile=`echo "$(head -n 1 /tmp/start-profile)"`
+
+echo "$DIR" > /tmp/dir #update dir-entry in gui
+#heading
+
+echo "$DIR"
+echo "/root/.wine/drive_c/users/$profile/Start Menu/Programs/"
+
+root1=0
+
+if [ "$DIR" ==  "/root/.wine/drive_c/users/$profile/Start Menu/Programs/" ]; then
+	echo -n > /tmp/ls
+	root1=1
+elif [ "$DIR" ==  "/root/.wine/drive_c/users/$profile/Start Menu/Programs" ]; then
+	echo -n > /tmp/ls
+	root1=1
+else
+    root1=0
+	echo "gtk-go-up|..|.                                      .|.." > /tmp/ls #add .. prefix
+fi
+
+#---
+[ ! -d "$DIR" ] && "|$(gettext 'Error')" > /tmp/ls #check if valid dir-name
+#add items
+	find "$DIR" -maxdepth 1 -mindepth 1 -type d -follow -printf "gtk-directory|%f|.                                      .|%p/\n" \
+	  -o -type f -follow -name "*.lnk" -printf "gtk-execute|%f|.                                      .|%p\n" | sort >> /tmp/ls
+
+if [ $root1 -eq 1 ]; then
+echo "gtk-execute|Add/Remove Programs|.                                      .|/root/.wine/drive_c/windows/system32/uninstaller.exe" >> /tmp/ls
+echo "gtk-execute|Command Prompt|.                                      .|/root/.wine/drive_c/windows/command/start.exe" >> /tmp/ls
+echo "gtk-execute|Control Panel|.                                      .|/root/.wine/drive_c/windows/system32/control.exe" >> /tmp/ls
+echo "gtk-execute|Internet Explorer|.                                      .|/root/.wine/drive_c/windows/iexplore.exe" >> /tmp/ls
+echo "gtk-execute|Notepad|.                                      .|/root/.wine/drive_c/windows/notepad.exe" >> /tmp/ls
+echo "gtk-execute|Registry Editor|.                                      .|/root/.wine/drive_c/windows/regedit.exe" >> /tmp/ls
+echo "gtk-execute|Task Manager|.                                      .|/root/.wine/drive_c/windows/system32/taskmgr.exe" >> /tmp/ls
+echo "gtk-execute|Wine Explorer|.                                      .|/root/.wine/drive_c/windows/explorer.exe" >> /tmp/ls
+echo "gtk-execute|Wordpad|.                                      .|/root/.wine/drive_c/Program Files/Windows NT/Accessories/wordpad.exe" >> /tmp/ls
+
+fi
+
+}
+
+kill_menu()
+{
+ALLPS="`ps`"
+OLDPIDS="`echo "$ALLPS" | grep 'gtkdialog' | grep 'WIN_MENU' | tr -s ' ' | sed -e 's%^ %%' | cut -f 1 -d ' ' | tr '\n' ' '`"
+kill $OLDPIDS 2>/dev/null	
+}
+
+
+change_dir()
+{
+	if [ "$1" != "" ]; then
+	CHOOSER="$1"
+	fi
+	
+	if [ "$CHOOSER" == "" ]; then
+	exit
+	fi
+	
+	if [ "$CHOOSER" != ".." ]; then
+		TMP="`find "$CHOOSER" -maxdepth 0 -type d`" 2> /dev/null #check if hit is directory
+		
+		if [ ! "$TMP" ]; then #it's a file - MIME
+			exec pre-wine "$CHOOSER" &
+			kill_menu
+			exit
+		else
+			DIR="$TMP"
+		fi
+	else
+		DIR=`dirname "$(head -n 1 /tmp/dir)"`
+	fi
+	
+
+	search_f
+
+	
+}
+
+
+export -f change_dir
+export -f search_f
+export -f kill_menu
+
+
+export WIN_MENU="<window title=\"Wine Application Launcher\" image-name=\"/usr/share/pixmaps/wincfg.png\" resizable=\"false\">
+	<vbox>
+	<hbox>
+	
+	<frame Windows Profile>
+	 <radiobutton active=\"true\">
+	 <label>root</label>
+	 <variable>ROOT1</variable>
+	 <action>echo \"root\" > /tmp/start-profile</action> 
+	 <action>change_dir \"/root/.wine/drive_c/users/\$(cat /tmp/start-profile)/Start Menu/Programs/\"</action>
+     <action>refresh:CHOOSER</action>
+     </radiobutton>
+	 <radiobutton>
+	 <label>Public</label>
+	 <variable>PUBLIC</variable>
+	 <action>echo \"Public\" > /tmp/start-profile</action> 
+	 <action>change_dir \"/root/.wine/drive_c/users/\$(cat /tmp/start-profile)/Start Menu/Programs/\"</action>
+     <action>refresh:CHOOSER</action>
+     </radiobutton>
+     </frame>
+     </hbox>
+	 <tree headers_visible=\"false\" exported_column=\"2\" rubber-banding=\"true\" column-visible=\"true|false|false\">
+     <label>\"a|b|c\"</label>
+     <variable>CHOOSER</variable>
+     <input icon_column=\"0\">cat /tmp/ls</input>
+     <height>300</height><width>400</width>
+     <action signal=\"button-release-event\">change_dir</action>
+     <action signal=\"button-release-event\">refresh:CHOOSER</action>
+    </tree>
+    </vbox>
+    </window>"
+
+DIR="/root/.wine/drive_c/users/root/Start Menu/Programs/"
+
+if [ -d /etc/slitaz ]; then
+ PKGMGR="Tazpkg Package Manager"
+else
+ PKGMGR="Puppy Package Manager"
+fi
+
+if [ "$(which wine)" == "" ]; then
+/usr/lib/gtkdialog/box_ok "Notice" info "Please install WINE to enable this feature" "Wine is a compatibility layer to run Windows application. You can get it on $PKGMGR or download it from the internet"
+exit
+fi
+
+
+rm -f /tmp/start-profile
+
+if [ ! -d /root/.wine/drive_c ]; then
+/usr/lib/gtkdialog/box_ok "Notice" info "The wine is running for the first time. It will configure first before using this feature"
+wine cmd /c ver
+fi
+
+
+search_f "$DIR"
+    
+gtkdialog --program=WIN_MENU
+
+rm -f /tmp/start-profile

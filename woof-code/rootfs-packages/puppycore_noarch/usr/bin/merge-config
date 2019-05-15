@@ -1,0 +1,91 @@
+#!/bin/sh
+#written by mistfire
+
+show_help(){
+echo "Usage: merge-config [source config] [target config]
+Apply linux kernel source .config settings to a newer version of .config" 
+}
+
+
+infile="$1"
+outfile="$2"
+
+
+if [ "$infile" == "" ] || [ "$outfile" == "" ] ; then
+show_help
+exit
+fi
+
+if [ ! -f $infile ]; then
+echo "source config not found"
+exit
+fi
+
+if [ ! -f $outfile ]; then
+echo "target config not found"
+exit
+fi
+
+cp $outfile $outfile.old
+
+    if [ "$(cat $outfile | grep "#####APPEND#####")" == "" ]; then
+    echo "" >> $outfile
+    echo "#####APPEND#####" >> $outfile
+    echo "" >> $outfile
+    fi 
+    
+
+	while IFS='' read -r line || [[ -n $line ]]
+	do
+	
+	keyword=`echo "$line" | sed -e "s%^#%%g" -e "s# is not set##g" -e "s#=y##g" -e "s#=n##g" -e "s#=m##g" -e "s#^ ##g"`
+	
+	if [ "$(echo "$keyword" | grep "=")" != "" ]; then
+	nkeyword=`echo "$keyword" | cut -f 1 -d '='`
+	keyword="$nkeyword"
+	fi
+	
+	#echo "$keyword"
+		
+    if [ "$keyword" != "" ]; then
+   
+		if [ "$(echo "$line" | grep "is not set")" != "" ] || [ "$(echo "$line" | grep "=")" != "" ]; then
+	   
+		  nline=`cat $outfile | grep -w "$keyword"`
+		
+			if [ "$nline" != "" ]; then
+						
+				if [ "$line" != "$nline" ] && [ "$(echo "$nline" | grep "=m")" == ""  ]; then
+				
+				echo "UPDATING $keyword ..."	
+
+					pattern=`echo "s/${nline}/${line}/g" | sed -e 's%\"%\\\"%g'`
+				
+				    #echo "$pattern"
+					
+					sed -i -e "$pattern" $outfile
+					
+					res=$?
+					
+					if [ $res -ne 0 ]; then
+					echo "$pattern"
+					sleep 5
+					fi
+					
+					#sleep 5
+					
+				fi
+			
+			else
+			 echo "APPEND $keyword ..."	
+			 echo "$line" >> $outfile
+			fi
+			
+		fi
+		
+    fi
+
+
+	done < $infile
+	
+	echo "The configuration of $infile sucessfully applied to $outfile"

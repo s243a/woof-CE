@@ -1,0 +1,90 @@
+#!/bin/sh
+
+#if [ $# -eq 0 ]; then
+#DEB=`$(Xdialog --title "Select file" --wrap --fselect *.apk 0 0 2>&1)`
+#else
+#fi
+
+if [ $# -eq 0 ]; then
+echo "Usage: apk2pet <filename>"
+echo "Converts Alpine Linux Package to PET Package"
+else
+APK=$1
+
+echo "Converting APK to PET..."
+if [ -e "$APK" ]; then
+for i in "$APK"
+do
+FOLDR=$(echo $i|sed 's/\.apk$//')
+done
+mkdir "$FOLDR"
+cp "$APK" "$FOLDR"
+cd "$FOLDR"
+APK=`ls | grep ".apk"`
+unapk "$APK"
+
+#if [ -f .PKGINFO ]; then
+#rm .PKGINFO
+#fi
+
+if [ -f .SIGN.*.pub ]; then
+rm .SIGN.*.pub
+fi
+
+else
+echo "Not an Alpine Linux Package"
+notify "Invalid Alpine Linux Package"
+cd ..
+echo "Removing working directory"
+rm -R -f "$FOLDR"
+exit
+fi
+
+if [ -f ./.PKGINFO ]; then
+
+#pkgname|nameonly|version|pkgrelease|category|size|path|fullfilename|dependencies|description|
+
+pkgname="$FOLDR"
+nameonly=`cat ./.PKGINFO | grep "pkgname" | cut -f 2 -d "=" | cut -f 2 -d " "`
+version=`cat ./.PKGINFO | grep "pkgver" | cut -f 2 -d "=" | cut -f 2 -d " "`
+size=`cat ./.PKGINFO | grep "size" | cut -f 2 -d "=" | cut -f 2 -d " "`
+path=""
+fullfilename="$APK"
+dependencies=""
+
+for dep1 in `cat ./.PKGINFO | grep "depend" | cut -f 2 -d "=" | cut -f 2 -d " "`
+do
+ if [ "$dependencies" == "" ]; then
+ dependencies="+$dep1"
+ else
+ dependencies="$dependencies,+$dep1"
+ fi
+done 
+
+description=`cat ./.PKGINFO | grep "pkgdesc" | cut -f 2 -d "="`
+
+echo "$pkgname|$nameonly|$version|$pkgrelease|$category|$size|$path|$fullfilename|$dependencies|$description|" | sed -e "s#| #|#g" > ./pet.specs
+
+rm -f ./.PKGINFO
+ 
+else
+echo "PETMENUDESCR=''" > "$FOLDR.pet.specs"
+echo "PETOFFICIALDEPS=''" >> "$FOLDR.pet.specs"
+echo "PETREGISTER='yes'" >> "$FOLDR.pet.specs"
+fi
+
+
+
+rm "$APK"
+FOLDR=`basename "$FOLDR"`
+cd ..
+tar -cf "$FOLDR.tar" "$FOLDR"
+gzip "$FOLDR.tar"
+tgz2pet "$FOLDR.tar.gz"
+rm -R -f "$FOLDR"
+rm "$FOLDR.apk"
+#petget "$FOLDR.pet"
+#rox
+fi
+
+fi

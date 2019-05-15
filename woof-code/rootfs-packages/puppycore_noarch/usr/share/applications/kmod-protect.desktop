@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Kernel Module Protection
+Icon=/usr/share/pixmaps/puppy/lock.svg
+Comment=Counfigure kernel module protection
+Exec=kernel-module-protect
+Terminal=false
+Type=Application
+Categories=X-SystemSchedule
+GenericName=Kernel Module Protection

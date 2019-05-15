@@ -1,0 +1,69 @@
+#!/bin/sh
+
+#if [ $# -eq 0 ]; then
+#DEB=`$(Xdialog --title "Select file" --wrap --fselect *.tcz 0 0 2>&1)`
+#else
+TCZ=$1
+#fi
+
+
+echo "Converting TCZ to PET..."
+
+if [ -e "$TCZ" ]; then
+for i in "$TCZ"
+do
+FOLDR=$(echo $i|sed 's/\.tcz$//')
+done
+mkdir "$FOLDR"
+cp "$TCZ" "$FOLDR"
+cd "$FOLDR"
+cpath=`pwd`
+TCZ=`ls | grep ".tcz"`
+untcz "$TCZ"
+
+if [ -d $cpath/usr/local/share/applications ]; then
+	mkdir $cpath/usr/share
+	mkdir $cpath/usr/share/applications
+	mv -f $cpath/usr/local/share/applications/*.desktop $cpath/usr/share/applications	
+fi
+
+for file1 in `find $cpath -name "*.desktop"`
+do
+	if [ "$file1" != "" ]; then	
+		if [ "`cat "$file1" | grep "X-FullPathIcon="`" != "" ]; then
+		
+			iconpath=`cat "$file1" | grep "Icon=" | grep "X-FullPathIcon=" | cut -f 2 -d "=" | sed 's#\/#\\\/#g'`		
+			icon1=`cat "$file1" | grep "Icon=" | grep -v "X-FullPathIcon=" | cut -f 2 -d "=" | sed 's#\/#\\\/#g'`
+			
+			#echo "$iconpath"
+			#echo "$icon1"
+			
+			sed -i -e "s#Icon=$icon1#Icon=$iconpath#g" $file1
+			
+		fi
+	fi
+done
+
+if  [ "`find $cpath -name "*.xml" | grep "/mime/packages"`" != "" ]; then
+	if [ -d $cpath/usr/local/share/mime/packages ]; then
+		mkdir $cpath/usr/share
+		mkdir $cpath/usr/share/mime
+		mkdir $cpath/usr/share/mime/packages
+		mv -f $cpath/usr/local/share/mime/packages/*.xml $cpath/usr/share/mime/packages
+	fi
+fi
+
+rm "$TCZ"
+FOLDR=`basename "$FOLDR"`
+echo "PETMENUDESCR=''" > "$FOLDR.pet.specs"
+echo "PETOFFICIALDEPS=''" >> "$FOLDR.pet.specs"
+echo "PETREGISTER='yes'" >> "$FOLDR.pet.specs"
+cd ..
+tar -cf "$FOLDR.tar" "$FOLDR"
+gzip "$FOLDR.tar"
+tgz2pet "$FOLDR.tar.gz"
+rm -R -f "$FOLDR"
+rm "$FOLDR.tcz"
+#petget "$FOLDR.pet"
+#rox
+fi

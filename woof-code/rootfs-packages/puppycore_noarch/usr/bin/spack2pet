@@ -1,0 +1,35 @@
+#!/bin/sh
+
+#if [ $# -eq 0 ]; then
+#DEB=`$(Xdialog --title "Select file" --wrap --fselect *.tazpkg 0 0 2>&1)`
+#else
+SPACK=$1
+#fi
+
+
+echo "Converting SPACK to PET..."
+if [ -e "$SPACK" ]; then
+for i in "$SPACK"
+do
+FOLDR=$(echo $i|sed 's/\.spack$//')
+done
+mkdir "$FOLDR"
+cp "$SPACK" "$FOLDR"
+cd "$FOLDR"
+SPACK=`ls | grep ".spack"`
+unspack "$SPACK"
+#undeb "$TAZ"
+rm "$SPACK"
+FOLDR=`basename "$FOLDR"`
+echo "PETMENUDESCR=''" > "$FOLDR.pet.specs"
+echo "PETOFFICIALDEPS=''" >> "$FOLDR.pet.specs"
+echo "PETREGISTER='yes'" >> "$FOLDR.pet.specs"
+cd ..
+tar -cf "$FOLDR.tar" "$FOLDR"
+gzip "$FOLDR.tar"
+tgz2pet "$FOLDR.tar.gz"
+rm -R -f "$FOLDR"
+rm "$FOLDR.spack"
+#petget "$FOLDR.pet"
+#rox
+fi

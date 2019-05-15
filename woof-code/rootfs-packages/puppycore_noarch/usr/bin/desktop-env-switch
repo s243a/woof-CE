@@ -1,0 +1,136 @@
+#!/bin/sh
+
+ENV_BIN="blackbox
+cinnamon-session
+enlightenment_start
+startfluxbox
+fvwm95
+gnome-session
+icewm
+jwm
+startkde
+startlxde
+lxqt-session
+mate-session
+razor-session
+starttde
+xfce4-session
+openbox
+pekwm
+wmaker"
+
+select1=""
+cnt=0
+
+cwm=`cat /etc/windowmanager`
+
+for env1 in $ENV_BIN
+do
+
+if [ "`which $env1`" != "" ]; then
+
+   if [ "$env1" != "$cwm" ]; then
+
+	if [ "$env1" == "startkde" ]; then
+	select1="$select1 KDE"
+	elif [ "$env1" == "startlxde" ]; then
+	select1="$select1 LXDE"
+	elif [ "$env1" == "starttde" ]; then
+	select1="$select1 Trinity"
+	elif [ "$env1" == "startfluxbox" ]; then
+	select1="$select1 Fluxbox"
+	elif [ "$env1" == "gnome-session" ]; then
+	select1="$select1 GNOME"
+	elif [ "$env1" == "xfce4-session" ]; then
+	select1="$select1 XFCE"
+	elif [ "$env1" == "razor-session" ]; then
+	select1="$select1 Razor"
+	elif [ "$env1" == "icewm" ]; then
+	select1="$select1 IceWM"
+	elif [ "$env1" == "mate-session" ]; then
+	select1="$select1 Mate"
+	elif [ "$env1" == "cinnamon-session" ]; then
+	select1="$select1 Cinnamon"
+	elif [ "$env1" == "lxqt-session" ]; then
+	select1="$select1 LXQT"
+	elif [ "$env1" == "enlightenment_start" ]; then
+	select1="$select1 Enlightenment"
+	elif [ "$env1" == "jwm" ]; then
+	select1="$select1 JWM"
+	elif [ "$env1" == "blackbox" ]; then
+	select1="$select1 Blackbox"
+	elif [ "$env1" == "fvwm95" ]; then
+	select1="$select1 FVWM95"
+	elif [ "$env1" == "openbox" ]; then
+	select1="$select1 Openbox"
+	elif [ "$env1" == "pekwm" ]; then
+	select1="$select1 PekWM"
+	elif [ "$env1" == "wmaker" ]; then
+	select1="$select1 WindowMaker"
+	fi
+	
+	cnt=`expr $cnt + 1`
+	
+   fi
+	
+fi
+
+done
+
+if [ $cnt -eq 0 ]; then
+/usr/lib/gtkdialog/box_ok "Notice" info "You only have one desktop environment installed"
+exit
+fi
+
+echo $select1
+
+wm1=`Xdialog --wrap --stdout --title "Switch Desktop Environment" --combobox "Select desktop environment to use\nSave your data first before to proceed" 8 45$select1`
+
+if [ "$wm1" == "" ]; then
+exit
+fi
+
+echo $wm1
+
+	if [ "$wm1" == "KDE" ]; then
+	execwm1="startkde"
+	elif [ "$wm1" == "LXDE" ]; then
+	execwm1="startlxde"
+	elif [ "$wm1" == "Trinity" ]; then
+	execwm1="starttde"
+	elif [ "$wm1" == "Fluxbox" ]; then
+	execwm1="startfluxbox"
+	elif [ "$wm1" == "GNOME" ]; then
+	execwm1="gnome-session"
+	elif [ "$wm1" == "XFCE" ]; then
+	execwm1="xfce4-session"
+	elif [ "$wm1" == "Razor" ]; then
+	execwm1="razor-session"
+	elif [ "$wm1" == "IceWM" ]; then
+	execwm1="icewm"
+	elif [ "$wm1" == "Mate" ]; then
+	execwm1="mate-session"
+	elif [ "$wm1" == "LXQT" ]; then
+	execwm1="lxqt-session"
+	elif [ "$wm1" == "Cinnamon" ]; then
+	execwm1="cinnamon-session"
+	elif [ "$wm1" == "Enlightenment" ]; then
+	execwm1="enlightenment_start"
+	elif [ "$wm1" == "JWM" ]; then
+	execwm1="jwm"
+	elif [ "$wm1" == "Blackbox" ]; then
+	execwm1="blackbox"
+	elif [ "$wm1" == "FVWM95" ]; then
+	execwm1="fvwm95"
+	elif [ "$wm1" == "Openbox" ]; then
+	execwm1="openbox"
+	elif [ "$wm1" == "PekWM" ]; then
+	execwm1="pekwm"
+	elif [ "$wm1" == "WindowMaker" ]; then
+	execwm1="wmaker"
+	fi
+
+echo '$execwm1'> /tmp/nextwm
+restartwm $execwm1
+killall X
+

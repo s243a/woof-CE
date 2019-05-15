@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<!-- Windows-specific mime info -->
+
+<mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+	
+  <mime-type type="application/x-windows">
+    <comment>MS Windows file</comment>
+    <glob pattern="*.dll"/>
+    <glob pattern="*.vxd"/>
+    <glob pattern="*.ocx"/>
+    <glob pattern="*.sys"/>
+    <glob pattern="*.scr"/>
+    <glob pattern="*.msu"/>
+    <glob pattern="*.olb"/>
+    <glob pattern="*.tlb"/>
+    <glob pattern="*.drv"/>
+    <glob pattern="*.vbx"/>
+    <glob pattern="*.ole"/>
+    <glob pattern="*.tsk"/>
+    <glob pattern="*.mui"/>
+    <glob pattern="*.job"/>
+    <glob pattern="*.cpl"/>
+    <glob pattern="*.bpl"/>
+    <glob pattern="*.msc"/>
+    <glob pattern="*.ax"/>
+    <glob pattern="*.acm"/>
+    <glob pattern="*.lnk"/>
+    <glob pattern="*.vmx"/>
+  </mime-type>
+  
+  <mime-type type="application/x-ms-dos-executable">
+    <comment>DOS file</comment>
+    <glob pattern="*.cmd"/>
+    <glob pattern="*.com"/>
+    <glob pattern="*.bat"/>
+    <glob pattern="*.vbs"/>
+    <glob pattern="*.vbe"/>
+    <glob pattern="*.wsf"/>
+    <glob pattern="*.wsh"/>
+  </mime-type>
+  
+   <mime-type type="application/x-configuration">
+    <comment>Configuration file</comment>
+    <glob pattern="*.cfg"/>
+    <glob pattern="*.ini"/>
+    <glob pattern="*.cnf"/>
+    <glob pattern="*.conf"/>
+    <glob pattern="*.lst"/>
+    <glob pattern="*.inf"/>
+    <glob pattern="*.manifest"/>
+    <glob pattern="*.rules"/>
+  </mime-type>
+  
+  <mime-type type="application/zip">
+    <comment>Cabinet file</comment>
+    <glob pattern="*.cab"/>
+  </mime-type>
+  
+</mime-info>
+
+
+
+
+
+
+
+
+

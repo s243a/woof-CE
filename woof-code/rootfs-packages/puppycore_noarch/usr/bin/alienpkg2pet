@@ -1,0 +1,177 @@
+#!/bin/sh
+#Written by mistfire
+#This tool converts the old alienpackage which is used by puppy 1.x to pet package
+ 
+  if [ "$1" == "" ]; then
+  echo "Converts legacy alienpackage to pet package"	 
+  echo "usage: alienpkg2pet <alien pkg filename>"
+  exit
+  fi	 
+
+  APKGNAME="$1"
+  OLDFILE="$1"
+  PKGMAIN=`basename $OLDFILE`
+  PKGFILE=`basename $OLDFILE`
+  ORIGPATH=`pwd`
+  
+  mkdir /tmp/alienpkg
+  mkdir /tmp/alienpkg/test
+
+  if [ "`basename "$APKGNAME" | grep --extended-regexp "\.tgz|\.tar\.gz"`" != "" ];then
+	tarball="gz"
+    APKGNAME="`basename "$APKGNAME" | sed -e 's/.tgz//g' | sed -e 's/.tar.gz//g'`"
+    PKGMAIN="`echo "$PKGMAIN" | sed -e 's/.tgz//g' | sed -e 's/.tar.gz//g'`"
+  elif [ "`basename "$APKGNAME" | grep --extended-regexp "\.tbz2|\.tar\.bz2"`" != "" ];then
+    tarball="bz"
+    APKGNAME="`basename "$APKGNAME" | sed -e 's/.tbz2//g' | sed -e 's/.tar.bz2//g'`"
+    PKGMAIN="`echo "$PKGMAIN" | sed -e 's/.tbz2//g' | sed -e 's/.tar.bz2//g'`"
+  else
+    notify "$1"
+	notify "Not an alien puppy package"
+	echo "Not an alien puppy package"
+	rm -rf /tmp/alienpkg
+  fi
+  
+
+PKGSIZEB=`stat --format=%s $OLDFILE`
+PKGSIZEK=`expr $PKGSIZEB \/ 1024`
+
+PKGNAME="$PKGMAIN"
+DB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%'`"
+xDB_version="`echo -n "$DB_version" | sed -e 's%\\-%\\\\-%g' -e 's%\\.%\\\\.%g'`"
+xPATTERN="s%${xDB_version}%%"
+DB_nameonly="`echo -n "$PKGNAME" | sed -e "$xPATTERN" -e 's%\-$%%'`"
+DB_pkgrelease=""
+  
+    if [ "$tarball" == "gz" ]; then
+	tar -zxf $1 -C /tmp/alienpkg/test
+	elif [ "$tarball" == "bz" ] || [ "$tarball" == "bz2" ]; then
+	tar -jxf $1 -C /tmp/alienpkg/test
+	fi   
+	
+	if [ ! -d /tmp/alienpkg/test/$PKGNAME ]; then
+	notify "Not an alien puppy package"
+	exit
+	fi
+	
+	rm -f /tmp/alienpkg/test/$PKGNAME
+	
+	mkdir /tmp/alienpkg/$APKGNAME
+	
+	cd /tmp/alienpkg/test/$APKGNAME
+	
+	if [ -f ./keyword ]; then
+	pkgname1=`cat ./keyword | head -n 1 | cut -f 1 -d " "`
+		if [ "$pkgname1" != "" ]; then
+		DB_nameonly="$pkgname1"
+		fi
+	rm -f ./keyword
+	fi
+	
+	
+    if [ -f ./puninstall.sh ];then
+     mv ./puninstall.sh /tmp/alienpkg/$APKGNAME/puninstall.sh
+    fi
+
+    if [ -f ./pinstall.sh ];then
+     mv ./pinstall.sh /tmp/alienpkg/$APKGNAME/pinstall.sh
+    fi
+    
+    if [ -d ./root0 ];then
+     mv ./root0 /tmp/alienpkg/$APKGNAME/root
+    fi
+    
+    if [ -d ./usr ]; then
+    mv ./usr /tmp/alienpkg/$APKGNAME/usr
+    fi
+    
+    if [ -d ./etc ]; then
+    mv ./etc /tmp/alienpkg/$APKGNAME/etc
+    fi
+    
+    if [ -d ./bin ]; then
+    mv ./bin /tmp/alienpkg/$APKGNAME/bin
+    fi
+
+	if [ -d ./sbin ]; then
+    mv ./sbin /tmp/alienpkg/$APKGNAME/sbin
+    fi
+
+	if [ -d ./lib ]; then
+    mv ./lib /tmp/alienpkg/$APKGNAME/lib
+    fi
+
+	if [ -d ./opt ]; then
+    mv ./opt /tmp/alienpkg/$APKGNAME/opt
+    fi
+
+	if [ -d ./var ]; then
+    mv ./var /tmp/alienpkg/$APKGNAME/var
+    fi
+    
+    xpmfound="$(find ./ -name '*.xpm')"
+	pngfound="$(find ./ -name '*.png')"
+	
+	xpm24="$(find ./ -name '*24.xpm')"
+	xpm32="$(find ./ -name '*32.xpm')"
+	xpm48="$(find ./ -name '*48.xpm')"
+	
+	png32="$(find ./ -name '*32.png')"
+	png48="$(find ./ -name '*48.png')"
+	
+if [ "$xpmfound" != "" ] || [ "$pngfound" != "" ]; then
+    
+    if [ ! -d /tmp/alienpkg/$APKGNAME/usr ]; then
+    mkdir /tmp/alienpkg/$APKGNAME/usr
+    fi
+    
+    if [ ! -d /tmp/alienpkg/$APKGNAME/usr/local ]; then
+    mkdir /tmp/alienpkg/$APKGNAME/usr/local
+    fi
+    
+    if [ ! -d /tmp/alienpkg/$APKGNAME/usr/local/lib ]; then
+    mkdir /tmp/alienpkg/$APKGNAME/usr/local/lib
+    fi
+    
+    if [ ! -d /tmp/alienpkg/$APKGNAME/usr/local/lib/X11 ]; then
+    mkdir /tmp/alienpkg/$APKGNAME/usr/local/lib/X11
+    fi    
+    
+    if [ "$xpm24" != "" ] || [ "$xpm32" != "" ] || [ "$xpm48" != "" ] || [ "$png32" != "" ] || [ "$png48" != "" ]; then
+        if [ ! -d /tmp/alienpkg/$APKGNAME/usr/local/lib/X11/pixmaps ]; then
+		mkdir /tmp/alienpkg/$APKGNAME/usr/local/lib/X11/pixmaps
+		fi
+	fi
+    
+	if [ ! -d /tmp/alienpkg/$APKGNAME/usr/local/lib/X11/mini-icons ]; then
+	mkdir /tmp/alienpkg/$APKGNAME/usr/local/lib/X11/mini-icons
+	fi
+		
+	mv ./*24.xpm /tmp/alienpkg/$APKGNAME/usr/local/lib/X11/pixmaps/ 2>/dev/null    
+    mv ./*32.xpm /tmp/alienpkg/$APKGNAME/usr/local/lib/X11/pixmaps/ 2>/dev/null
+    mv ./*48.xpm /tmp/alienpkg/$APKGNAME/usr/local/lib/X11/pixmaps/ 2>/dev/null
+    mv ./*.xpm /tmp/alienpkg/$APKGNAME/usr/local/lib/X11/mini-icons/ 2>/dev/null
+    
+    mv ./*48.png /tmp/alienpkg/$APKGNAME/usr/local/lib/X11/pixmaps/ 2>/dev/null
+    mv ./*32.png /tmp/alienpkg/$APKGNAME/usr/local/lib/X11/pixmaps/ 2>/dev/null
+    
+fi
+
+	cd /tmp/alienpkg/$APKGNAME
+	
+	FOLDR=`basename "$APKGNAME"`
+
+    echo "${PKGNAME}|$DB_nameonly|$DB_version|$DB_pkgrelease||${PKGSIZEK}K||${PKGFILE}||Legacy Puppy Package|" > ./pet.specs
+	
+	cd ..
+	
+	tar -cf "$APKGNAME.tar" "$APKGNAME"
+	gzip "$APKGNAME.tar"
+	tgz2pet "$APKGNAME.tar.gz"
+	
+	mv -f "./$APKGNAME.pet" "$ORIGPATH/$APKGNAME.pet"
+	
+	cd $ORIGPATH
+	rm -f "$OLDFILE"
+	
+rm -fr /tmp/alienpkg	

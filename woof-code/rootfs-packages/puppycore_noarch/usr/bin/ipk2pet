@@ -1,0 +1,34 @@
+#!/bin/sh
+
+#if [ $# -eq 0 ]; then
+#DEB=`$(Xdialog --title "Select file" --wrap --fselect *.IPK 0 0 2>&1)`
+#else
+IPK=$1
+#fi
+
+echo "Converting IPK to PET..."
+
+if [ -e "$IPK" ]; then
+for i in "$IPK"
+do
+FOLDR=$(echo $i|sed 's/\.ipk$//')
+done
+mkdir "$FOLDR"
+cp "$IPK" "$FOLDR"
+cd "$FOLDR"
+IPK=`ls | grep ".ipk"`
+unipk "$IPK"
+rm "$IPK"
+FOLDR=`basename "$FOLDR"`
+echo "PETMENUDESCR=''" > "$FOLDR.pet.specs"
+echo "PETOFFICIALDEPS=''" >> "$FOLDR.pet.specs"
+echo "PETREGISTER='yes'" >> "$FOLDR.pet.specs"
+cd ..
+tar -cf "$FOLDR.tar" "$FOLDR"
+gzip "$FOLDR.tar"
+tgz2pet "$FOLDR.tar.gz"
+rm -R -f "$FOLDR"
+rm "$FOLDR.ipk"
+#petget "$FOLDR.pet"
+#rox
+fi

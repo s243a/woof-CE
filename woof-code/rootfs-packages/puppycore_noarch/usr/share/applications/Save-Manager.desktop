@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Exec=savemanager
+Icon=save48.png
+StartupNotify=false
+Terminal=false
+Categories=System;
+Name=Save-Manager
+NoDisplay=true

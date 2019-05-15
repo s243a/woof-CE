@@ -1,0 +1,13 @@
+ACTION=="add", SUBSYSTEM=="usb", RUN+="/usr/bin/notify-dev add"
+ACTION=="add", SUBSYSTEM=="pcmcia", RUN+="/usr/bin/notify-dev add"
+ACTION=="add", SUBSYSTEM=="bluetooth", RUN+="/usr/bin/notify-dev add"
+ACTION=="add", SUBSYSTEM=="wireless", RUN+="/usr/bin/notify-dev add"
+ACTION=="add", KERNEL=="mmcblk[0-9]", RUN+="/usr/bin/notify-dev add"
+ACTION=="add", SUBSYSTEM=="firewire", RUN+="/usr/bin/notify-dev add"
+
+ACTION=="remove", SUBSYSTEM=="usb", RUN+="/usr/bin/notify-dev remove"
+ACTION=="remove", SUBSYSTEM=="pcmcia", RUN+="/usr/bin/notify-dev remove"
+ACTION=="remove", SUBSYSTEM=="bluetooth", RUN+="/usr/bin/notify-dev remove"
+ACTION=="remove", KERNEL=="mmcblk[0-9]", RUN+="/usr/bin/notify-dev remove"
+ACTION=="remove", SUBSYSTEM=="wireless", RUN+="/usr/bin/notify-dev remove"
+ACTION=="remove", SUBSYSTEM=="firewire", RUN+="/usr/bin/notify-dev remove"

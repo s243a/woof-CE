@@ -1,0 +1,92 @@
+#!/bin/sh
+#set backlight of the display from 0 to 100 percent
+
+brightness_value()
+{
+
+if [ $RBR -eq 0 ]; then
+BR=0
+else
+LR=`expr $MAXBR / $RBR`
+BR=`expr 100 / $LR`	
+fi
+
+}
+
+BKFILES=0
+
+for dir1 in `ls -1 /sys/class/backlight`
+do
+
+	if [ -f /sys/class/backlight/$dir1/brightness ] && [ "$(cat /sys/class/backlight/$dir1/type)" == "firmware" ]; then
+
+		MAXBR=`cat /sys/class/backlight/$dir1/max_brightness`
+		
+		RBR=`cat /sys/class/backlight/$dir1/brightness`
+
+        brightness_value
+
+		echo $BR
+		
+		BKFILES=`expr $BKFILES + 1`
+	
+	fi
+
+done
+
+
+if [ "$dir1" == "" ] || [ $BKFILES -eq 0 ]; then
+
+	if [ -d /proc/acpi/sony ]; then
+
+		MAXBR=8
+
+        if [ -f /proc/acpi/sony/brightness ]; then 
+        RBR=`cat /proc/acpi/sony/brightness`
+		elif [ -f /proc/acpi/sony/backlight ]; then
+		RBR=`cat /proc/acpi/sony/backlight`
+		elif [ -f /proc/acpi/sony/brightness_default ]; then
+		RBR=`cat /proc/acpi/sony/brightness_default`
+		fi
+		
+		brightness_value
+
+	    echo $BR
+			
+	elif [ -f /proc/acpi/toshiba/lcd ]; then
+	
+		MAXBR=7
+
+		RBR=`cat /proc/acpi/toshiba/lcd`
+		
+		brightness_value
+
+		echo $BR
+
+	elif [ -f /proc/acpi/ibm/brightness ]; then
+	
+		MAXBR=7
+
+		RBR=`/proc/acpi/ibm/brightness`
+
+		brightness_value
+		
+		echo $BR
+	elif [ -f /proc/acpi/asus/brn ]; then
+		
+		MAXBR=15
+
+		RBR=`cat /proc/acpi/asus/brn`
+	
+		brightness_value
+		
+		echo $BR
+		
+	else
+		echo 0
+	fi
+fi
+
+if [ $BKFILES -eq 0 ]; then
+echo 0
+fi

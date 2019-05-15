@@ -1,0 +1,25 @@
+#!/bin/sh
+
+
+if [ $# -eq 0 ]; then
+
+echo "usage: untcz <filename>"
+echo "Extracts Tiny Core Linux packages"
+
+else
+
+TCZ=$1
+
+if [ ! -d /mnt/tcz ]; then
+mkdir /mnt/tcz
+fi
+
+mount -o loop "$TCZ" /mnt/tcz
+cp -r /mnt/tcz/* ./
+umount /mnt/tcz
+
+if [ -d /mnt/tcz ]; then
+rmdir /mnt/tcz
+fi
+
+fi

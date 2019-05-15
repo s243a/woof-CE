@@ -1,0 +1,641 @@
+#!/bin/bash
+#100924 TaZoC lhpup.org license: GPL version 3 or any later version
+#100928 Archive with .gz instead of .tgz
+#100929 Current WM, #Tasks, memory, extra SFS, installed pets and slackware pkgs, bootinit & bootsysinit.logs
+#101002 Report correct WM for multi-user
+#101003 Help panel, report kernel command line, uptime, load avg, restore geany session before opening report
+#101004 CUPS, JWM, IceWM, active network interface
+#101012 Xfce version
+#110617 LHP version from /etc/issue.net, xdriinfo only if X running
+#110630 Bug fix didn't filter pupver output correctly, thanks to gcmartin 
+#110831 CUPS--show all printers. Samba status. Remove redundant report-video.gz
+#111020 0.7 CPU data and kern modules. lspci, lsusb (thanks to BarryK.)
+#       Bug fix --help didn't work in X. Remove redundant report-video.gz
+#       Include report-video-glx o/p if found. non-root user support.
+#120704 0.9 Fix missing (if non-root user) indicator in report. Fixed /usr/sbin/ifactive.
+#           Fatdog 600 support. Generic SFS list (thanks to JamesBond.)
+#120727 1.1 Align pkg list columns. Jasper: report free mem +buffers,cache,slab.
+#           Expanded on some category details. Removed xdriinfo. New GUI with gtkdialog. 
+#           Buttons for Scan/Refresh, PupSysInfo, report-video, Open reports in filer.
+#120813 1.2 Report arch (uname -rsm) Changed to test for nvidia-xconfig
+#120902 1.3 report-video script updated, thanks to BarryK, 01micko
+#120903 1.4 report-video -d|--driver (just output driver to CL and exit)
+#121024 1.4.1 Added +xorg dep to pet.specs
+#121030 1.4.2 Bugfix: escape codes sometimes appeared in report-video output
+#130121 1.5 Renamed to report-video to video-info
+#130131 1.5.1 Instead of --center, use gtkdialog window-position=1, thanks to Radky.
+
+[ -f /etc/DISTRO_SPECS ] && . /etc/DISTRO_SPECS
+[ -n "$DISTRO_NAME" ] && DISTRO_NAME="$(echo "$DISTRO_NAME" | sed "s/ $//g")" #120704
+export APPTITLE="Lighthouse System Information"
+export APPVERSION="1.5.1"
+export APPNAME="sys-info"
+export APPNAMECAP="Sys-Info"
+FONTCOLOR="#005C00"
+MSGFONTCOLOR="#000000"
+export USER=`id -un`
+REPORTDIR="/tmp/$USER"
+SYSDATE="`date +'%y%m%d'`" # yymmdd
+REPORTFILE="$REPORTDIR/$APPNAME-$SYSDATE"
+ICON="/usr/share/icons/$APPNAME.png"
+INSTALLEDPETS="/root/.packages/user-installed-packages"
+SLACKPGS="/var/log/packages"
+XLOG="/var/log/Xorg.0.log"
+nl='
+'
+
+mkdir -p "$REPORTDIR/"
+#rm -f "$REPORTFILE" #120704
+
+if [ "$USER" != "root" ]; then #120704
+ #echo -e "Non-root (normal) user" >> "$REPORTFILE" #120704
+ exec sudo -A "$0" "$@" #support sudo for non-root user
+fi
+
+# I18N #120727 from BarryK's pmount
+# set locale
+# myLOCALE=$LANG # is enough for puppy. but this code is more general. 
+for myLOCALE in C $(echo $LANGUAGE|cut -d':' -f1) $LC_ALL $LANG;do :;done	# ex. 	ja_JP.UTF-8
+# search locale file
+myLOCALE1=$(echo $myLOCALE|cut -d'.' -f1)		# ex.	ja_JP
+myLOCALE2=$(echo $myLOCALE|cut -d'_' -f1)	# ex.	ja
+LOCALEDIR=/usr/share/locale
+LOCALEFILE=$(basename $0).mo
+for D in C $myLOCALE2 $myLOCALE1 $myLOCALE
+do
+	F="$LOCALEDIR/$D/LC_MESSAGES/$LOCALEFILE"
+	[ -f "$F" ] && . "$F" 
+done
+#[ "`echo "$LANG" | grep '^en_US'`" ] && export LANG=C #111214
+# end of I18N
+[ "$LANG" == "C" ] && export LANG=en_US #120727 pupver code needs this
+
+#120727 define gtkdialog (thanks to Radky)
+if [ "`which gtkdialog4`" ]; then
+	GTKDIALOG=gtkdialog4
+elif [ "`which gtkdialog3`" ]; then
+	GTKDIALOG=gtkdialog3
+else
+	GTKDIALOG=gtkdialog
+fi
+
+if [ "$(echo $GTKDIALOG | grep '4')" ]; then #120727 
+ HSEPARATOR='<hseparator></hseparator>'; VSEPARATOR='<vseparator></vseparator>'
+else
+ HSEPARATOR=''; VSEPARATOR=''
+fi
+
+[ -f /etc/rc.d/PUPSTATE ] && . /etc/rc.d/PUPSTATE
+if [ -f /etc/issue.net ]; then #110617
+ [ "`grep Lighthouse /etc/issue.net`" ] && LHPVERSION="`cat /etc/issue.net | tr '\n' ' ' | tr '-' ' '`" && FORUMSECTION="Derivatives "
+fi
+
+INITRD=/initrd #120704
+[ ! -d $INITRD ] && [ -d /aufs ] && INITRD=/aufs #120704 Fatdog 600
+
+if [ -n "$LHPVERSION" ]; then #110617 ex: Lighthouse64 5.11 A
+ VERSION="`echo $LHPVERSION | rev | cut -f1-2 -d ' ' | rev`" # ex: 5.11 A
+else VERSION="`echo $DISTRO_VERSION`" # ex: 500
+fi
+ 
+export TEXT_HELP="\n $APPNAMECAP gathers configuration data from many sources--all into 
+ one file, to help you get 'under the hood' and track down any problems. 
+ The report is designed to shed some light on the inner workings of 
+ $DISTRO_NAME, however the log messages are often cryptic, sometimes 
+ even alarming. Not to worry--many of the warnings are inconsequential.\n\n
+ $APPNAMECAP can be started with '$APPNAME -q' (or --quiet) to generate a report 
+ without opening any windows. 'hardinfo -r | gzip >/tmp/root/hardinfo.gz' will
+ archive its report. Feedback about $APPNAME is welcome at 
+ http://www.murga-linux.com/puppy/viewtopic.php?t=60462\n\n
+ $APPNAME $APPVERSION by TaZoC - lhpup.org or lighthouselinux.com
+ License: GPL version 3 or any later version. \n\n
+ $APPNAME is based on the original report-video by Barry Kauler - bkhome.org" #101003
+
+export TOPMSG="<span color='"$FONTCOLOR"'>Click the button at left to scan the system.</span>${nl}All data gathered is recorded in the plain text file ${nl}<span color='"$FONTCOLOR"'><b>$REPORTFILE</b></span> ($APPNAME-yymmdd), gzipped as ${nl}<span color='"$FONTCOLOR"'>$REPORTFILE.<b>gz</b></span> and will be displayed in the default text editor." #101003 #120727
+
+export TEXT_MSG=" To post the results for help on the forum, please verify the file displayed in 
+ the text editor contains no personal information, then attach the archive 
+ '$REPORTFILE.gz' to a reply on the Puppy ${FORUMSECTION}Forum, in 
+ the thread labeled '$DISTRO_NAME $DISTRO_VERSION'. \n\n
+ All files in /tmp will be deleted at shutdown, so if you want to keep 
+ the reports after this session, please move them somewhere else. \n\n
+ Tip: $APPNAME and video-info can be started from the command line, 
+ even if X is not running. For expanded hardware information, click on 
+ HardInfo, or type 'hardinfo -r >/tmp/root/hardinfo' in a terminal to
+ direct HardInfo's report to a file. \n" #101003
+
+export MSG="Care is taken to avoid collecting any private data. ${nl}
+To post the results for help on the forum, please verify the file ${nl}displayed in the text editor contains no personal information. Then ${nl}attach the archive <span color='"$FONTCOLOR"'><b>$REPORTFILE.gz</b></span> to a reply on the Puppy ${FORUMSECTION}Forum, in the thread labeled <i>$DISTRO_NAME $DISTRO_VERSION.</i> All files in <span color='"$FONTCOLOR"'>/tmp</span> will be deleted at shutdown, so if you want to keep the reports after this session, please move them somewhere else.${nl}
+Tip: <span color='"$FONTCOLOR"'><tt>$APPNAME</tt></span> and <span color='"$FONTCOLOR"'><tt>video-info</tt></span> can be started from the command line, even if X is not running.${nl}
+For additional hardware information, click the HardInfo or PupSysInfo buttons, ${nl}or type <span color='"$FONTCOLOR"'><tt>hardinfo -r >/tmp/root/hardinfo</tt></span> in a terminal to direct HardInfo's report to a file." #101003 #120727
+
+###### Function call scripts ######
+MainDialogFunc() { #101003 #120727
+
+export HELP_DIALOG="
+<window title=\"$APPNAMECAP $APPTITLE - Help\" window-position=\"1\" width-request=\"500\" height-request=\"380\" icon-name=\"$APPNAME\" resizable=\"false\">
+ <notebook labels=\"Help / About|License\">
+  <vbox space-fill=\"true\" space-expand=\"true\" margin=\"8\">
+   <progressbar>
+    <input>echo 0; echo \"$APPTITLE $APPVERSION\"</input>
+   </progressbar>
+   <edit editable=\"false\">
+    <width>620</width><height>250</height>
+     <default>\"$(echo -e "$TEXT_HELP" | sed '/./,/^$/!d')\"</default>
+   </edit>
+   <hbox space-fill=\"true\" space-expand=\"true\">
+    <button tooltip-text=\"Open in browser\">
+    <input file>/usr/share/icons/hicolor/32x32/apps/sys-info.png</input>
+     <label>\"$APPNAMECAP Forum\"</label>
+     <action>defaultbrowser http://www.murga-linux.com/puppy/viewtopic.php?t=60462 &</action>
+    </button>
+    <button tooltip-text=\"Open in browser\">
+    <input file>/usr/share/icons/hicolor/32x32/apps/Pup-SysInfo32.png</input>
+     <label>\"PupSysInfo Forum\"</label>
+     <action>defaultbrowser http://murga-linux.com/puppy/viewtopic.php?t=73101 &</action>
+    </button>
+    <button width-request=\"132\" tooltip-text=\"$(gettext ROX-Filer 'Cancel')\">
+     <input file stock=\"gtk-quit\"></input>
+     <label>\"$(gettext ROX-Filer 'Close')  \"</label>
+     <action type=\"exit\">EXIT</action>
+     </button>
+   </hbox>
+  </vbox>
+  <vbox space-fill=\"true\" space-expand=\"true\" margin=\"8\">
+   <text height-request=\"30\"><label>\"\"</label></text>
+   <text use-markup=\"true\" width-request=\"620\"><label>\"$APPNAMECAP is released under the <b>GNU General Public License</b> (GPL). You have the right to use and modify this software in any way you like, so long as any derivative works remain under a GPL license.\"</label></text>
+   <text height-request=\"30\"><label>\"\"</label></text>
+    ${HSEPARATOR}
+   <text height-request=\"30\"><label>\"\"</label></text>
+   <text use-markup=\"true\"><label>\"This program is distributed in the hope that it will be useful, but <b><span color='"'red'"'>WITHOUT ANY WARRANTY</span></b>. See the GNU General Public License homepage for more details.\"</label></text>
+   <text height-request=\"50\"><label>\"\"</label></text>
+   <hbox height-request=\"40\" space-fill=\"true\">
+    <button tooltip-text=\"Open in browser\">
+     <label>\"http://www.gnu.org/licenses/\"</label>
+     <action>defaultbrowser http:\/\/www.gnu.org\/licenses\/ &</action>
+    </button>
+    <button width-request=\"132\" tooltip-text=\"$(gettext ROX-Filer 'Cancel')\">
+     <input file stock=\"gtk-quit\"></input>
+     <label>\"$(gettext ROX-Filer 'Close')  \"</label>
+     <action type=\"exit\">EXIT</action>
+     </button>
+   </hbox>
+   <text height-request=\"50\"><label>\"\"</label></text>
+  </vbox>
+ </notebook>
+</window>" #120727 (thanks to Zigbert) #130131
+
+if [ -x /usr/local/bin/Pup-SysInfo ]; then #120727
+ PSI_BUTTON="
+   <button width-request=\"132\" height-request=\"42\" tooltip-text=\"Comprehensive System Information\">
+    <input file>/usr/share/pixmaps/puppy/find.svg</input>
+    <width>32</width>
+    <label>PupSysInfo </label>
+    <action>/usr/local/bin/Pup-SysInfo &</action>
+    </button>"
+elif [ -x /usr/local/PupControl/Pup-SysInfo ]; then
+ PSI_BUTTON="
+   <button width-request=\"132\" height-request=\"42\" tooltip-text=\"Comprehensive System Information\">
+    <input file>/usr/share/pixmaps/puppy/find.svg</input>
+    <width>32</width>
+    <label>PupSysInfo </label>
+    <action>/usr/local/PupControl/func -sysinfo_mono &</action>
+    </button>"
+else
+ PSI_BUTTON="
+   <button width-request=\"132\" height-request=\"42\" tooltip-text=\"PupSysInfo - See Help to Install\">
+    <input file>/usr/share/icons/hicolor/32x32/apps/Pup-SysInfo32.png</input>
+    <label>PupSysInfo </label><visible>disabled</visible>
+    <action>/usr/local/bin/Pup-SysInfo &</action>
+    </button>"
+fi
+
+if [ "`which video-info-glx`" ] && [ ! -L "`which video-info-glx`" ]; then #120727
+ RV_BUTTON="
+   <button width-request=\"42\" height-request=\"42\" tooltip-text=\"video-info-glx Graphics Information\">
+    <input file>/usr/share/pixmaps/video-info.png</input>
+    <action>video-info-glx &>/dev/null &</action>
+    </button>"
+else
+ RV_BUTTON="
+   <button width-request=\"42\" height-request=\"42\" tooltip-text=\"video-info Graphics Information\">
+    <input file>/usr/share/pixmaps/video-info.png</input>
+    <action>video-info &>/dev/null &</action>
+    </button>"
+fi
+
+export MAIN_DIALOG="<window title=\"$APPNAMECAP $APPTITLE $APPVERSION\" icon-name=\"$APPNAME\" window-position=\"1\" width-request=\"550\" height-request=\"380\" resizable=\"false\">
+ <vbox>
+  
+  <vbox>
+    <hbox space-expand=\"true\">
+    <hbox>
+     <text width-request=\"8\"><label>\"\"</label></text>
+     <button relief=\"0\" tooltip-text=\"$(gettext ROX-Filer 'Create') / $(gettext ROX-Filer 'Refresh') $(gettext ROX-Filer 'File')\">
+      <width>64</width><height>64</height>
+      <input file>$ICON</input>
+      <action>"${0}" -r &</action>
+     </button>
+     <text width-request=\"4\"><label>\"\"</label></text>
+     <text width-request=\"400\" use-markup=\"true\">
+      <label>\"<span color='"$MSGFONTCOLOR"'>"${TOPMSG}"</span>\"</label>
+     </text>
+     </hbox>
+    </hbox>
+  </vbox>
+   
+  <vbox space-fill=\"true\" space-expand=\"true\">
+  <frame> 
+  <vbox scrollable=\"true\">
+    <text width-request=\"500\" use-markup=\"true\">
+     <label>\"<span color='"$MSGFONTCOLOR"'>"${MSG}"</span>\"</label>
+    </text>
+   </vbox>
+  </frame>
+  </vbox>
+  
+  <vbox space-fill=\"false\" space-expand=\"false\">
+  <hbox height-request=\"42\" space-fill=\"true\" space-expand=\"true\">
+   <button width-request=\"132\" height-request=\"42\" tooltip-text=\"System Profiler and Benchmark\">
+    <input file>/usr/share/pixmaps/puppy/execute_inspect.svg</input>
+    <width>32</width>
+    <label>HardInfo  </label>
+    <action>hardinfo &</action>
+   </button>
+   ${PSI_BUTTON}
+   ${VSEPARATOR}
+   ${RV_BUTTON}
+   <button width-request=\"42\" height-request=\"42\" tooltip-text=\"Open Reports in File Manager\">
+    <input file>/usr/share/pixmaps/document-open-folder.png</input>
+    <action>rox -d ${REPORTDIR} &</action>
+   </button>
+   ${VSEPARATOR}
+   <button width-request=\"124\" height-request=\"42\" tooltip-text=\"$(gettext ROX-Filer 'Show Help Files')\">
+    <input file>/usr/share/pixmaps/help-contents.png</input>
+    <label>\"$(gettext ROX-Filer 'Help')  \"</label>
+    <action>$GTKDIALOG --program=HELP_DIALOG &</action>
+    </button>
+   <button width-request=\"124\" height-request=\"42\" tooltip-text=\"$(gettext ROX-Filer 'Cancel')\">
+    <input file stock=\"gtk-quit\"></input>
+    <label>\"$(gettext ROX-Filer 'Close') \"</label>
+    <action type=\"exit\">Cancel</action>
+   </button>
+  </hbox>
+  </vbox>
+ </vbox>
+</window>
+ "
+ RET=$($GTKDIALOG --program=MAIN_DIALOG) #120724 #130131
+ #gxmessage "$RET" # debug
+ eval "$RET"
+ unset MAIN_DIALOG
+ unset HELP_DIALOG
+ [ "$(echo "$EXIT" | grep "Cancel\|abort")" ] && exit #120724
+
+} ## End MainDialogFunc
+
+space_pkg_col2_func() { #120727 when displaying pkgs, adjust column spacing by length of pkg in col 1
+COLUMN1_LEN=$1 # Length of pkg name in column 1
+
+SPACECNT=`expr 37 - $COLUMN1_LEN`
+echo -n " " >> "$REPORTFILE"
+while [ $SPACECNT -gt 0 ]; do
+ echo -n "_" >> "$REPORTFILE"
+ SPACECNT=`expr $SPACECNT - 1`
+done
+echo -n " " >> "$REPORTFILE"
+} ## End space_pkg_col2_func
+
+InstalledPkgsFunc() { #100929 
+echo -e "\n=== User Installed Pkgs (PPM /root/.packages/user-installed-packages) ===" >> "$REPORTFILE" #120727
+
+if [ -s "$INSTALLEDPETS" ]; then
+ echo -e "       Package                             Description" >> "$REPORTFILE"
+ cat "$INSTALLEDPETS" |
+ while read ONELINE
+ do
+  ONEPKG="`echo -n "$ONELINE" | cut -f1 -d '|'`"
+  ONEDESC="`echo -n "$ONELINE" | cut -f10 -d '|'`"
+  echo -en "$ONEPKG" >> "$REPORTFILE" #120727
+  space_pkg_col2_func $(echo $ONEPKG | wc -L) #120727
+  echo -e "$ONEDESC" >> "$REPORTFILE" #120727
+ done
+else echo -e "\nNone listed in $INSTALLEDPETS" >> "$REPORTFILE"
+fi
+
+if [ "$PUPMODE" = "12" -o "$PUPMODE" = "13" -o "$PUPMODE" = "77" ]; then
+ USERSLACKPGS="${INITRD}${SAVE_LAYER}${SLACKPGS}" # Skip built-ins
+ if [ -d "$USERSLACKPGS" ] && [ "`ls -1 "$USERSLACKPGS" | grep -v '.wh.'`" ]; then
+  echo -e "\n=== User Installed Slackware Pkgs (/var/log/packages in save layer) ===" >> "$REPORTFILE"
+  echo -e "       Package                             Description" >> "$REPORTFILE"
+  ls -1 "$USERSLACKPGS" | grep -v '.wh.' |
+  while read ONESLACK
+  do
+   if [ ! "`cat "$INSTALLEDPETS" | grep "$ONESLACK"`" ]; then
+    ONEPKG="${ONESLACK}"
+    ONEDESC="`cat "${USERSLACKPGS}/${ONESLACK}" | sed '6q;d' | cut -f2- -d' '`" # 6th line of file
+    echo -en "$ONEPKG" >> "$REPORTFILE" #120727
+    space_pkg_col2_func $(echo $ONEPKG | wc -L) #120727
+    echo -e "$ONEDESC" >> "$REPORTFILE" #120727
+   fi
+  done
+ fi
+fi
+} ## End InstalledPkgsFunc
+
+SFSloopsFunc() { #120704 SFS detection based on code by James Budiono, Fatdog 600 /sbin/load_sfs.sh
+echo -e "\n=== SFS Add-ons (loop mounts /dev/loop4 or above) ===\n" >> "$REPORTFILE" #120704 generic list
+losetup-FULL -a | sed '/loop[0-3]:/ d;s_^.*/__;s/)$//' | sort  >> "$REPORTFILE"
+} ## End SFSloopsFunc
+
+CPUFunc() { #111020
+# get the first cpu
+processor=`cat /proc/cpuinfo | grep "model name" | head -1`
+
+# get rid of "model name:"
+processor=${processor##*:}
+
+#get rid of the frequency at the end
+#processor="`echo ${processor%%@*} | sed 's%^ %%'`" #120704 
+
+[ -d /sys/devices/system/cpu/cpufreq/ondemand ] && sleep .8 # allow scaling to reduce frequency if scaling is active
+CORE_PLURAL=""
+CPU_INFO_SPEED="`cat /proc/cpuinfo | grep 'MHz' | awk '{print $4}' | cut -f 1 -d '.'`"
+CORE=0; CPU_CORES=`echo "$CPU_INFO_SPEED" | wc -l`
+[ $CPU_CORES -gt 1 ] && CORE_PLURAL="s"
+CPU_SPEED="Core "
+for ONE_CORE in $CPU_INFO_SPEED; do
+ CPU_SPEED="$CPU_SPEED$CORE: @$ONE_CORE  " #120704 @
+ CORE=$(expr $CORE + 1)
+done
+ echo -e "\n=== CPU, Tasks and Uptime ===\n" >>"$REPORTFILE"
+echo -e "$processor\n ${CPU_SPEED}MHz" >> "$REPORTFILE"
+
+ echo -e "\n$(expr `ps -eo pid | wc -l` - 1) Tasks, `ps -eo stat | grep 'R' | wc -l` Running. Uptime: `uptime | cut -f4- -d' '`\n" >> "$REPORTFILE"
+} ## End CPUFunc
+
+RAMsizeFunc() { #100929 #120727
+echo -e "\n=== Memory (free) ===" >> "$REPORTFILE"
+free >> "$REPORTFILE" 2>&1
+
+echo -e "\n=== Memory (/proc/meminfo) ===" >> "$REPORTFILE"
+RAMSIZE=`grep ^MemTotal /proc/meminfo | awk '{print $2}'` #110907 ex: 3796496
+RAMSIZE="$(expr $(expr $RAMSIZE \/ 1024) + 1) MiB" # round up to nearest MiB
+FREERAM=`grep ^MemFree /proc/meminfo | awk '{print $2}'` #110907 ex: 415320
+BUFFERS=`grep ^Buffers /proc/meminfo | awk '{print $2}'`
+CACHED=`grep ^Cached /proc/meminfo | awk '{print $2}'`
+SLAB=`grep ^Slab /proc/meminfo | awk '{print $2}'`
+FREERAM="$(($FREERAM + $(($BUFFERS + $(($CACHED + $SLAB)) )) ))" # 
+FREERAM="$(expr $(expr $FREERAM \/ 1024) + 1) MiB" # round up to nearest MiB
+echo -e "\n$FREERAM free (incl. buffers,cache) of $RAMSIZE total RAM (shared unaccounted for)" >> "$REPORTFILE"
+} ## End RAMsizeFunc
+
+ReportVideoFunc() { #100929
+ 
+if [ "$1" = "full" ]; then
+ [ "`which video-info`" ] && video-info -q &>/dev/null #100929 silent report
+ if [ $(which glxinfo) ] || [ $(which fglrxinfo) ] || [ $(which nvidia-xconfig) ]; then # My attempt to test if mesa or a proprietary driver is installed #120813
+  echo -e "\n=== GLX Video Report  ===\n" >>"$REPORTFILE"
+  if [ "`which video-info-glx`" ] && [ ! -L "`which video-info-glx`" ]; then # test for script in path
+   #report-video-glx -cl | head -16 >> "$REPORTFILE" # skip cpu info and footer
+   video-info-glx -cl | grep -Ev 'Processor|Core|also\ recorded' >> "$REPORTFILE" # skip cpu info and footer #120813
+  else
+   echo -en "video-info-glx not found on this system.\nFree Pet package at http://www.murga-linux.com/puppy/viewtopic.php?t=69326\n" >> "$REPORTFILE" 
+  fi
+ fi
+ sleep .1
+ # Append xorg.conf and Xorg.0.log
+ [ -s /tmp/${USER}/video-info-full ] && cat /tmp/${USER}/video-info-full | tail +13 >> "$REPORTFILE"
+else
+ echo -e "\n=== video-info ===\n" >> "$REPORTFILE"
+ video-info -q && cat /tmp/${USER}/video-info | head -13 >> "$REPORTFILE" #120903 #121030
+ 
+ #echo -en "$(head -n 8 "$XLOG" | grep Date | sed -e 's%\[.*[0-9]*\]\ %%g' -e '/./!d')\n" >> "$REPORTFILE" 2>&1 # sed skip blank line and line numbers
+fi
+rm -f /tmp/${USER}/video-info-full* #110831
+} ## End ReportVideoFunc
+
+PrintersFunc() { #101004
+ [ "`which cups-config`" ] && echo -e "\n=== CUPS `cups-config --version` ===\n" >> "$REPORTFILE"
+ if [ "`grep '<DefaultPrinter ' /etc/cups/printers.conf`" ]; then
+  echo -e "\n`grep '<DefaultPrinter ' /etc/cups/printers.conf | tr -d '<' | tr -d '>'`" >> "$REPORTFILE"
+ fi
+ if [ "`which lpstat`" ] && [ "`lpstat -v`" ]; then
+  lpstat -v  >> "$REPORTFILE" #110831
+ else
+  [ "`grep '<Printer ' /etc/cups/printers.conf`" ] && echo -e "`grep '<Printer ' /etc/cups/printers.conf | tr -d '<' | tr -d '>'`" >> "$REPORTFILE" #110831
+ fi
+} ## End PrintersFunc
+
+SambaFunc() { #110831
+ if [ "`which smbclient`" ]; then
+  echo -e "\n=== Samba ===\n" >> "$REPORTFILE"
+  echo -e "\nsmbclient `smbclient -V`  $([ `which smbd` ] && echo smbd `smbd -V`)" >> "$REPORTFILE"
+  [ "`which nmblookup`" ] && echo -en "nmblookup `nmblookup -V`  " >> "$REPORTFILE"
+  [ "`which nmbd`" ] && echo -en "nmbd `nmbd -V`  " >> "$REPORTFILE"
+  [ "`which winbindd`" ] && echo -en "winbindd `winbindd -V`  " >> "$REPORTFILE"
+  echo >> "$REPORTFILE"
+  [ "`which testparm`" ] && echo -e "\ntestparm -s\n`testparm -s 2>/dev/null`  " >> "$REPORTFILE"
+ fi
+} ## End SambaFunc
+ 
+wmFunc() { #101002 #120704
+  if [ -s "${HOME}/Choices/windowmanager" ]; then # Lighthouse multi-user
+   CURRENTWM="`cat "${HOME}/Choices/windowmanager"`"
+  elif [ -s /etc/windowmanager ]; then CURRENTWM="`cat /etc/windowmanager`" # Puppy
+  fi
+  if [ -s "$FATDOG_STATE_DIR/windowmanager" ]; then
+   CURRENTWM=`cat "$FATDOG_STATE_DIR/windowmanager"`
+  elif [ "`pidof openbox`" ]; then
+   CURRENTWM="openbox-session"
+  elif [ "`pidof jwm`" ]; then
+   CURRENTWM="jwm"
+  elif [ "`pidof icewm`" ]; then
+   CURRENTWM="icewm"
+  elif [ "`pidof xfwm4`" ]; then
+   CURRENTWM="xfwm4"
+  fi
+  
+  if [ -n $CURRENTWM ]; then
+   echo -e "\n=== Window Manager/Desktop Environment ===\n" >> "$REPORTFILE"
+   echo -e "\nCurrent window manager: `echo "$CURRENTWM" | sed 's/start//g' | sed 's/-session//g' | tr 'a-z' 'A-Z'` (starts from C.L. with: 'xwin `echo "$CURRENTWM"`')\n" >> "$REPORTFILE"
+  fi
+} ## End wmFunc
+###### End function call scripts ######
+
+# Define some colors
+white='\e[1;37m'  # Bold white
+dkgreen='\e[0;32m'
+green='\e[1;32m'
+NC='\e[0m'        # No Color
+
+###### Present GUI if X is running and no options ######
+if [ "$(ps -eo comm | grep ^X)" -a "$1" = "" ]; then #120727
+ MainDialogFunc ## function call
+ exit 0 ### End script ###
+elif [ "$(ps -eo comm | grep ^X)" -a "$1" = "-r" ]; then #100901 #111020 #120727 -r reentrant
+ if [ -L /usr/bin/yaf-splash ]; then #120727
+  yaf-splash -text " $APPNAMECAP $APPVERSION is generating a system report...  " -bg "#03CD40" -placement top -close never -icon /usr/share/icons/sys-info.png & #120704 #120903
+ else # yaf-splash is not a symlink to gtkdialog-splash
+  yaf-splash -text " $APPNAMECAP $APPVERSION is generating a system report...  " -bg "#03CD40" -placement top -font "8x16" &
+ fi
+ SplashID=$!
+elif [ "$@" ] && [ "$1" != "-q" -a "$1" != "--quiet" -a "$1" != "-r" ]; then #120727
+  echo -e "${green}$APPNAME $APPVERSION${NC} by TaZoC
+${green}lhpup.org ${NC}or ${green}lighthouselinux.com${NC}  License: GPL v3 or any later version.
+Usage: ${white}$APPNAME ${NC}[${white}-q${NC} | ${white}--quiet${NC}] (silently generate report)"
+ exit ### End script ###
+elif [ "$1" != "-q" -a "$1" != "--quiet" ]; then
+  echo -en "${green}$APPNAME $APPVERSION${NC}\nCreating text report at ${dkgreen}$REPORTFILE${NC}..."
+fi
+
+##### Generate Report #####
+echo -e "=== $APPNAME $APPVERSION === `date +'%a %-e %b %Y'` on `uname -rsm` ===" > "$REPORTFILE" #120704 #120813
+ echo -e "(See end of report for usage and additional information.)" >> "$REPORTFILE"
+
+echo -e "\n=== Kernel command line (cat /proc/cmdline) ===\n" >> "$REPORTFILE"
+KERNELCL="`cat /proc/cmdline`"
+[ "$KERNELCL" = "" ] && KERNELCL="`grep -m1 'Kernel command line:' "$XLOG" | cut -f2- -d':' | cut -f2- -d' '`"
+echo -e "\n$KERNELCL\n" >> "$REPORTFILE" #101003
+
+CPUFunc ## function call
+ 
+RAMsizeFunc ## function call #100929
+
+wmFunc ## function call #100929
+
+##### Lighthouse specific section #####  #110617
+if [ -n "$LHPVERSION" ]; then 
+
+ echo -e "\n=== pupver ===\n" >> "$REPORTFILE"
+ pupver | sed "s%[^A-Z|^a-z|^0-9|.;\/\:=_-#\ ]%%g" | sed "s/\[[0-9];[0-9][0-9]m//g" | sed "s/\[0m//g" | sed '/lighthouselinux.com/,/faq\.htm/d' | grep -v 'window manager:' >> "$REPORTFILE" 2>&1 # sed filters out the escaped colors & text at end #110630 '\ '
+ 
+ InstalledPkgsFunc ## function call
+ 
+ SFSloopsFunc ## function call
+ 
+ ReportVideoFunc ## function call #100929
+ 
+ echo -e "\n=== /etc/rc.d/PUPSTATE ===\n" >> "$REPORTFILE"
+ [ -r /etc/rc.d/PUPSTATE ] && cat /etc/rc.d/PUPSTATE >> "$REPORTFILE"
+ 
+ echo -e "\n=== probepart ===\n" >> "$REPORTFILE"
+ probepart >> "$REPORTFILE" 2>&1
+ 
+ echo -e "\n=== df -h ===\n" >> "$REPORTFILE"
+ df -h 2>/dev/null >> "$REPORTFILE"
+ 
+ PrintersFunc ## function call #101004
+ 
+ SambaFunc #110831
+ 
+ echo -e "\n=== ${INITRD}/tmp/bootinit.log ===\n" >> "$REPORTFILE"
+ [ -s ${INITRD}/tmp/bootinit.log ] && cat ${INITRD}/tmp/bootinit.log | grep -v 'switch_root' >> "$REPORTFILE"
+  
+else ########### Generic Woof-based system ###########
+
+ [ -e /etc/DISTRO_SPECS ] && echo -e "\n=== Distro ===\n\n$DISTRO_NAME $DISTRO_VERSION `uname -m`" >> "$REPORTFILE"
+
+ [ `which jwm` ] && echo -e "`jwm -v | grep 'JWM' | cut -f -2 -d ' '`" >> "$REPORTFILE" 2>&1 #101004
+ 
+[ `which icewm` ] && echo -e "`icewm -v | cut -f 1 -d ','`" >> "$REPORTFILE" 2>&1 #101004
+
+[ `which xfce4-session` ] && xfce4-session --version | grep '(Xfce' >> "$REPORTFILE" 2>&1 #101012
+ 
+ rox -v | sed '1q;d' | sed '/./G' >> "$REPORTFILE" 2>&1 # prints first line, blank line
+ 
+[ -x /usr/sbin/ifactive ] && echo -e "\n=== Network Interface ===\n\n`ifactive`" >> "$REPORTFILE" 2>&1  #101004
+ 
+ InstalledPkgsFunc ## function call
+ 
+ SFSloopsFunc ## function call
+ 
+ ReportVideoFunc ## function call #100929
+   
+ echo -e "\n=== /etc/rc.d/PUPSTATE ===\n" >> "$REPORTFILE"
+ [ -r /etc/rc.d/PUPSTATE ] && cat /etc/rc.d/PUPSTATE >> "$REPORTFILE"
+ 
+ echo -e "\n=== probepart ===\n" >> "$REPORTFILE"
+ probepart >> "$REPORTFILE" 2>&1
+ 
+ echo -e "\n=== df -h ===\n" >> "$REPORTFILE"
+ df -h >> "$REPORTFILE" 2>&1
+  
+ PrintersFunc ## function call #101004
+ 
+ SambaFunc #110831
+ 
+ #echo -e "\n=== ${INITRD}/tmp/EXTRASFSS ===\n" >> "$REPORTFILE" #120704 moved up
+ #[ -s ${INITRD}/tmp/EXTRASFSS ] && cat ${INITRD}/tmp/EXTRASFSS | sed s'|\/mnt\/dev_save\/||g' | #sort  >> "$REPORTFILE" # Strip /mnt/dev_save/ and sort list
+ 
+ if [ -s ${INITRD}/tmp/bootinit.log ]; then #120727
+  echo -e "\n=== ${INITRD}/tmp/bootinit.log (Disregard any 'FATAL' messages) ===\n" >> "$REPORTFILE"
+  cat ${INITRD}/tmp/bootinit.log >> "$REPORTFILE"
+ fi
+ 
+fi ########### End of generic Woof-based section ###########
+
+[ "`which pupscan`" ] && pupscan --silent #111020
+echo -e "\n=== PCI bus (lspci -nn) ===\n" >> "$REPORTFILE"
+lspci -nn >> "$REPORTFILE"
+#[ -r /tmp/chipnummod.txt ] && cat /tmp/chipnummod.txt >> "$REPORTFILE"
+
+if [ "`which lsusb`" ]; then #111020
+ echo -e "\n=== USB devices (lsusb) ===\n" >> "$REPORTFILE"
+ lsusb >> "$REPORTFILE"; echo >> "$REPORTFILE"
+ [ -r /tmp/usbchipnummod.txt ] && cat /tmp/usbchipnummod.txt >> "$REPORTFILE"
+fi
+
+if [ "`which lsmod`" ]; then #111020
+ echo -e "\n=== Kernel Modules (lsmod) ===\n" >> "$REPORTFILE"
+ lsmod >> "$REPORTFILE"
+fi
+
+if [ -s /tmp/bootsysinit.log ]; then #120727
+ echo -e "\n=== /tmp/bootsysinit.log (Disregard any 'FATAL' messages) ===\n" >> "$REPORTFILE"
+ cat /tmp/bootsysinit.log >> "$REPORTFILE"
+fi
+ 
+echo -e "\n=== whiteout(.wh.*) files in /bin /etc /lib /sbin /usr ===\n" >> "$REPORTFILE"
+cd ${INITRD}/
+find ./pup_r*/bin ./pup_r*/etc ./pup_r*/lib ./pup_r*/sbin ./pup_r*/usr -noleaf -type f -name ".wh.*" | sed -e "s%^\.%$INITRD%g" >> "$REPORTFILE" #120727
+ 
+#if [ "$(ps -eo comm | grep ^X)" -a "`which xdriinfo`" ]; then # X is running #110617
+# echo -e "\n=== xdriinfo ===\n" >> "$REPORTFILE"
+# xdriinfo >> "$REPORTFILE" 2>&1
+#fi
+ 
+ReportVideoFunc full ## function call #100929
+
+echo -e "\n=== Help and Usage ===\n\n${TEXT_MSG}\n\n${TEXT_HELP}\n" >> "$REPORTFILE" #120727
+ 
+echo -e "\n=== End of Report === $APPNAME $APPVERSION `date +'%a %-e %b %Y'` ===" >> "$REPORTFILE"
+sed -i '/./,/^$/!d' "$REPORTFILE" # strip consecutive blank lines, allows 0 blanks at top, 1 at EOF
+
+cat "$REPORTFILE" | gzip -f > "$REPORTFILE.gz"
+
+#REPVIDPID="`ps -eo pid,command | grep '\-\-wmclass report-video' | awk '{print $1}'`"
+#[ "$REPVIDPID" ] && kill $REPVIDPID # kill Lighthouse report-video dialog box
+
+if [ "$(ps -eo comm | grep ^X)" -a "$1" != "-q" -a "$1" != "--quiet" ]; then # X is running
+ kill $SplashID & #100901 TaZoC
+ if [ "$DEFAULTTEXTEDITOR" = "geany" -a ! "`pidof geany`" 2>/dev/null -a ! "`pidof geany-bin`" 2>/dev/null ]; then #101004 
+  defaulttexteditor &  #101003 for Geany, open prev session first
+  sleep .5
+ fi
+ defaulttexteditor "/tmp/${USER}/$APPNAME-$SYSDATE" &
+
+elif [ -z "$(ps -eo comm | grep ^X)" -a "$1" != "-q" -a "$1" != "--quiet" ]; then #120727
+  echo -e " ${green}done.${NC} (${green}$SYSDATE${NC} => ${white}YYMMDD${NC})"
+  echo -e "$DISTRO_NAME $APPNAME gathers configuration data from many sources--all
+into one file, to help you get 'under the hood' and track down any problems.\n
+All information gathered was recorded in the text file above, 
+and gzipped as ${dkgreen}$REPORTFILE.${green}gz${NC}. You can view this report
+in a text editor now, by typing ${green}mp ${dkgreen}$REPORTFILE${NC}\n
+Care was taken to avoid collecting any private data. To post the results for
+help on the forum, please verify that the text report listed above contains
+no personal information, then attach ${dkgreen}$REPORTFILE.${green}gz${NC} to a reply
+on the Puppy ${FORUMSECTION}Forum, in the thread labeled ${dkgreen}$DISTRO_NAME $DISTRO_VERSION${NC}.\n
+(All files in /tmp will be deleted at shutdown, so if you want to keep
+the reports after this session, please move them somewhere else.)"
+fi

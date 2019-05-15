@@ -1,0 +1,67 @@
+#!/bin/sh
+
+for dir1 in `ls /root/tftpboot | grep -v "pxe"` 
+do
+
+if [ -d /root/tftpboot/$dir1 ]; then
+ITEMS="$ITEMS<item>$dir1</item>"
+fi
+
+done
+
+if [ "$ITEMS" == "" ]; then
+/usr/lib/gtkdialog/box_ok "Manage Netboot OS" error "Netboot OS is not exist" "Add Netboot OS first"
+exit
+fi
+
+def1=`cat /root/tftpboot/pxelinux.cfg/default | grep default | sed -e "s#default ##"`
+
+export WIN1="
+<window resizable=\"false\" title=\"Manage Netboot OS\">
+<vbox>
+<frame Current Netboot OS>
+<text><label>\"$def1\"</label></text>
+</frame>
+<frame Select default Netboot OS>
+<combobox>
+$ITEMS
+<variable>SELECT</variable>
+</combobox>
+</frame>
+<hbox>
+<button>
+	<action>EXIT:20</action>
+</button>
+<button>
+    <label>\"Cancel\"</label>
+	<action>EXIT:10</action>
+</button>
+</hbox>
+</vbox>
+</window>"
+
+eval $(gtkdialog -p WIN1 -c)
+
+if [ "$SELECT" != "" ] && [ $EXIT -eq 20 ]; then
+
+	if [ ! -d /root/tftpboot/$SELECT ]; then
+	/usr/lib/gtkdialog/box_ok "Manage Netboot OS" error "$SELECT is not exist" "Please choose other OS"
+	$0
+	exit
+	fi
+
+cat > /root/tftpboot/pxelinux.cfg/default <<PXE
+default $SELECT
+
+label $SELECT
+kernel vmlinuz
+append initrd=initrd.gz
+PXE
+
+rm -f /root/tftpboot/pxelinux.cfg/initrd.gz
+rm -f /root/tftpboot/pxelinux.cfg/vmlinuz
+
+ln -s /root/tftpboot/$SELECT/initrd.gz /root/tftpboot/pxelinux.cfg/initrd.gz
+ln -s /root/tftpboot/$SELECT/vmlinuz /root/tftpboot/pxelinux.cfg/vmlinuz
+
+fi

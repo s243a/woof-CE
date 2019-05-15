@@ -1,0 +1,88 @@
+#!/bin/bash
+#
+#This box shows one ok-button, one icon, and textstring(s)
+#markup/span is valid
+#
+#Usage :
+# box_ok HEADING MSG-TYPE|ICON "textstring1" "textstring2" "..."
+#
+# HEADING is a short description. Maybe the app-name of the sender.
+# MSG-TYPE sets icon of icon and window. one of the following: complete, info, error or warning
+# ICON is a svg file. If path is not defined, /usr/share/pixmaps/puppy/ will be used
+#
+#Example :
+# 3 sec timeout: /usr/lib/gtkdialog/box_ok "heading" complete "text" &; XPID=$!; sleep 3; pkill -P $XPID
+#
+#Sigmund Berglund, dec 2013
+#GPL
+
+export TEXTDOMAIN=libstardust
+export OUTPUT_CHARSET=UTF-8
+
+HEADING="$1"
+
+case $2 in
+	complete)
+		ICON=/usr/share/pixmaps/puppy/dialog-complete.svg
+		ICON_WM=gtk-yes
+		FRAME="$(gettext 'Complete')"
+		;;
+	info)
+		ICON=/usr/share/pixmaps/puppy/dialog-info.svg
+		ICON_WM=gtk-info
+		FRAME="$(gettext 'Info')"
+		;;
+	error)
+		ICON=/usr/share/pixmaps/puppy/dialog-error.svg
+		ICON_WM=gtk-no
+		FRAME="$(gettext 'Error')"
+		;;
+	warning)
+		ICON=/usr/share/pixmaps/puppy/dialog-warning.svg
+		ICON_WM=gtk-no
+		FRAME="$(gettext 'Warning')"
+		;;
+	nb)
+		ICON=/usr/share/pixmaps/puppy/nb.svg
+		ICON_WM=gtk-no
+		FRAME="$(gettext 'NB!')"
+		;;
+	*)
+		ICON="$2"
+		ICON_WM=gtk-about
+		FRAME=" "
+		;;
+esac
+
+S='
+<window title="'$HEADING'" icon-name="'$ICON_WM'" resizable="false">
+<vbox space-expand="true" space-fill="true">
+  <frame>
+    <hbox homogeneous="true">
+      '"`/usr/lib/gtkdialog/xml_pixmap "$ICON" popup`"'
+    </hbox>
+    <hbox border-width="10" homogeneous="true">
+      <vbox space-expand="false" space-fill="false">'
+        [ "$3" ] && S=$S'<text xalign="0" use-markup="true"><label>"'$3'"</label></text>'
+        [ "$4" ] && S=$S'<text xalign="0" use-markup="true"><label>"'$4'"</label></text>'
+        [ "$5" ] && S=$S'<text xalign="0" use-markup="true"><label>"'$5'"</label></text>'
+        [ "$6" ] && S=$S'<text xalign="0" use-markup="true"><label>"'$6'"</label></text>'
+        [ "$7" ] && S=$S'<text xalign="0" use-markup="true"><label>"'$7'"</label></text>'
+        [ "$8" ] && S=$S'<text xalign="0" use-markup="true"><label>"'$8'"</label></text>'
+        [ "$9" ] && S=$S'<text xalign="0" use-markup="true"><label>"'$9'"</label></text>'
+        [ "${10}" ] && S=$S'<text xalign="0" use-markup="true"><label>"'${10}'"</label></text>'
+        [ "${11}" ] && S=$S'<text xalign="0" use-markup="true"><label>"'${11}'"</label></text>'
+        S=$S'</vbox>
+     </hbox>
+  </frame>
+  <hbox space-expand="false" space-fill="false">
+    <button>
+      '"`/usr/lib/gtkdialog/xml_button-icon ok`"'
+      <label>" '$(gettext 'Ok')' "</label>
+    </button>
+  </hbox>
+</vbox>
+</window>'
+
+export box_ok="$S"
+gtkdialog --center -p box_ok

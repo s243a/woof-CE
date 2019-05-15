@@ -1,0 +1,12 @@
+#!/bin/sh
+
+#v2.17 suggested by andrei...
+if [ -d $HOME/Startup ];then
+ for a in $HOME/Startup/*
+ do
+  if [ -x "$a" ];then
+   $a & #jamesbond
+  fi
+  sleep 0.2
+ done
+fi

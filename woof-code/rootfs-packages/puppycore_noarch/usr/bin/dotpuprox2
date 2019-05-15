@@ -1,0 +1,335 @@
+#!/bin/bash
+# dotpup handler 0.0.2 - GuestToo - Sep 15, 2005
+# Modified by mistfire - August 03, 2016
+### always, never options
+### removed geometry for gxmessage
+### changed rm -rf $DPDIR to rm -rf /root/DotPupTmpDir (just in case)
+### read DPDIR from $CONFIG ??
+
+export DISPLAY=:0.0
+
+FNAME=`basename "$1"`
+PKGNAME=$(echo $FNAME|sed 's/\.pup$//')
+CONFIG=/etc/dotpup
+DPDIR=/tmp/DotPupTmpDir
+
+echo "PUP PKG: $PKGNAME"
+
+if which gxmessage
+then
+  ##### MSG='gxmessage -geometry 640x160'
+  MSG=gxmessage
+else
+  MSG=xmessage
+fi
+
+[ -d $CONFIG ] || mkdir $CONFIG
+
+if [ ! -r "$1" ]
+then
+  $MSG -center -title "DotPup Error" "Pup package not found"
+  exit 1
+fi
+
+# ----- test zip integrity
+
+if ! unzip -t "$1"
+then
+  $MSG -center -title "DotPup Error" "File integrity ERROR: $FNAME
+
+Suggestion: Download the Pup file again"
+  exit 1
+fi
+
+# ----- check if it is already installed
+
+dbentry=$(grep $PKGNAME /root/.packages/user-installed-packages | head -n 1)
+
+	if [ "$dbentry" != "" ]; then
+	$MSG -center -title "DotPup Error" "The package is already installed: $PKGNAME"
+	exit
+	fi
+
+# ----- setup clean workspace
+
+[ -d "$DPDIR" ] && rm -rf $DPDIR
+mkdir "$DPDIR"
+cd "$DPDIR"
+
+
+# ----- unzip the dotpup
+
+#unzip -o "$1"
+
+if ! unzip -o "$1"
+then
+  $MSG -center -title "DotPup Error" "ERROR unzipping: $FNAME"
+  exit 1
+fi
+
+
+# ----- run dotpup.sh script
+
+if [ -r dotpup.sh ]
+then
+    $MSG -buttons "Run the Installer:21,Cancel" -center -title "DotPup Installer" "    You are installing an old puppy package.
+    Application performance from this package is not guarranted. 
+    DO NOT RUN THE INSTALLER
+    IF YOU ARE NOT SURE IT IS SAFE"
+    case $? in
+      21) true;;
+      *) exit ;;
+    esac
+  
+  #if [ ! -d /root/.packages/pup-keyword ]; then
+  #mkdir /root/.packages/pup-keyword
+  #fi
+    
+  echo "" > /root/.packages/packages.txt
+  echo "" >/root/.packages/alienpackages.txt
+  mkdir /root/DotPupTmpDir
+  
+  nPATTERN1="s/\/usr\/X11R6\/bin\/xinit/xinit/g"
+  nPATTERN2="s/\/usr\/X11R7\/bin\/xinit/xinit/g"
+  nPATTERN3="s/\/usr\/X11\/bin\/xinit/xinit/g"
+  
+  sed -i -e "$nPATTERN1" -e "$nPATTERN2" -e "$nPATTERN3" ./dotpup.sh
+  
+  chmod a+x ./dotpup.sh
+  
+  "$DPDIR/dotpup.sh"
+
+	  file2=$(sed -n '2p' < /root/.packages/alienpackages.txt | cut -f 1 -d ' '| tr -d '""')
+	  
+	  PKG1="$file2"
+	  PKGNAME="$file2"
+	  
+	  dbentry=$(grep $PKG1 /root/.packages/user-installed-packages | head -n 1)
+
+	  if [ "$dbentry" == "" ]; then
+
+			  if [ -f /root/.packages/${PKG1}.files ]; then
+			  
+				  mv -f /root/.packages/${PKG1}.files /root/.packages/package-files/${PKGNAME}.files
+				  
+				  DB_version="`echo -n "${PKGNAME}" | grep -o '\-[0-9].*' | sed -e 's%^\-%%'`"
+				  xPATTERN="s%$DB_version%%"
+				  
+				  if [ "$DB_version" != "" ]; then
+				  DB_nameonly="`echo -n "$PKGNAME" | sed -e "$xPATTERN" -e 's%\-$%%'`"
+				  else
+				  DB_nameonly=""
+				  fi
+				  
+				  DB_ENTRY="${PKGNAME}|$DB_nameonly|$DB_version|||||${FNAME}|||"
+
+					DESKTOPFILE="`grep '\.desktop$' /root/.packages/package-files/${PKGNAME}.files | head -n 1`"
+						
+						if [ "$DESKTOPFILE" != "" ];then
+						 
+						 dfile=$(basename $DESKTOPFILE)
+						 
+						 if [ ! -f /usr/share/applications/$dfile ]; then
+							
+							binfile_exec="`cat $DESKTOPFILE | grep '^Exec=' | cut -f 2 -d '='`"
+							bexec=`basename $binfile_exec`
+						 
+							 for line1 in `cat /root/.packages/package-files/${PKGNAME}.files | grep "$binfile_exec"`
+							 do
+							 lexec=`basename $line1` 
+								 if [ -f $line1 ] && [ "$lexec" == "$bexec" ]; then
+								 bin_exec2="$line1"
+								 break
+								 fi							 
+							 done			 
+						 
+						     iconfile=$(cat $DESKTOPFILE | grep '^Icon=' | cut -f 2 -d '=')
+						     bicon=`basename $iconfile`
+						     				     
+						     line1=""
+						     iconfound=""
+						     						 
+							 for line1 in `cat /root/.packages/package-files/${PKGNAME}.files | grep "$iconfile"`
+							 do
+							 licon=`basename $line1`
+							 							 
+								 if [ "$licon" == "$bicon" ]; then
+								 iconfound="$line1"
+								 break
+								 fi
+							 done
+							 
+							 echo "$iconfound"
+							 
+							 if [ ! -f $iconfound ]; then
+							 iconfound="mini-dog.xpm"
+							 fi
+							 
+							 name1="`cat $DESKTOPFILE | grep '^Name=' | cut -f 2 -d '='`"
+							 category1="`cat $DESKTOPFILE | grep '^Categories=' | cut -f 2 -d '='`"
+							 comment1="`cat $DESKTOPFILE | grep '^Comment=' | cut -f 2 -d '='`"
+							 type1="`cat $DESKTOPFILE | grep '^Type=' | cut -f 2 -d '='`"
+							 terminal1="`cat $DESKTOPFILE | grep '^Terminal=' | cut -f 2 -d '='`"
+							
+							 echo "[Desktop Entry]" > /usr/share/applications/$dfile
+							 echo "Name=$name1" >> /usr/share/applications/$dfile
+							 echo "Icon=$iconfound" >> /usr/share/applications/$dfile
+							 echo "Exec=$bin_exec2" >> /usr/share/applications/$dfile
+							 echo "Categories=$category1" >> /usr/share/applications/$dfile
+							 echo "Comment=$comment1" >> /usr/share/applications/$dfile
+							 echo "Type=$type1" >> /usr/share/applications/$dfile
+							 echo "Terminal=$terminal1" >> /usr/share/applications/$dfile
+							 
+							 echo "/usr/share/applications/$dfile" >>  /root/.packages/package-files/${PKGNAME}.files
+						 fi
+						 				 
+						 
+						 
+						 DB_category="`echo -n "$DB_ENTRY" | cut -f 5 -d '|'`"
+						 DB_description="`echo -n "$DB_ENTRY" | cut -f 10 -d '|'`"
+						 CATEGORY="$DB_category"
+						 DESCRIPTION="$DB_description"
+						 zCATEGORY="`cat $DESKTOPFILE | grep '^Categories=' | sed -e 's%;$%%' | cut -f 2 -d '=' | rev | cut -f 1 -d ';' | rev`" #121109
+							 
+							 if [ "$zCATEGORY" != "" ];then #121109
+							  #v424 but want the top-level menu category...
+							  catPATTERN="[ ,]${zCATEGORY},|[ ,]${zCATEGORY} |[ ,]${zCATEGORY}"'$' #121119 fix bug in pattern.
+							  CATEGORY="`echo "$PUPHIERARCHY" | cut -f 1 -d '#' | grep -E "$catPATTERN" | grep ':' | cut -f 1 -d ' ' | head -n 1`" #121119 /etc/xdg/menus/hierarchy 
+							 fi
+							 if [ "$DB_description" = "" ];then
+							  DESCRIPTION="`cat $DESKTOPFILE | grep '^Comment=' | cut -f 2 -d '='`"
+							  [ "$DESCRIPTION" = "" ] && DESCRIPTION="`cat $DESKTOPFILE | grep '^Name=' | cut -f 2 -d '='`"	# shinobar
+							 fi
+							 if [ "$DB_category" = "" -o "$DB_description" = "" ];then
+							  newDB_ENTRY="`echo -n "$DB_ENTRY" | cut -f 1-4 -d '|'`"
+							  newDB_ENTRY="$newDB_ENTRY"'|'"$CATEGORY"'|'
+							  newDB_ENTRY="$newDB_ENTRY""`echo -n "$DB_ENTRY" | cut -f 6-9 -d '|'`"
+							  newDB_ENTRY="$newDB_ENTRY"'|'"$DESCRIPTION"'|'
+							  newDB_ENTRY="$newDB_ENTRY""`echo -n "$DB_ENTRY" | cut -f 11-14 -d '|'`"
+							  DB_ENTRY="$newDB_ENTRY"
+							 fi
+						 
+						elif [ -f ./wxbmenue.rc ]; then
+						
+						binpath2=$(cat ./wxbmenue.rc)
+						apppath=$(echo $binpath2 | cut -f 1 -d '/')
+						
+							if [ binpath2 != "" ] && [ -f /usr/local/$binpath2 ]; then
+							
+							echo "[Desktop Entry]" > $DPDIR/${PKGNAME}.desktop
+							echo "Encoding=UTF-8" >> $DPDIR/${PKGNAME}.desktop
+							echo "Type=Application" >> $DPDIR/${PKGNAME}.desktop
+							echo "Name=${PKGNAME}" >> $DPDIR/${PKGNAME}.desktop
+							echo "Comment=Legacy application" >> $DPDIR/${PKGNAME}.desktop
+							echo "Exec=/usr/local/$binpath2" >> $DPDIR/${PKGNAME}.desktop
+							
+								if [ -f /usr/local/$apppath/icon.xpm ]; then
+								echo "Icon=/usr/local/$apppath/icon.xpm" >> $DPDIR/${PKGNAME}.desktop
+								elif [ -f /usr/local/$apppath/icon.png ]; then
+								echo "Icon=/usr/local/$apppath/icon.png" >> $DPDIR/${PKGNAME}.desktop
+								else
+								echo "Icon=mini-dog.xpm" >> $DPDIR/${PKGNAME}.desktop
+								fi
+							
+							echo "Terminal=false" >> $DPDIR/${PKGNAME}.desktop
+							echo "Categories=Utility;All;Applications;App;Apps;Program" >> $DPDIR/${PKGNAME}.desktop
+							echo "StartupNotify=false" >> $DPDIR/${PKGNAME}.desktop
+							
+							mv -f $DPDIR/${PKGNAME}.desktop /usr/share/applications/${PKGNAME}.desktop
+
+							echo "/usr/share/applications/${PKGNAME}.desktop" >> /root/.packages/package-files/${PKGNAME}.files
+							
+							fi
+						
+						/usr/sbin/fixmenus
+						
+						fi
+					
+					if [ -f /root/.packages/${PKG1}.remove ]; then
+					mv -f /root/.packages/${PKG1}.remove /root/.packages/remove-script/${PKGNAME}.remove 
+					fi
+					
+					if [ -f /root/.packages/${PKG1}.keyword ]; then
+					rm -f /root/.packages/${PKG1}.keyword
+					fi
+					
+					
+					DESKTOPFILE="`grep '\.desktop$' /root/.packages/package-files/${PKGNAME}.files | head -n 1`"
+					
+					dfile_tmp=`basename $DESKTOPFILE`
+					
+				    if [ -f $DESKTOPFILE ]; then 
+				   		 
+					 echo "Rebuild Icon"
+					 icon0="`cat $DESKTOPFILE | grep '^Icon=' | cut -f 2 -d '='`"
+					 icon1=`basename $icon0`
+					 
+					 iconloc=`find /usr -name $icon1 | grep ".xpm"`
+					 
+					 if [ "$iconloc" == "" ]; then
+					 iconloc=`find /usr -name $icon1 | grep ".png"`
+					 fi
+					 
+						 if [ "$iconloc" == "" ]; then	
+
+						 cat $DESKTOPFILE | grep -v "Icon=" > /tmp/$dfile_tmp
+						 
+							if [ -f /usr/local/${PKGNAME}/icon.xpm ]; then
+							echo "Icon=/usr/local/${PKGNAME}/icon.xpm" >> /tmp/$dfile_tmp
+							elif [ -f /usr/local/${PKGNAME}/icon.png ]; then
+							echo "Icon=/usr/local/${PKGNAME}/icon.png" >> /tmp/$dfile_tmp
+							else
+							echo "Icon=mini-dog.xpm" >> /tmp/$dfile_tmp
+							fi
+						 
+						 mv /tmp/$dfile_tmp $DESKTOPFILE
+						 
+						 /usr/sbin/fixmenus
+						 
+						 fi	 
+						 
+					 fi
+					
+					echo "$DB_ENTRY" >> /root/.packages/user-installed-packages
+
+			  fi
+		fi
+
+ 
+  
+  # popup a message if an error code was returned??
+fi
+
+
+# ----- cleanup the working space
+
+rm -f /root/.packages/packages.txt
+rm -f /root/.packages/alienpackages.txt
+rm -rf /root/DotPupTmpDir
+rm -rf /tmp/DotPupTmpDir
+
+# ---repair paths
+
+if [ -d /root/.etc ] && [ -L /root/.etc ]; then
+echo "symlink already"
+else
+cp -rf /root/.etc/* /etc/
+rm -rf /root/.etc
+ln -s /etc /root/.etc
+fi
+
+if [ -d /root/.usr ] && [ -L /root/.usr ]; then
+echo "symlink already"
+else
+cp -rf /root/.usr/* /usr/
+rm -rf /root/.usr
+ln -s /usr /root/.usr
+fi
+
+if [ -d /usr/share/doc ] && [ -L /usr/share/doc ]; then
+echo "symlink already"
+else
+cp -rf /usr/share/doc/* /usr/doc
+rm -rf /usr/share/doc
+ln -s /usr/doc /usr/share/doc
+fi

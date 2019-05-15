@@ -1,0 +1,72 @@
+#!/bin/sh
+
+#if [ $# -eq 0 ]; then
+#DEB=`$(Xdialog --title "Select file" --wrap --fselect *.pisi 0 0 2>&1)`
+#else
+PISI=$1
+#fi
+
+
+echo "Converting PISI to PET..."
+
+if [ -e "$PISI" ]; then
+for i in "$PISI"
+do
+FOLDR=$(echo $i|sed 's/\.pisi$//')
+done
+mkdir "$FOLDR"
+cp "$PISI" "$FOLDR"
+cd "$FOLDR"
+PISI=`ls | grep ".pisi"`
+unpar "$PISI"
+#undeb "$PISI"
+rm "$PISI"
+FOLDR=`basename "$FOLDR"`
+
+
+if [ -f ./metadata.xml ] && [ "$(which xmllint)" != "" ]; then
+
+#pkgname|nameonly|version|pkgrelease|category|size|path|fullfilename|dependencies|description|
+
+pkgname="$FOLDR"
+nameonly=`xmllint --xpath "/PISI/Package/Name" ./metadata.xml | sed -e "s#<Name>##g" -e "s#<\/Name>##g"`
+version=`xmllint --xpath "/PISI/Package/History/Update/Version" ./metadata.xml | sed -e "s#<\/Version><Version>#|#g" -e "s#<Version>##g" -e "s#<\/Version>##g" | cut -f 1 -d '|'`
+pkgrelease=`xmllint --xpath "/PISI/Package/History/Update/@release" ./metadata.xml | cut -f 2 -d '=' | cut -f 1 -d " "| sed -e "s#\"##g"`
+category=`xmllint --xpath "/PISI/Package/PartOf" ./metadata.xml | sed -e "s#<PartOf>##g" -e "s#<\/PartOf>##g"`
+size=`xmllint --xpath "/PISI/Package/InstalledSize" ./metadata.xml | sed -e "s#<InstalledSize>##g" -e "s#<\/InstalledSize>##g"`
+path=""
+fullfilename="$PISI"
+dependencies=""
+
+depstr=`xmllint --xpath "/PISI/Package/RuntimeDependencies/Dependency" ./metadata.xml | sed -e "s#<Dependency releaseFrom=\"[0-9][0-9]\">#<Dependency>#g" -e "s#<Dependency releaseFrom=\"[0-9]\">#<Dependency>#g" -e "s#<\/Dependency><Dependency># #g" -e "s#<Dependency>##g" -e "s#<\/Dependency>##g" `
+
+for dep1 in $depstr
+do
+ if [ "$dependencies" == "" ]; then
+ dependencies="+$dep1"
+ else
+ dependencies="$dependencies,+$dep1"
+ fi
+done 
+
+description=`xmllint --xpath "/PISI/Package/Summary" ./metadata.xml | sed -e "s#<Summary xml:lang=\"[Aa-Zz][Aa-Zz]\">##g" -e "s#<\/Summary>##g"`
+
+echo "$pkgname|$nameonly|$version|$pkgrelease|$category|$size|$path|$fullfilename|$dependencies|$description|" > ./pet.specs
+
+rm -f ./metadata.xml
+
+else
+echo "PETMENUDESCR=''" > "$FOLDR.pet.specs"
+echo "PETOFFICIALDEPS=''" >> "$FOLDR.pet.specs"
+echo "PETREGISTER='yes'" >> "$FOLDR.pet.specs"
+fi
+
+cd ..
+tar -cf "$FOLDR.tar" "$FOLDR"
+gzip "$FOLDR.tar"
+tgz2pet "$FOLDR.tar.gz"
+rm -R -f "$FOLDR"
+rm "$FOLDR.pisi"
+#petget "$FOLDR.pet"
+#rox
+fi

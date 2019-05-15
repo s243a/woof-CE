@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -x
+export DISPLAY=:0.0
+
+if [ "$1" == "" ]; then
+exit
+fi
+
+drv="$1"
+mnt1=0
+
+echo "new drive: $drv"
+
+exec xfmedia -c -p cdda:///dev/$drv 

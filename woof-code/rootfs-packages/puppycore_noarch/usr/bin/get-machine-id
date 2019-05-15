@@ -1,0 +1,14 @@
+#!/bin/sh
+#obtain new machine id
+#written by mistfire
+
+if [ "$(whoami)" != "root" ]; then
+ exec sudo -A $0 $@
+ exit
+fi
+
+guid=`cat /proc/sys/kernel/random/uuid | sed -e "s#-##g"`
+
+echo "$guid" > /var/lib/dbus/machine-id
+
+echo "Machine ID: $guid"

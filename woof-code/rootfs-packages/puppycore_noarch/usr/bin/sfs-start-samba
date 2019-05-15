@@ -1,0 +1,20 @@
+#!/bin/sh
+#start samba if found
+#written by mistfire
+
+if [ "$(which smbd)" == "" ]; then
+ exit 
+fi
+
+if [ "$(whoami)" != "root" ]; then
+ exec sudo -A $0 $@
+ exit 
+fi
+
+if [ "$(busybox pidof smbd)" == "" ]; then
+ smbd -D
+fi
+
+if [ "$(busybox pidof nmbd)" == "" ]; then
+ nmbd -D
+fi

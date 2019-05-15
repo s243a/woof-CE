@@ -1,0 +1,127 @@
+#!/bin/sh
+
+ARCH=`uname -m`
+
+. /etc/rc.d/PUPSTATE
+
+function set_xorg_video_driver() {
+	local vd
+	
+	[ -f /tmp/xorg.video.driver ] && read -r vd < /tmp/xorg.video.driver
+	
+	[ $1 ] && vd="$1"
+	
+	case $vd in
+		auto) RSTR='#	Driver      "vesa" #card0driver' ;;
+		"") return 1 ;;
+		*) RSTR='	Driver      "'${vd}'" #card0driver' ;;
+	esac
+	
+	echo $RSTR > /tmp/zz
+	
+	if [ -f /etc/X11/xorg.conf ] ; then
+		sed -i "s|.*#card0driver.*|${RSTR}|" /etc/X11/xorg.conf
+		rm -f /tmp/xorg.video.driver
+	else
+		echo -n "$vd" > /tmp/xorg.video.driver
+	fi
+}
+
+function set_xorg_color_depth() {
+	[ -f /tmp/xorg.depth ] && read -r XCD < /tmp/xorg.depth
+	
+	[ $1 ] && XCD="$1"
+	case $XCD in
+		16|24) ok=1 ;;
+		remove) remove=1 ;;
+		*) return 1 ;;
+	esac
+	
+	if [ -f /etc/X11/xorg.conf ] ; then
+		RSTR="		Depth       $XCD #screen0depth"
+	
+		if [ "$remove" = "1" ] ; then
+			XCD=$(grep 'screen0depth' /etc/X11/xorg.conf | grep -o 'Depth.*' | tr -s ' ' | cut -d ' ' -f2)
+			RSTR="#		Depth       $XCD #screen0depth"
+		fi
+	
+		sed -i "s|.*#screen0depth.*|${RSTR}|" /etc/X11/xorg.conf
+		rm -f /tmp/xorg.depth
+	
+	else
+		echo -n "$XCD" > /tmp/xorg.depth
+	fi
+}
+
+function set_xorg_screen_res() {
+	[ -f /tmp/xorg.res ] && read -r RES < /tmp/xorg.res
+	[ $1 ] && RES="$1"
+	case $RES in
+		*"x"*) ok=1 ;;
+		*) return 1 ;;
+	esac
+	if [ -f /etc/X11/xorg.conf ] ; then
+		RSTR="		Modes       \"${RES}\" #screen0modes"
+		sed -i "s|.*#screen0modes.*|${RSTR}|" /etc/X11/xorg.conf
+		rm -f /tmp/xorg.res
+	else
+		echo -n "$RES" > /tmp/xorg.res
+	fi
+	rm -f /etc/xrandrindex
+}
+
+if [ -f /var/local/xorg_udev ] ; then
+	cp -f /etc/X11/xorg.conf.udev /etc/X11/xorg.conf
+	THE_END=1
+else
+	cp -f /etc/X11/xorg.conf-auto-pc /etc/X11/xorg.conf
+fi
+
+set_xorg_video_driver
+set_xorg_screen_res
+set_xorg_color_depth
+
+if [ $THE_END ] ; then
+	echo "New xorg configuration generated"
+	exit ### exit ###
+fi
+
+TOUCHPAD=''
+OLD3='Section "Monitor"'
+
+[ "`grep 'Elantech' /proc/bus/input/devices`" ] && TOUCHPAD='Elantech'
+
+[ "`grep 'Alps' /proc/bus/input/devices`" ] && TOUCHPAD='Alps'
+
+[ "`grep 'Synaptics' /proc/bus/input/devices`" ] && TOUCHPAD='Synaptics'
+
+if [ "$TOUCHPAD" ];then
+ 
+ . /etc/rc.d/MODULESCONFIG #ADDLIST
+ 
+ if [ "`lsmod | grep '^evdev'`" = "" ];then
+   if ! ( grep 'ADDLIST' /etc/rc.d/MODULESCONFIG | grep evdev ) ; then
+     REGEXt0="s%^ADDLIST=.*%ADDLIST='${ADDLIST} evdev '%"
+     sed -i -e "$REGEXt0" /etc/rc.d/MODULESCONFIG #so evdev module will load next bootup.
+     modprobe evdev
+   fi
+ fi
+ 
+ #110913 create basic section...
+ REGEXt1='s%.*#loadsynaptics%	Load "synaptics" #loadsynaptics%'
+ REGEXt2='s%.*#serverlayoutsynaptics%	InputDevice "Synaptics Mouse" "AlwaysCore" #serverlayoutsynaptics%'
+ NEW3='Section "InputDevice"\
+	Identifier "Synaptics Mouse"\
+	Driver "synaptics"\
+	Option "SHMConfig" "on"\
+EndSection\
+\
+Section "Monitor"'
+
+ REGEXt3="s%${OLD3}%${NEW3}%"
+
+ sed -i -e "$REGEXt1" -e "$REGEXt2" -e "$REGEXt3" /etc/X11/xorg.conf
+ 
+ echo "New xorg configuration generated"
+
+fi

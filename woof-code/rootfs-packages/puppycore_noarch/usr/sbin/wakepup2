@@ -1,0 +1,76 @@
+#!/bin/sh
+#2007 Lesser GPL licence v2 (http://www.fsf.org/licensing/licenses/lgpl.html)
+
+MSG="
+Welcome! This little program will create a boot floppy disk, for booting puppy. WakePup2 is a floppy disk that will search for Puppy on USB, CD/DVD or hard drive and if found will boot puppy. A limitation is that Puppy must be installed in a FAT or NTFS partition on the USB or hard drive.
+
+Why use WakePup2? The most common reason is you have used the Puppy Universal Installer (see 'Setup' menu) to install Puppy to a USB Flash 'key' drive, but the PC refuses to boot from it. Or, you have a PC that has a CD drive but refuses to boot from it. This is a solution for such cantankerous PCs, but of course is not applicable if you have a modern sans-floppy-drive PC.
+
+Note, if you need to boot Puppy installed in a Linux partition (ext2, ext3, reiserfs, or minix), it is possible to create a GRUB boot floppy and this can be done when the 'Puppy Universal Installer' (in 'Setup' menu) is executed, or by selecting 'GRUB bootloader config' from the 'Control Panel' menu.
+(FAT is the filesystem used by MSDOS and Windows up to version 98 -- Windows XP can also be installed on a FAT partition but usually isn't, instead XP is usually in a NTFS partition. Note, in Linux we often refer to a FAT filesystem by the names 'msdos' and 'vfat', where 'msdos' refers to using the filesystem with only the 8.3 filename size, and 'vfat' is when long filenames are supported)
+
+PLEASE INSERT A FLOPPY DISK RIGHT NOW, then click the 'Create WakePup floppy' button... 
+"
+
+xmessage -wrap -bg "$BKCOLOR" -center -title "Wakepup" -geometry 400x300 -buttons "Create Wakepup:1,Cancel:0" -file -<<MSG1
+$MSG
+MSG1
+
+RETVAL=$?
+
+echo $RETVAL
+
+if [ $RETVAL -eq 1 ]; then
+RETSTR="WAKEPUP"
+fi
+
+if [ ! "`echo "$RETSTR" | grep "WAKEPUP"`" = "" ];then
+ while [ 1 ];do
+  /usr/lib/gtkdialog/box_splash -close never -text "Now writing WakePup2 disk image, please wait..." &
+  MSGID=$!
+  
+  if [ -f /lib/wakepup2.img ]; then
+  dd if=/lib/wakepup2.img of=/dev/fd0
+  elif [ -f /lib/wakepup2.img.gz ]; then
+  gunzip --stdout /lib/wakepup2.img.gz | dd of=/dev/fd0
+  elif [ -f /lib/wakepup2.img.xz ]; then
+  unxz --stdout /lib/wakepup2.img.xz | dd of=/dev/fd0
+  fi
+  
+  sync
+  
+  kill $MSGID
+  
+  if [ -f /lib/wakepup2.img ]; then
+	  /usr/lib/gtkdialog/box_splash -close never -text "Verifying floppy disk, please wait..." &
+	  MSGID=$!
+	  dd if=/dev/fd0 of=/tmp/wakepup2.img bs=512 count=2880
+	  sync
+	  MD5ORIG="`md5sum /lib/wakepup2.img | cut -f 1 -d " "`"
+	  MD5CHK="`md5sum /tmp/wakepup2.img | cut -f 1 -d " "`"
+	  sync
+	  rm -f /tmp/wakepup2.img
+	  kill $MSGID 2>/dev/null
+	  
+	  if [ "$MD5ORIG" = "$MD5CHK" ];then
+      xmessage -title "WakePup2: SUCCESS" -center "DONE! Please remove floppy"
+      break
+      else
+      xmessage -title "WakePup2: ERROR" -center -buttons "TRY_AGAIN:10,CANCEL:11" "There was an error writing to the floppy disk.
+If you want to try a different floppy disk, insert it right now.
+
+Click 'TRY_AGAIN' button to try again...
+or 'CANCEL' to give up..."
+      [ $? -ne 10 ] && break
+      fi
+  else
+  	  xmessage -title "WakePup2: SUCCESS" -center "DONE! Please remove floppy"
+  	  break
+  fi
+  
+  
+  
+ done
+fi
+
+###END###

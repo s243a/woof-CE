@@ -1,0 +1,1049 @@
+#!/bin/bash
+
+# f2fs insatller
+#  (c) copyright Michael Amadio, 2014, Gold Coast, Australia
+#  ALL RIGHTS RESERVED
+#  01micko@gmail.com
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#  
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
+# 
+# see /usr/share/doc/legal for full licence 
+# first version
+# wizard style script to install to an f2fs flash drive in puppylinux
+#-----------------------------------------------------------------------------#
+# depends: 
+# k >=3.8, with f2fs as builtin or module, or kernel patched for f2fs 
+# +gtkdialog >=0.8
+# +gtkdialog-splash
+# +Xdialog 
+# +gparted>=1.4.1 patched for f2fs
+# +gettext
+# +grub4dos
+# need PSAVEMARK
+#-----------------------------------------------------------------------------#
+
+[ "`whoami`" != "root" ] && exec sudo -A ${0} ${@} #110505
+
+ver=0.23
+
+# vars
+. /etc/DISTRO_SPECS
+. /etc/rc.d/PUPSTATE
+TMPMNT1=/mnt/f2fs1
+mkdir -p "$TMPMNT1"
+TMPMNT2=/mnt/f2fs2
+mkdir -p "$TMPMNT2"
+TMP=/tmp/f2fs$$
+mkdir -p "$TMP"
+ABTMSG=$(gettext "You aborted the installation.")
+FULLINST=yes
+MNTERR=$(gettext "Aborting... Failed to mount ")
+CPERR=$(gettext "Copy error")
+SYSDIR=`find /usr -type d -name syslinux`
+LABEL=""
+DISTRO=""
+VERSION=""
+INITRDXZ=""
+
+# functions====================================================================
+error_func() {
+	#rm -r "$TMP"
+	retval="$3"
+	color="$2"
+	[ "$retval" ] || color=red retval=$2
+	/usr/lib/gtkdialog/box_ok " " error "$1"
+	[ "$retval" ] && exit "$retval" || exit 1
+}
+
+# check running state, frugal and live only supported
+pupcheck() {
+	case "$PUPMODE" in
+	 2|3|6|7|77)error_func "Can't use this script, wrong pupmode" 255
+	 ;;
+	esac
+}
+
+# check f2fs support
+check_f2fs() {
+	ENOCFG=$(gettext "No kernel config found.")
+	DOTCFG="/etc/modules/DOTconfig*"
+	CFG=`cat $DOTCFG 2>/dev/null`
+	[ "$CFG" ] || CFIG=`zcat /proc/config.gz 2>/dev/null`
+	[ "$CFG" ] || error_func "$ENOCFG" 1
+	
+	if printf "$CFG"|grep -q 'CONFIG_F2FS_FS=y';then
+	  echo yes 
+	else
+	  ECFGMSG=$(gettext "f2fs not supported in kernel")
+	  error_func "$ECFGMSG" 2
+	fi
+}
+
+# check syslinux
+syslinux_chk() {
+	SYSERR1=$(gettext "Syslinux not found. Exiting")
+	SYSERR2=$(gettext "Syslinux verion is too old. Exiting")
+	type syslinux 2>/dev/null || error_func "$SYSERR1" $?
+	SYSVER=`syslinux -v 2>&1 >/dev/null |awk '{print substr($0,10,1)}'`
+	[ "$SYSVER" -lt 4 ] && error_func "$SYSERR2" $?
+}
+
+# find usb drive
+find_usb() {
+	probedisk|grep 'usb' > $TMP/f2fs-wiz-list
+	#probedisk > $TMP/f2fs-wiz-list
+	
+	if [ ! -s "$TMP/f2fs-wiz-list" ];then
+	  MSG2=\
+$(gettext "A USB drive can not be found. Is it plugged in? Exiting now")
+	  error_func "$MSG2" 3
+	fi
+}
+
+# check if previous f2fs exists
+exist_func() {
+	echo "======================"
+	echo "exist_func"
+	echo "======================"
+	FEXISTS=`probepart|grep -E 'f2fs'`
+	[ "$FEXISTS" ] && FPART2=`echo $FEXISTS|cut -d '|' -f1 |grep "2$"`
+	echo e="$FEXISTS"
+	[ "$FPART2" ] || func_gui1 No Yes 
+	FPART1=`echo "$FPART2" | sed 's%2$%1%'`
+	FPART1P=`probepart|grep -E $FPART1`
+	echo $FPART1P|grep -q 'ext2' || func_gui1 No Yes
+	EXINST=No
+	if [ "$FEXISTS" ];then
+	  #first we test if parts are empty, maybe pre-formatted
+	  FPART=${FPART1%[0-9]*}
+	  TMPMNT=/mnt/f2fs
+	  CONTENT=0
+	  for m in 1 2 ;do #=3
+	    #echo mtpt="${TMPMNT}${m}"
+	    mtype=`guess_fstype "${FPART}${m}"`
+	    
+	    mount|grep -q "${TMPMNT}${m}" || mount -t "$mtype" "${FPART}${m}" "${TMPMNT}${m}"
+	    CONTENTS=`ls "${TMPMNT}${m}"|wc -l`
+	    #mount|grep -q "${TMPMNT}${m}" && umount "${TMPMNT}${m}" #leave mounted for a bit
+	    echo -n "$CONTENTS "
+	    CONTENT=$(($CONTENT + $CONTENTS))
+	    [ "${TMPMNT}${m}" = "${TMPMNT1}" ] && echo -n '+ '
+	    umount "${TMPMNT}${m}"
+	  done
+	  echo "= $CONTENT"
+	  if [ "$CONTENT" -le 1 ];then #pre formatted; 1 because of /lost+found
+	    echo "$FPART1 $FPART2"
+	    #full_or_frugal yes "$FPART1" "$FPART2"
+	    func_gui1 No Yes
+	  else
+	    echo "$FPART1 $FPART2"
+	    # not empty
+	    # test for full. test for /etc/DISTRO_SPECS
+	    [ -f "${TMPMNT2}"/etc/DISTRO_SPECS ] && inst=full || inst=frugal
+	    if [ "$inst" = "full" ];then
+	      v=`grep "DISTRO_VERSION" "${TMPMNT2}"/etc/DISTRO_SPECS|cut -d '=' -f2`
+	      n=`grep "DISTRO_FILE_PREFIX" "${TMPMNT2}"/etc/DISTRO_SPECS|cut -d '=' -f2|tr -d "'"`
+	      d=${n}_${v}
+	      currd=${DISTRO_FILE_PREFIX}_${DISTRO_VERSION}
+	      if [ "$d" = "$currd" ];then
+	        mount|grep -q "${TMPMNT2}" && umount "${TMPMNT2}"
+	        UERR=$(gettext "The current version is the same as the old version. Not upgrading.")
+	        error_func "${UERR}" orange 66
+	      fi
+	      UTTL=$(gettext "F2FS installer - Upgrade")
+	      UMSG=$(gettext "Do you want to upgrade your full installation on ")
+	      Xdialog --title "$UTTL" \
+	      "$FULLB" --yesno "$UMSG ${FPART2}?" 0 0 0 
+	      case $? in
+		    0)func_full "$dev1" "$dev2" yes ;;
+		    *)mount|grep -q "${TMPMNT2}" && umount "${TMPMNT2}"
+		      error_func "$ABTMSG" yellow 0;;
+	      esac
+	      return 0
+	    fi
+	    EMSG1=$(gettext "seems to already be an f2fs partition")
+		EMSG2=$(gettext "Do you want to add another f2fs aware Puppy and make your drive multiboot?")
+		FMSG=$(gettext "This only works on FRUGAL type installs.")
+	    export egui='<window title="f2fs installer - multiboot" resizable="false">
+		  <vbox>
+			<frame>
+			  <text><label>"'"$FPART2 $EMSG1"'"</label></text>
+			  <text><label>"'"$EMSG2"'"</label></text>
+			  <text><label>"'"$FMSG"'"</label></text>
+			</frame>
+			<hbox homogeneous="true">
+			  <button yes></button><button no></button><button cancel></button>
+			</hbox>
+		  </vbox>
+		</window>'
+		eval `gtkdialog -p egui -c`
+		echo "$EXIT"
+	    case $EXIT in
+		  Yes)EXINST="yes";FULLINST="no" 
+		  add_func $FPART1 $FPART2;;
+		  abort|Cancel)error_func "$ABTMSG" yellow 0;;
+	      #*)NOMSG=$(gettext "You can try again later")
+	      #error_func "$NOMSG" orange 0;;
+	      *)func_gui1 No Yes ;;
+		esac
+	  fi
+	fi
+}
+
+# add multiboot
+add_func(){
+	echo "======================"
+	echo "add_func"
+	echo "======================"
+	dev1="$1" dev2="$2"
+	#echo "$LABEL"
+	## test same version don't already exist
+	#mount|grep -q "$TMPMNT1" || mount -t ext2 "$dev1" "$TMPMNT1"
+	#OLDLABEL=`grep "^MENU LABEL" "$TMPMNT1"/extlinux.conf|awk '{print $3,$4}'|\
+#grep -vE 'Windows|Boot from'|grep "${LABEL}$"` #if there returns $LABEL
+	#echo "$OLDLABEL"
+	#ISERR=$(gettext " installation already exists. Use a different version. Exiting.")
+	#if [ "$OLDLABEL" ];then
+	  #umount "$TMPMNT1"
+	  #error_func "$LABEL $ISERR" yellow 44
+	#fi
+	#umount "$TMPMNT1"
+	
+	# copy files
+	echo $dev1
+	func_frugal $dev1 $dev2 no
+	
+	# add entry to extlinux.conf
+	mount|grep -q "$TMPMNT1" || mount -t ext2 "$dev1" "$TMPMNT1"
+	NENTRY="LABEL ${LABEL%% *}
+MENU LABEL  ${LABEL}
+KERNEL /${HOMEDIR}/vmlinuz
+APPEND initrd=/${HOMEDIR}/initrd.gz pmedia=usbflash psavemark=2
+
+MENU SEPARATOR
+"
+
+	while read a
+	  do [ "`echo "$a"|grep 'windows'`" ] && break || echo $a >> $TMP/f2fs-part-a
+	  done <"$TMPMNT1"/extlinux.conf
+	echo "$NENTRY" >> $TMP/f2fs-part-a
+	echo 'LABEL windows
+MENU LABEL Windows
+COM32 chain.c32
+APPEND hd1 1 swap
+	
+MENU SEPARATOR
+	
+LABEL hd
+MENU LABEL Boot from 1st HD
+localboot -1
+' >>$TMP/f2fs-part-a
+
+    if [ "$INITRDXZ"="yes" ]; then
+    sed -i -e "s#initrd.gz#initrd.xz#g" $TMP/f2fs-part-a
+    fi
+
+	cat $TMP/f2fs-part-a >"$TMPMNT1"/extlinux.conf
+	mount|grep -q "$TMPMNT1" && umount "$TMPMNT1"
+	mount|grep -q "$TMPMNT2" && umount "$TMPMNT2" #precuation
+	
+	HAPPY=$(gettext "Everything looks good. Make sure $dev1 and $dev2 are unmounted and remove the media.")
+	HXMSG=$(gettext " Hopefully your device is now multiboot.")
+	error_func "$HAPPY $HXMSG" green 0 #not an error but a clean way to get out
+}
+
+# gui 1
+func_gui1() {
+	echo "======================"
+	echo "func_gui1"
+	echo "======================"
+	EXINST=$1 FULLINST=$2 FPART1=$3 FPART2=$4
+	echo "e=$EXINST f=$FULLINST 1=$FPART1 2=$FPART2"
+	if [ "$EXINST" = "No" ];then #big if
+	# construct gui 1
+	  DESC=$(gettext "USB device - ")
+	  while read line
+	    do dev="${line%%|*}"
+	    desc="${line##*|}"
+	    echo "<radiobutton>
+	     <label>$DESC $dev $desc</label>
+	     <variable>$dev</variable>
+	    </radiobutton>" >> $TMP/f2fs-wiz-radbtn
+	    done <"$TMP"/f2fs-wiz-list
+	  RADBTN=`cat $TMP/f2fs-wiz-radbtn`
+	  export gui1='<window title="f2fs usb installer - 1 v-'$ver'" resizable="false">
+	    <vbox space-expand="true" space-fill="true">
+	      <text use-markup="true"><label>"<b>'$(gettext "Welcome to the f2fs to usb drive installer wizard.")'</b>"</label></text>
+	      <hseparator></hseparator>
+	      <text><label>'$(gettext "Please choose the drive you wish to install to below.")'</label></text>
+	      <frame>
+	       '$RADBTN'
+	      </frame>
+	      <hbox homogeneous="true"><button ok></button></hbox>
+	    </vbox>
+	  </window>'
+	  gtkdialog -p gui1 > "$TMP"/f2fs-chosen
+	  CHOSEN=`grep "true" "$TMP"/f2fs-chosen|cut -d '=' -f1`
+	  echo $CHOSEN
+	  if [ ! "$CHOSEN" ];then 
+	    error_func "$ABTMSG" yellow 0
+	  fi
+	  DESC2=`grep "$CHOSEN" "$TMP"/f2fs-wiz-list|rev|cut -d '|' -f1|rev` 
+	  # splash some info
+	  DMSG1=$(gettext "You have chosen ")
+	  DMSG2=$(gettext "When you click OK gparted will open to allow you to partition your \
+drive. It is recommended to make the first partition ext2 of size 32 MB then partition the \
+rest of the drive with f2fs. Be sure the drive is not mounted and be aware that all data on \
+the drive will be destroyed. You may want to write this down.")
+	  DMSG3=$(gettext "Be sure to mark the first partition with the boot flag in gparted")
+	  export guigp='<window title="f2fs usb installer v-'$ver'" resizable="false">
+	    <vbox space-expand="true" space-fill="true">
+	      <frame>
+	        <text><label>"'"$DMSG1 $CHOSEN - $DESC2"'"</label></text>
+	        <text><label>"'"$DMSG2"'"</label></text>
+	        <text use-markup="true"><label>"<b>'"$DMSG3"'</b>"</label></text>
+	      </frame>
+	    <hbox homogeneous="true"><button ok></button></hbox>
+	    </vbox>
+	  </window>'
+	  eval `gtkdialog -p guigp -c`
+	  [ "$EXIT" = "abort" ] && error_func "$ABTMSG" yellow 0
+	  # run gparted on chosen partition
+	  GPERR=$(gettext "Gparted exited with an error. Exiting.")
+	  gparted "$CHOSEN"
+	  [ "$?" = 0 ] || error_func "$GPERR" $?
+	  dev1=${CHOSEN}1
+	  dev2=${CHOSEN}2
+	  sync
+	  # check fs type
+	  FSNOT=$(gettext " is the wrong filesystem for that partition!")
+	  Ex2=`guess_fstype $dev1`
+	  Fx2=`guess_fstype $dev2`
+	  [ "$Ex2" = "ext2" ] || error_func "$Ex2 $FSNOT" 255
+	  [ "$Fx2" = "f2fs" ] || error_func "$Fx2 $FSNOT" 255
+	  
+	  # check size, get away with 10M but we want at least 20, rec 32
+	  mount|grep -q "$TMPMNT1" || mount -t ext2 "$dev1" "$TMPMNT1"
+	  CSIZE=`df -m "$dev1"|awk '{print $2}'|tail -n1`
+	  if [ "$CSIZE" -lt 20 ];then
+	    SIZERR=$(gettext "Your boot partition is too small. Try again")
+	    umount "$TMPMNT1"
+	    error_func "$SIZERR" 77
+	  fi
+	  umount "$TMPMNT1"
+	  
+	  # check if boot flag set
+	  NOTBOOT=$(gettext " device is not bootable! Try again.")
+	  disktype "${CHOSEN}"|grep -q 'bootable'
+	  [ "$?" -ne 0 ] && error_func "$CHOSEN $NOTBOOT" 78
+	  
+	  # make bootable
+	  MBRF=(gettext "Failed to make bootable.")
+	  mbr_func "$CHOSEN"
+	  [ "$?" -ne 0 ] && error_func "$MBRF" "$?"
+	  
+	  FPART1=`probepart|grep -E 'ext2'|cut -d '|' -f1`
+	  FPART2=`probepart|grep -E 'f2fs'|cut -d '|' -f1`
+	
+	  rm $TMP/f2fs*
+	  # sanity check
+	  FST1=`guess_fstype "$dev1"`
+	  FST2=`guess_fstype "$dev2"`
+	  echo $FST1 $FST2
+	  MSG_FS1_1=$(gettext "is of type")
+	  MSG_FS1_2=$(gettext "it needs to be ext2. Exiting now.")
+	  MSG_FS2_2=$(gettext "it needs to be of type f2fs. Exiting now.")
+	  if ! [ "`echo $FST1|grep ext2`" ];then
+	    error_func "$dev1 $MSG_FS1_1 $FST1 ${MSG_FS1_2}" 4
+	  fi
+	  
+	  if ! [ "`echo $FST2|grep f2fs`" ];then
+	    error_func "$dev2 $MSG_FS1_1 $FST2 ${MSG_FS2_2}" 5
+	  fi
+	else
+	  dev1="$FPART1"
+	  dev2="$FPART2"
+	  CHOSEN=`echo $FPART1|tr -d '1'`
+	  echo $CHOSEN
+	  echo $FULLINST
+	  MBRF=(gettext "Failed to make bootable.")
+	  mbr_func "$CHOSEN"
+	  [ "$?" -ne 0 ] && error_func "$MBRF" "$?"
+	fi #end big if (start line ~252)
+	sync
+	if [ "$FULLINST" = "no" ];then
+	  func_frugal "$dev1" "$dev2"
+	else
+	  full_or_frugal "$FULLINST" "$dev1" "$dev2"
+	fi
+}
+
+# full or frugal
+full_or_frugal() {
+	echo "======================"
+	echo "full_or_frugal"
+	echo "======================"
+	FULLINST=$1 dev1=$2 dev2=$3
+	echo f="$FULLINST" 1="$dev1" 2="$dev2"
+	if [ "$FULLINST" != "no" ];then
+	  FULLB=$(gettext "FULL")
+	  FRUGALB=$(gettext "FRUGAL")
+	  FORKMSG=$(gettext "You can now decide if you want a \n\nFULL or FRUGAL\n\ninstall \
+of the f2fs filesystem USB device")
+	  Xdialog --title "f2fs v-$ver - Full or Frugal?" --ok-label "$FRUGALB" \
+	  --cancel-label "$FULLB" --yesno "$FORKMSG $CHOSEN" 0 0 0 
+	  case $? in
+		0)func_frugal "$dev1" "$dev2" ;;
+		1)func_full "$dev1" "$dev2";;
+		255)error_func "$ABTMSG" yellow 0;;
+	  esac
+	else func_frugal "$dev1" "$dev2"
+	fi
+}
+
+# choose pupmode
+pupmode_func () {
+	echo "======================"
+	echo "pupmode_func"
+	echo "======================"
+	# PUPMODE=13 can be replaced with PUPMODE=12 on f2fs
+	CMSG1=$(gettext "You have a choice of how your installation will run. Normally, USB \
+installations are cached in a temporary filesystem and written to disk periodically. This \
+has two drawbacks; RAM can quickly fill up and there is a heavy overhead of writing the \
+cache to disk at the end of the defined period, by default 30 minutes. The reason for this \
+was so that writes to the disk would be minimised. This can be avoided \
+by fooling the system into thinking it is a hard disk installation where all data is written \
+directly to the hard disk. The f2fs filesystem is designed to balance out wear.")
+	CMSG2=$(gettext "If you want to enable saving without the overhead of a temporary \
+filesystem and periodical large writes to disk choose Yes.")
+	export cgui='<window title="f2fs installer - choice" resizable="false">
+	    <vbox space-expand="true" space-fill="false">
+	      <frame>
+	        <text><label>"'"$CMSG1"'"</label></text>
+	        <text><label>""</label></text>
+	        <text use-markup="true"><label>"<b>'"$CMSG2"'</b>"</label></text>
+	      </frame>
+	      <hbox homogeneous="true">
+	        <button yes></button>
+	        <button no></button>
+	      </hbox>
+	    </vbox>
+	  </window>'
+	eval `gtkdialog -p cgui -c`
+	echo "$EXIT"
+	case "$EXIT" in
+	  Yes)pupmode=yes ;;
+	  No)pupmode=no ;;
+	  *)pupmode=abort;;
+	esac
+}
+
+# find and copy pup files
+copy_func(){
+	echo "======================"
+	echo "copy_func"
+	echo "======================"
+	# note, initrd and vmlinuz go to ext2
+	# puppy_*_*.sfs, z(a,y)drv_*_*.sfs to f2fs
+	SRCF="$1" dev1="$2" dev2="$3" BOOT="$4" #$4 only from func_frugal << add_func
+	PUPPY=`ls "$SRCF"|grep '^puppy_'|grep 'sfs$'`
+	DISTRO=`echo "$PUPPY"|cut -d _ -f2`
+	VERSION=`echo "$PUPPY"|cut -d _ -f3`
+	VERSION=${VERSION%.*}
+	LABEL="$DISTRO $VERSION"
+	echo "$LABEL"
+	echo "single boot - $BOOT"
+	mount|grep -q "$TMPMNT2" || mount -t f2fs "$dev2" "$TMPMNT2"
+	[ "$?" = "0" ] || error_func "$MNTERR $dev2" $?
+	# Only support root of drive for now.. 140702 change to subdir for frugal
+	HOMEDIR="${DISTRO}_${VERSION}"
+	mkdir -p "$TMPMNT2"/$HOMEDIR
+	
+	for s in `ls $SRCF|grep 'sfs$'`;do
+	  cp -a "${SRCF}"/"$s" "$TMPMNT2"/$HOMEDIR
+	done
+	touch "$TMPMNT2"/$HOMEDIR/USBFLASH
+	sync
+	PID=`cat /tmp/f2fs_pid`
+	kill -9 $PID
+	mount|grep -q "$TMPMNT2" && umount "$TMPMNT2"
+	mount|grep -q "$TMPMNT1" || mount -t ext2 "$dev1" "$TMPMNT1"
+	[ "$?" = 0 ] || error_func "$MNTERR ${dev1}" $?
+	mkdir -p "$TMPMNT1"/$HOMEDIR
+	#choice of pupmode
+	pupmode_func
+	echo "$pupmode"
+	[ "$pupmode" = "abort" ] && return 255; #abort .. see frugal_func
+	if [ "$pupmode" = "no" ];then
+		if [ -f "${SRCF}"/initrd.xz ]; then
+		INITRDXZ="yes"
+		cp -a "${SRCF}"/initrd.xz $HOMEDIR
+		elif [ -f "${SRCF}"/initrd.gz ]; then
+		INITRDXZ="no"
+		cp -a "${SRCF}"/initrd.gz $HOMEDIR
+		fi	
+	 cp -a "${SRCF}"/vmlinuz $HOMEDIR
+	 sync
+	else
+	  cp -a "${SRCF}"/vmlinuz "$TMPMNT1"/$HOMEDIR
+	  # expand initrd.gz and edit init in /tmp
+	  
+	  if [ -f "${SRCF}"/initrd.xz ]; then
+	      INITRDXZ="yes"
+		  INITMSG=$(gettext "Failed to edit the initrd.xz")
+		  cp -a "${SRCF}"/initrd.xz "$TMP"/
+		  mkdir -p "$TMP"/initrd
+		  cd "$TMP"/initrd
+		  unxz -t ../initrd.xz | cpio -i -d ;retval=$?
+		  # maybe making from USB f2fs PUPMODE={5,12}
+		  grep -q "PUPMODE\=13" init
+		  if [ "$?" -eq 0 ];then
+			sed -i 's%PUPMODE\=13%PUPMODE=12%g' init ;retval=$(($retval + $?))
+			rm ../initrd.xz #dispose of old
+			find . | cpio -o -H newc > ../initrd
+			xz --check=crc32 --x86 --lzma2=dict=1MB initrd
+			retval=$(($retval + $?))
+		  fi
+		  cd -
+		  [ "$retval" = 0 ] || error_func "$INITMSG" $retval
+		  cp -a "$TMP"/initrd.xz "$TMPMNT1"/$HOMEDIR
+	  elif [ -f "${SRCF}"/initrd.gz ]; then
+	      INITRDXZ="no"
+		  INITMSG=$(gettext "Failed to edit the initrd.gz")
+		  cp -a "${SRCF}"/initrd.gz "$TMP"/
+		  mkdir -p "$TMP"/initrd
+		  cd "$TMP"/initrd
+		  zcat ../initrd.gz | cpio -i -d ;retval=$?
+		  # maybe making from USB f2fs PUPMODE={5,12}
+		  grep -q "PUPMODE\=13" init
+		  if [ "$?" -eq 0 ];then
+			sed -i 's%PUPMODE\=13%PUPMODE=12%g' init ;retval=$(($retval + $?))
+			rm ../initrd.gz #dispose of old
+			find . | cpio -o -H newc | gzip -9 > ../initrd.gz ;retval=$(($retval + $?))
+		  fi
+		  cd -
+		  [ "$retval" = 0 ] || error_func "$INITMSG" $retval
+		  cp -a "$TMP"/initrd.gz "$TMPMNT1"/$HOMEDIR
+	  fi
+	  
+	fi
+	mount|grep -q "${SRCF}" && umount ${SRCF}
+	#mount|grep -q "$TMPMNT1" && umount "$TMPMNT1" #leave mounted
+	[ "$BOOT" = "no" ] || boot_func "$dev1" "$dev2" frugal 
+}
+
+# gui 2
+func_frugal() {
+	echo "======================"
+	echo "func_frugal"
+	echo "======================"
+	dev1="$1" dev2="$2"
+	[ "$3" ] && BOOT=no # passed to copy_func if multi boot
+	FMSG1=$(gettext "Now it's time to specify your files.")
+	FMSG2=$(gettext "Please choose where the Puppy files are located. \
+The Puppy <u>must</u> be f2fs compatible!!!")
+	export gui2='<window title="f2fs usb installer - frugal v-'$ver'" resizable="false">
+	  <vbox>
+	    <text use-markup="true"><label>"<b>'$FMSG1'</b>"</label></text>
+	    <hseparator></hseparator>
+	    <text use-markup="true"><label>"<i>'$FMSG2'</i>"</label></text>
+	    <frame>
+	     <hbox homogeneous="true">
+	       <radiobutton><label>cd</label><variable>rb0</variable></radiobutton>
+	       <radiobutton><label>iso image</label><variable>rb1</variable></radiobutton>
+	       <radiobutton><label>files</label><variable>rb2</variable></radiobutton>
+	     </hbox>
+	    </frame>
+	    <hbox homogeneous="true"><button ok></button></hbox>
+	  </vbox>
+	</window>'
+	gtkdialog -p gui2 > "$TMP"/f2fs-gui2
+	. "$TMP"/f2fs-gui2
+	# choice of where files are located
+	CPMSG1="$(gettext "Copying all the files to")"
+	CPMSG2="$(gettext ". Please wait...")"
+	case "$EXIT" in 
+	OK)if [ "$rb0" = "true" ];then
+		 /usr/lib/gtkdialog/box_splash -close never -text "$CPMSG1 $dev2 $CPMSG2" &
+		 CDPID=$!
+		 echo $CDPID > /tmp/f2fs_pid
+		 mkdir -p /mnt/isomnt #mountpoint
+		 
+		 if grep -qs '/mnt/sr0' /proc/mounts; then
+		 umount /mnt/sr0
+		 fi
+		 
+		 if [ ! -d /mnt/cdmnt ]; then
+		 mkdir /mnt/cdmnt
+		 fi
+		 
+		 mount -t iso9660 /dev/sr0 /mnt/cdmnt -o loop,ro
+		 
+		 if [ "$?" -ne 0 ];then
+		   sleep 1
+		   kill -9 "$CDPID"
+		   mount|grep -q 'cdmnt' && umount /mnt/cdmnt 2>/dev/null
+		   FAILCDMSG="$(gettext "Failed to mount the CD! Is it there? Exiting")"
+		   error_func "$FAILCDMSG" 9
+		 fi
+		 copy_func /mnt/cdmnt "$dev1" "$dev2" $BOOT
+		 if [ "$?" = 255 ];then
+		   kill -9 "$CDPID"
+		   mount|grep -q "$TMPMNT1" && umount "$TMPMNT1"
+		   mount|grep -q 'cdmnt' && umount /mnt/cdmnt
+		   error_func "$ABTMSG" $?
+		 fi
+		 
+	   elif [ "$rb1" = "true" ];then
+	     ISO="`Xdialog -title "f2fs - find ISO image" \
+	     -backtitle "$(gettext "Please find the Puppy ISO image\n\
+that you want to use for your install.")" \
+	     -stdout --no-buttons --no-cancel --fselect "*" 0 0`"
+	     [ ! $? -eq 0 ] && error_func "Something went wrong" 254
+	     if [ ! `echo $ISO|grep 'iso$'` ];then
+	       ISOMSG=$(gettext "is not an ISO image! Exiting")
+	       error_func "$ISO $ISOMSG" 253
+	     fi
+		 /usr/lib/gtkdialog/box_splash -close never -text "$CPMSG1 $dev2 $CPMSG2" &
+		 ISOPID=$!
+		 echo $ISOPID > /tmp/f2fs_pid
+		 mkdir -p /mnt/isomnt #mountpoint
+		 mount -t iso9660 "$ISO" /mnt/isomnt -o loop,ro
+		 if [ "$?" -ne 0 ];then
+		   sleep 1
+		   kill -9 "$ISOPID"
+		   mount|grep -q 'isomnt' && umount /mnt/isomnt 2>/dev/null
+		   CPISOMSG="$(gettext "Failed to mount the ISO! Is it valid? Exiting")"
+		   error_func "$CPISOMSG" 252
+		 fi
+		 copy_func /mnt/isomnt "$dev1" "$dev2" $BOOT
+		 if [ "$?" = 255 ];then
+		   kill -9 "$ISOPID"
+		   mount|grep -q "$TMPMNT1" && umount "$TMPMNT1"
+		   mount|grep -q 'isomnt' && umount /mnt/cdmnt
+		   error_func "$ABTMSG" $?
+		 fi
+		 
+		 
+	   else # extracted from PUI, BK
+	     SRCFPATH="`Xdialog -title "f2fs - find files" \
+	     -backtitle "$(gettext "Please find the latest Puppy files\nvmlinuz, initrd.gz and related \
+sfs files,\nTHEN HIGHLIGHT ANY ONE OF THEM in the right pane \nand click the OK button")" \
+	     -stdout --no-buttons --no-cancel --fselect "*" 0 0`"
+	     [ ! $? -eq 0 ] && exit
+	     SRCPATH="${SRCFPATH%/*}"
+	     if [ ! -f "${SRCPATH}"/initrd.gz ] && [ ! -f "${SRCPATH}"/initrd.xz ];then
+	       FAIL0MSG="$(gettext "No Puppy files found in that directory! Exiting")"
+	       error_func "$FAIL0MSG" 250
+	     fi
+	     echo "$SRCPATH"
+	     /usr/lib/gtkdialog/box_splash -close never -text "$CPMSG1 $dev2 $CPMSG2" &
+		 CDPID=$!
+		 echo $CDPID > /tmp/f2fs_pid
+		 copy_func $SRCPATH "$dev1" "$dev2" $BOOT
+	     if [ "$?" = 255 ];then
+		   kill -9 "$CDPID"
+		   mount|grep -q "$TMPMNT1" && umount "$TMPMNT1"
+		   error_func "$ABTMSG" $?
+		 elif [ "$?" -gt 0 ];then
+		   sleep 1
+		   kill -9 "$CDPID"
+		   FAIL1MSG="$(gettext "Failed to copy the files! Is the path valid? Exiting")"
+		   error_func "$FAIL1MSG" 251
+		   exit
+		 fi
+		 kill -9 "$CDPID"
+	   fi
+	;;
+	*)exit
+	;;
+	esac
+}
+
+# f2fs full install
+func_full () {
+	echo "======================"
+	echo "func_full"
+	echo "======================"
+	#always copies from the running frugal system
+	dev1="$1" dev2="$2"
+	[ "$3" ] && upgrade="$3"
+	echo "1=$dev1 2=$dev2"
+	KERNELVER=`uname -r`
+	CMSG1="$(gettext 'Please wait a long time, between 2 and 20 minutes depending on your CPU speed and the USB media speed. ')" 
+	CMSG2="$(gettext 'Copying Puppy files to ')" 
+	/usr/lib/gtkdialog/box_splash -close never -text "$CMSG1 $CMSG2 ${dev2}..." &
+	XPID=$! ####
+	mount|grep -q "$TMPMNT2" || mount -t f2fs "$dev2" "$TMPMNT2"
+	if [ "$?" -ne 0 ];then
+	  kill -9 "$XPID"
+	  error_func "$MNTERR" 255
+	fi
+	# this can take a while #routine similar to PUI
+	if [ ! "$PUP_LAYER" ];then 
+	  kill -9 "$XPID"
+	  error_func "Major error, bailing now!" 255
+	fi
+	echo -n " main sfs,"
+	cp -a -u --remove-destination /initrd${PUP_LAYER}/* $TMPMNT2/
+	if [ "$?" -ne 0 ];then
+	  kill -9 "$XPID"
+	  error_func "$CPERR" $?
+	fi
+	
+	# fix handling if separate zdrv file, + a + y
+	for d in z a y ; do
+	echo -n " ${d} drive,"
+	  [ -d /initrd/pup_"${d}"/ ] && \
+	  cp -a -u --remove-destination /initrd/pup_"${d}"/* "$TMPMNT2" 2>/dev/null
+	done
+	# put these modules back into the normal places...
+	if [ -d /lib/modules/"$KERNELVER"/initrd/* ];then
+	  echo -n " Kernel $KERNELVER modules,"
+	  cp -a -u --remove-destination /lib/modules/"$KERNELVER"/initrd/* \
+	  "$TMPMNT2"/lib/modules/"$KERNELVER"/
+	fi
+	if [ "$?" -ne 0 ];then
+	  kill -9 "$XPID"
+	  error_func "$CPERR" $?
+	fi
+	# fixup some stuff if missing
+	echo -n " DISTRO_SPECS,"
+	cp -af /etc/DISTRO_SPECS "$TMPMNT2"/etc
+	cp -af /etc/modules/modules.* "$TMPMNT2"/lib/modules/"$KERNELVER"/ 2>/dev/null
+	#if [ ! -f  "$TMPMNT2"/lib/modules/"$KERNELVER"/modules.builtin ] &&\
+	# [ ! -f  "$TMPMNT2"/lib/modules/$KERNELVER/modules.order ];then
+	#  kill -9 "$XPID"
+	#  error_func "$CPERR" $?
+	#fi
+	sync
+	echo -n " depmod,"
+	depmod -b "$TMPMNT2"
+	echo -n " keymaps, consolefonts"
+	if [ -d /lib/keymaps ];then
+	  mkdir -p "$TMPMNT2"/lib/keymaps
+	  cp -a -f /lib/keymaps/* "$TMPMNT2"/lib/keymaps/
+	  mkdir -p "$TMPMNT2"/lib/consolefonts
+	  cp -a -f /lib/consolefonts/* "$TMPMNT2"/lib/consolefonts/
+	fi
+	
+	mkdir "$TMPMNT2"/sys 2>/dev/null
+	rm -f "$TMPMNT2"/var/log/modprobes.log 2>/dev/null
+	echo '#ATADRIVES is all internal ide/pata/sata drives...' >> $TMPMNT2/etc/rc.d/PUPSTATE
+	echo "ATADRIVES='$ATADRIVES'" >> $TMPMNT2/etc/rc.d/PUPSTATE
+	sync
+	kill -9 "$XPID" #### killed progress splash
+	echo
+	# chroot to run rc.update
+	UMSG="$(gettext 'Please wait, executing rc.update script...')"
+	/usr/lib/gtkdialog/box_splash -close never -text "$UMSG" &
+	RCPID=$!
+	sleep 2
+	
+	FLAGDEVMISS=0
+	if [ ! -e "$TMPMNT2"/dev/null ];then #130613 recent pups have empty /dev. rc.update may need these...
+	  cp -a /dev/console $TMPMNT2/dev/
+	  cp -a /dev/null "$TMPMNT2"/dev/
+	  FLAGDEVMISS=1
+	fi
+	chroot "$TMPMNT2" /etc/rc.d/rc.update option2hdinstall 2>/dev/null
+	if [ "$FLAGDEVMISS" -eq 1 ];then #130613
+	  rm -f "$TMPMNT2"/dev/console
+	  rm -f "$TMPMNT2"/dev/null
+	fi
+	#(need to tell rc.update where src files are, as passed param)
+	sync
+	mv -f "$TMPMNT2"/etc/fstab "$TMPMNT2"/etc/fstab.bak
+	echo "/dev/$DESTPART     /            $DESTFS     defaults               0 1" > "$TMPMNT2"/etc/fstab
+	echo "none          /proc        proc     defaults               0 0" >> "$TMPMNT2"/etc/fstab
+	echo "none          /sys         sysfs    defaults               0 0" >> "$TMPMNT2"/etc/fstab
+	echo "none          /dev/pts     devpts   gid=2,mode=620         0 0" >> "$TMPMNT2"/etc/fstab
+	echo "/dev/fd0      /mnt/floppy  auto     noauto,rw              0 0" >> "$TMPMNT2"/etc/fstab
+	
+	sync
+	kill -9 "$RCPID"
+	echo
+	#before we bale we get the uuid of the f2fs partition
+	rootdev=`blkid $dev2|awk -F'"' '{print $2}'`
+	mount|grep -q "$TMPMNT2" && umount "$TMPMNT2"
+	
+	####### initrd.gz #########################################################
+	
+	IMSG=$(gettext 'Now building initial ramdisk')
+	/usr/lib/gtkdialog/box_splash -close never -text "$IMSG" &
+	IPID=$!
+	mount|grep -q $TMPMNT1 || mount -t ext2 $dev1 $TMPMNT1
+	INITSHELL=`find /usr/share -type d -name 'initrd-f2fs-skeleton'`
+	cp -a -u --remove-destination "$INITSHELL" /tmp/
+	echo "rootdev=$rootdev" > /tmp/initrd-f2fs-skeleton/init.cfg
+	# wait number
+	echo "WAIT=5" >> /tmp/initrd-f2fs-skeleton/init.cfg
+	
+	# find existing initrd
+	MAINSFS=`find /initrd/mnt/dev_save -name "$DISTRO_PUPPYSFS"|head -1`
+	mkdir -p /tmp/oldinitrd/init-tree
+	# boot from CD?
+	if [ ! "$MAINSFS" ];then
+		CDMSG=$(gettext 'Did you boot off CD or DVD? If so, make sure it is inserted now then close this box.')
+		/usr/lib/gtkdialog/box_ok " " info "$CDMSG"
+		sleep 2
+		[ ! -d /mnt/cdrom ] && mkdir /mnt/cdrom
+		mount -t iso9660 /dev/sr0 /mnt/cdrom -o ro
+		CDERR=$(gettext 'Failed to mount the disc. Exiting')
+		if [ $? -ne 0 ];then
+		  kill -9 "$IPID"
+		  error_func "$CDERR" $?
+		fi
+		
+		if [ -f /mnt/cdrom/initrd.xz ]; then
+		cp -af /mnt/cdrom/initrd.xz /tmp/oldinitrd
+		elif [ -f /mnt/cdrom/initrd.gz ]; then
+		cp -af /mnt/cdrom/initrd.gz /tmp/oldinitrd
+		fi
+		
+		cp -af /mnt/cdrom/vmlinuz "$TMPMNT1"
+	else	
+		INITLOC="${MAINSFS%/*}"
+		
+		if [ -f "$INITLOC"/initrd.xz ]; then
+		cp -af "$INITLOC"/initrd.xz /tmp/oldinitrd
+		elif [ -f "$INITLOC"/initrd.gz ]; then
+		cp -af "$INITLOC"/initrd.gz /tmp/oldinitrd
+		fi
+		
+		cp -a "$INITLOC"/vmlinuz "$TMPMNT1"
+	fi
+	cd /tmp/oldinitrd/init-tree
+	
+	if [ -f /tmp/oldinitrd/initrd.xz ]; then
+	comp1="xz"
+	unxz -t ../initrd.xz | cpio -i -d
+	elif [ -f /tmp/oldinitrd/initrd.gz ]; then
+	comp1="gz"
+	zcat ../initrd.gz | cpio -i -d
+	fi
+	
+	# copy busybox
+	cp -af bin/* /tmp/initrd-f2fs-skeleton/bin/
+	# copy modules #was .gz but may be uncompressed
+	for module in mmc_block.ko* \
+	mmc_core.ko* \
+	sdhci-pci.ko* \
+	sdhci.ko* \
+	tifm_sd.ko* \
+	tifm_7xx1.ko* \
+	tifm_core.ko* \
+	ssb.ko*
+	  do MOD=`find lib -type f -name "$module"`
+	  MODDIR="${MOD%/*}"
+	  mkdir -p /tmp/initrd-f2fs-skeleton/"$MODDIR" 2>/dev/null
+	  [ "$MODDIR" ] && cp -a $MOD /tmp/initrd-f2fs-skeleton/"$MODDIR"/
+	  done
+	  
+	# console fonts and keymaps
+	mkdir /tmp/initrd-f2fs-skeleton/lib/consolefonts
+	cp -a lib/consolefonts/* /tmp/initrd-f2fs-skeleton/lib/consolefonts
+	mkdir /tmp/initrd-f2fs-skeleton/lib/keymaps
+	cp -a lib/keymaps/* /tmp/initrd-f2fs-skeleton/lib/keymaps
+	
+	# build initrd
+	cd /tmp/initrd-f2fs-skeleton
+	
+	find . | cpio -o -H newc > ../initrd
+	
+	if [ "$comp1" == "xz" ]; then
+	xz --check=crc32 --x86 --lzma2=dict=1MB initrd
+	else
+	gzip initrd
+	fi
+	
+	cd /root
+	INITFMSG=$(gettext 'Building ramdisk failed. Exiting')
+	
+	if [ "$comp1" == "xz" ]; then
+	ls /tmp|grep -q initrd.xz
+	else
+	ls /tmp|grep -q initrd.gz
+	fi
+	
+	if [ $? -ne 0 ];then
+	  kill -9 "$IPID"
+	  error_func "$INITFMSG" $?
+	fi
+	kill -9 "$IPID"	
+	# copy to stick
+	MVMSG=$(gettext 'initrd.gz is built, moving to filesystem')
+	/usr/lib/gtkdialog/box_ok " " info "$MVMSG"
+	
+	if [ -f /tmp/initrd.xz ]; then
+	cp -a /tmp/initrd.xz "$TMPMNT1"
+	elif [ -f /tmp/initrd.gz ]; then
+	cp -a /tmp/initrd.gz "$TMPMNT1"
+	fi
+	
+	sync
+	rm -r /tmp/*initrd* #cleanup
+	#mount|grep -q "$TMPMNT1" && umount "$TMPMNT1" #leave mounted
+	if [ "$upgrade" = "yes" ];then #no need to run boot_func
+	  # fix up the extlinux.conf
+	  newlabel=${LABEL%% *}
+	  sed -i -e "s%$n%$newlabel%" -e "s%$n $v%$LABEL%" "$TMPMNT1"/extlinux.conf
+	  mount|grep -q "$TMPMNT1" && umount "$TMPMNT1"
+	  mount|grep -q "$TMPMNT2" && umount "$TMPMNT2" #precuation
+	  SSMSG=$(gettext "Your full f2fs installation is now ready.")
+	  error_func "$SSMSG" green 0
+	else
+	  boot_func "$dev1" "$dev2" full
+	fi
+}
+
+# fix mbr
+mbr_func () {
+	device="$1"
+	echo "======================"
+	echo "mbr_func"
+	echo "======================"
+	dd if=${device} of=/tmp/mbr_old.bin bs=446 count=1
+	
+	dd if=${SYSDIR}/mbr.bin of=${device} bs=440 count=1 conv=notrunc
+	retval="$?"
+	return $retval
+}
+
+# extlinux - make bootable
+boot_func() {
+	echo "======================"
+	echo "boot_func"
+	echo "======================"
+	dev1="$1" dev2="$2" type="$3"
+	SYSPLASH=$(gettext "Now installing syslinux in to ")
+	/usr/lib/gtkdialog/box_splash -close never -text "$SYSPLASH $dev1" &
+	xpid=$!
+	extlinux -i "$TMPMNT1"
+	for b in vesamenu.c32 chain.c32;do 
+	   cp ${SYSDIR}/$b "$TMPMNT1" 2>/dev/null #top level
+	done
+	kill $xpid
+	sync
+
+# build extlinux.conf	
+cat > "$TMPMNT1"/extlinux.conf <<_EOL
+PROMPT 0
+TIMEOUT 80
+DEFAULT /vesamenu.c32
+MENU RESOLUTION 1024 768
+MENU BACKGROUND /img/default.jpg
+MENU TITLE Puppy Linux
+
+MENU WIDTH 30
+MENU MARGIN 2
+MENU ROWS 15
+MENU HELPMSGROW 19
+MENU TIMEOUTROW 20
+MENU TABMSGROW 21
+MENU CMDLINEROW 23
+MENU HSHIFT 50
+MENU VSHIFT 5
+
+	menu color screen	37;40      #00000000 #00000000 none
+	menu color border	30;44      #00000000 #00000000 none
+	menu color title	1;36;44    #00000000 #00000000 none
+	menu color unsel	37;44      #ff6a6a6a #00000000 none
+	menu color hotkey	1;37;44    #ff6a6a6a #00000000 none
+	menu color sel		7;37;40    #ffffffff #ff6a6a6a none
+	menu color hotsel	1;7;37;40  #ff808080 #ff6a6a6a none
+	menu color scrollbar	30;44      #00000000 #00000000 none
+
+	menu color tabmsg	31;40      #aaaaaaaa #00000000 none
+	menu color cmdmark	1;36;40    #ffff0000 #00000000 none
+	menu color cmdline	37;40      #aaaaaaaa #00000000 none
+	menu color pwdborder	30;47      #ffff0000 #00000000 std
+	menu color pwdheader	31;47      #ffff0000 #00000000 std
+	menu color pwdentry	30;47      #ffff0000 #00000000 std
+	menu color timeout_msg	37;40      #aaaaaaaa #00000000 none
+	menu color timeout	1;37;40    #ffaaaaff #00000000 none
+	menu color help		37;40      #aaaaaa00 #00000000 none
+	menu color msg07	37;40      #90ffffff #00000000 std
+
+_EOL
+	case "$type" in
+	frugal)
+cat >> "$TMPMNT1"/extlinux.conf <<_EOF
+LABEL ${LABEL%% *}
+MENU LABEL  $LABEL
+KERNEL /${HOMEDIR}/vmlinuz
+APPEND initrd=/${HOMEDIR}/initrd.gz pmedia=usbflash psavemark=2
+
+MENU SEPARATOR
+
+
+LABEL windows
+MENU LABEL Windows
+COM32 chain.c32
+APPEND hd1 1 swap
+
+MENU SEPARATOR
+
+LABEL hd
+MENU LABEL Boot from 1st HD
+localboot -1
+_EOF
+	;;
+	full)
+	#LABEL="${LABEL} Full"
+cat >> "$TMPMNT1"/extlinux.conf <<_EOF
+LABEL ${DISTRO_FILE_PREFIX}
+MENU LABEL  "${DISTRO_FILE_PREFIX} ${DISTRO_VERSION}"
+KERNEL /vmlinuz
+APPEND initrd=/initrd.gz
+
+MENU SEPARATOR
+
+LABEL windows
+MENU LABEL Windows
+COM32 chain.c32
+APPEND hd1 1 swap
+
+MENU SEPARATOR
+
+LABEL hd
+MENU LABEL Boot from 1st HD
+localboot -1
+_EOF
+	;;
+	esac
+	
+	if [ "$INITRDXZ" == "yes" ]; then
+	sed -i -e "s#initrd.gz#initrd.xz#g" "$TMPMNT1"/extlinux.conf
+	fi
+
+	mount|grep -q "$TMPMNT1" && umount "$TMPMNT1"
+	mount|grep -q "$TMPMNT2" && umount "$TMPMNT2" #precuation
+	
+	HAPPY=$(gettext "Everything looks good. Make sure $dev1 and $dev2 are unmounted and remove the media.")
+	[ "$type" = "frugal" ] && HXMSG=$(gettext " After first boot it is best to choose the \
+'save folder' option or if on an older version save to the entire partition to take advantage of f2fs.")
+	/usr/lib/gtkdialog/box_ok "f2fs installer" info "$HAPPY $HXMSG" #not an error, but a clean get out!
+}
+
+
+#main =========================================================================
+check_f2fs
+pupcheck
+syslinux_chk
+find_usb
+exist_func
+[ -d "$TMP" ] && rm -r $TMP #cleanup
+exit $?

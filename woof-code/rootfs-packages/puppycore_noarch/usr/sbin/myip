@@ -1,0 +1,5 @@
+#!/bin/sh
+# returns our actual IP address
+#   - jafa
+echo "     Current IP: `wget -O - -q http://icanhazip.com`"
+

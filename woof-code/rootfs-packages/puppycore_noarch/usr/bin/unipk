@@ -1,0 +1,10 @@
+#!/bin/sh
+
+IPK="$1"
+
+tar -zxf $IPK
+
+rm ./debian-binary
+#rm ./control.tar.gz
+tar -zxf ./data.tar.gz
+rm ./data.tar.gz

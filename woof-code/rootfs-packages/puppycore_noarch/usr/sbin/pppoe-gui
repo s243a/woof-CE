@@ -1,0 +1,54 @@
+#!/bin/sh
+#Barry Kauler 2008, for Puppy Linux. Totally free script.
+
+export MAIN_DIALOG="
+<window title=\"PPPOE\" icon-name=\"gtk-network\" resizable=\"false\">
+ <vbox>
+ <hbox>
+	<vbox>
+	<frame Settings>
+		 <hbox>
+			<text><label>$(gettext "Client setup")</label></text>
+			<button>
+				<input file icon=\"gtk-execute\"></input>
+				<action>rxvt -e pppoe-setup &</action>
+			</button>
+		</hbox>
+	 
+		 <hbox>
+			<text><label>$(gettext "View status")</label></text>
+			<button>
+				<input file icon=\"gtk-print-report\"></input>
+				<action>rxvt -e pppoe-status &</action>
+			</button>
+		</hbox> 
+	</frame>	
+	</vbox>
+	
+	<vbox>
+	<frame Connection>
+		 <hbox>
+			<text><label>$(gettext "Connect")</label></text>
+			<button>
+				<input file icon=\"gtk-apply\"></input>
+				<action>rxvt -e pppoe-start &</action>
+			</button>
+		</hbox>
+	 
+		 <hbox>
+			<text><label>$(gettext "Disconnect")</label></text>
+			<button>
+				<input file icon=\"gtk-cancel\"></input>
+				<action>rxvt -e pppoe-stop &</action>
+			</button>
+		</hbox> 
+		</frame>
+	</vbox>
+  </hbox>
+ </vbox>
+</window>
+"
+
+gtkdialog --center --program=MAIN_DIALOG
+
+###END###

@@ -1,0 +1,49 @@
+#!/bin/bash 
+
+if [ "$1" == "" ]; then
+echo "specify floppy device name"
+exit 
+fi 
+
+fd1="$1"
+
+if [ ! -b /dev/$fd1 ]; then
+echo "Block device not found"
+exit
+fi
+
+DIR="/mnt/$fd1"
+FS=`probepart | grep $fd1 | awk -F'|' '{print $2}'`
+FD=`grep $fd1 /etc/mtab`
+
+if [ "$FD" != "" ]; then
+
+  . /usr/lib/gtkdialog/box_yesno "Unmount Floppy" "NOTICE: $fd1 is already mounted" "Do you want to unmount this floppy?" "Choosing NO will just open the file manager"
+  
+  if [ "$EXIT" == "no" ]; then
+  exo-open "$DIR"
+  exit
+  fi
+
+   notify -i floppy48 -t 3000 "Unmounting fd0..."
+   umount $DIR
+else
+     if [ "$FS" != "none" ]; then
+     mkdir "$DIR" 
+     notify -i floppy48 -t 3000 "Mounting fd0..."
+     mount /dev/$fd1 "$DIR" 
+     
+     if [ $? -eq 0 ]; then
+     exo-open "$DIR"
+     else
+     notify -i floppy48 -t 3000 "Mounting fd0 failed" "There is no disk or filesystem"
+     fi
+     
+     elif 
+     [ "$FS" = none ]; then
+     notify -i floppy48 -t 3000 "Mounting fd0 failed" "There is no disk or filesystem"
+     exit 0 
+     fi 
+fi
+
+exit 0

@@ -1,0 +1,189 @@
+#! /bin/bash 
+
+# 4sep12 elroy: save current powermode to /root/.lastpmode. Value to be used by /root/Startup/9acpid on next start to restore last used CPU powermode.
+# 11dec12 Geoffrey: remember last action /root/.shutdown_action
+# 15dec12 elroy: added gtk-update-icon-cache to reduce savefile size.
+# 4sep12 elroy: save current powermode to /root/.lastpmode. Value to be used by /root/Startup/9acpid on next start to restore last used CPU powermode.
+# 19apr13 Geoffrey add extra yad compatible options from version 0.18.0 onward
+# 18sept17 mistfire: add hibernation support
+
+. /etc/rc.d/PUPSTATE
+BUTTON_LAYOUT="--buttons-layout=center"
+FIXED="--fixed"
+VERSION=`yad --version`
+if [ "$VERSION" = 0.12.4 ]; then
+BUTTON_LAYOUT=""
+FIXED=""
+fi
+
+if [ -f /root/.acpid_on ] ; then
+   echo $(cat /etc/acpi/powermode) > /root/.lastpmode
+fi
+
+PUPMODE=`cat /etc/rc.d/PUPSTATE |head -n 1|cut -f2 -d=`
+
+if [ $PUPMODE -eq 77 ] ; then
+   SAVEBUTTON="Save to CD/DVD"
+elif [ $PUPMODE -eq 3 -o $PUPMODE -eq 7 -o $PUPMODE -eq 13 ] ; then
+   SAVEBUTTON="Save Puppy"
+fi
+
+# 11dec12 Geoffrey: remember last action /root/.shutdown_action
+LAST_ACTION=`awk 'NR==1' < ~/.shutdown_action`
+if [ "$LAST_ACTION" = "" ]; then
+LAST_ACTION="Shutdown"
+else
+LAST_ACTION=$LAST_ACTION
+fi
+
+. /etc/DISTRO_SPECS
+
+echo $ENVD
+
+if [ "$SAVEBUTTON" != "" ]; then
+action=$(yad $FIXED $BUTTON_LAYOUT --width 300 --entry --title "$DISTRO_NAME $DISTRO_VERSION" \
+   --window-icon=shutdown48 \
+    --image=shutdown48 \
+    --button="gtk-ok:0" --button="gtk-cancel:1"\
+    --text "Choose action:" \
+    --entry-text \
+    "$LAST_ACTION" "Shutdown" "Reboot" "Change Desktop Environment" "Restart X Windows" "Exit to Prompt" "Sleep" "Hibernate" "Lock" "Task Manager" "$SAVEBUTTON")
+else
+action=$(yad $FIXED $BUTTON_LAYOUT --width 300 --entry --title "$DISTRO_NAME $DISTRO_VERSION" \
+   --window-icon=shutdown48 \
+    --image=shutdown48 \
+    --button="gtk-ok:0" --button="gtk-cancel:1"\
+    --text "Choose action:" \
+    --entry-text \
+    "$LAST_ACTION" "Shutdown" "Reboot" "Change Desktop Environment" "Restart X Windows" "Exit to Prompt" "Sleep" "Hibernate" "Lock" "Task Manager")
+fi
+
+
+ret=$?
+
+
+[[ $ret -eq 1 ]] && exit 0
+
+# 15dec12 elroy: added gtk-update-icon-cache to reduce savefile size.
+gtk-update-icon-cache -f -i /usr/share/icons/hicolor
+
+case $action in
+    Lock*)
+    echo Lock > ~/.shutdown_action
+    Xlock &
+    exit
+    ;;
+    
+    Shutdown*)
+    echo Shutdown > ~/.shutdown_action
+    wmpoweroff &
+    exit
+    ;;
+    
+    Sleep*)
+    
+    if [ ! -d /proc/acpi ] && [ ! -d /proc/apm ]; then
+    /usr/lib/gtkdialog/box_ok "Notice" error "This computer has lack of power management" "This feature is currently unavailable"
+    exit
+    elif [ ! -d /proc/acpi ] && [ -d /proc/apm ]; then
+    /usr/lib/gtkdialog/box_ok "Notice" error "This feature is not currently unavailable for APM computer"
+    exit
+    else
+    echo Suspend > ~/.shutdown_action
+    /etc/acpi/actions/suspend.sh &
+    exit 0
+    fi
+    ;;
+    
+    Hibernate*)
+    
+    PART=`fdisk -l |grep swap |head -n 1|cut -f1 -d\ `
+    
+    
+    SWAPSIZE=`expr $(cat /proc/swaps | grep -e '/dev/[h|s]d[a-z][0-9]' | head -n 1 | awk '{ print $3 }')`
+
+	if [ "$SWAPSIZE" != "" ]; then
+	SWAPSIZE=`expr $(cat /proc/swaps | grep -e '/dev/[h|s]d[a-z][0-9]' | head -n 1 | awk '{ print $3 }') / 1024`
+	else
+	SWAPSIZE=0
+	fi
+
+	RAMSIZE=$(free | grep -o 'Mem: .*' | tr -s ' ' | cut -f 2 -d ' ')
+
+	if [ "$RAMSIZE" != "" ]; then
+	RAMSIZE=`expr $(free | grep -o 'Mem: .*' | tr -s ' ' | cut -f 2 -d ' ') / 1024`
+	else
+	RAMSIZE=0
+	fi
+        
+    if [ ! -d /proc/acpi ] && [ ! -d /proc/apm ]; then
+    /usr/lib/gtkdialog/box_ok "Notice" error "This computer has lack of power management" "This feature is currently unavailable"
+    exit
+    elif [ ! -d /proc/acpi ] && [ -d /proc/apm ]; then
+    /usr/lib/gtkdialog/box_ok "Notice" error "This feature is not currently unavailable for APM computer"
+    exit
+    elif [ ! -e /sys/power/resume ]; then
+    /usr/lib/gtkdialog/box_ok "Notice" error "Hibernation is currently not supported"
+    exit
+    elif [ "$PART" == "" ]; then
+    /usr/lib/gtkdialog/box_ok "Notice" error "No swap partition for hibernation"
+    exit
+    elif [ $PUPMODE -eq 5 ]; then
+    /usr/lib/gtkdialog/box_ok "Notice" error "Save your session first"
+    exit
+    elif [ $PUPMODE -eq 77 ]; then
+    /usr/lib/gtkdialog/box_ok "Notice" error "Hibernation is currently not supported on multisession mode"
+    exit
+    elif [ $SWAPSIZE -lt $RAMSIZE ]; then
+    /usr/lib/gtkdialog/box_ok "Notice" error "Unable to hibernate because the swap partition size is smaller than RAM"
+    exit
+    else
+    echo Hibernate > ~/.shutdown_action
+    /etc/acpi/actions/hibernate.sh &
+    exit 0
+    fi
+    ;;
+    
+    Reboot*) 
+    echo Reboot > ~/.shutdown_action
+    exec wmreboot &
+    exit;;
+    
+    "Restart X Windows"*)
+    echo Restart X Windows > ~/.shutdown_action
+    exec restartwm 
+    exit
+    ;;
+    
+    "Exit to Prompt"*) 
+    echo Exit to Prompt > ~/.shutdown_action
+    exec wmexit &
+    exit
+    ;;
+    
+    "Task Manager"*)
+    echo Task Manager > ~/.shutdown_action
+    exec lxtask &
+    exit
+    ;;
+    "Save Puppy"*)
+    echo $SAVEBUTTON > ~/.shutdown_action
+    exec save2flash &
+    exit 0
+    ;;
+    "Save to CD/DVD"*)
+    echo $SAVEBUTTON > ~/.shutdown_action
+    exec savesession-dvd &
+    exit 0
+    ;;
+    
+    "Change Desktop Environment"*)
+    echo $SAVEBUTTON > ~/.shutdown_action
+    exec desktop-env-switch &
+    exit 0
+    ;;
+    
+    *) exit 1 ;;       
+esac
+
+exit

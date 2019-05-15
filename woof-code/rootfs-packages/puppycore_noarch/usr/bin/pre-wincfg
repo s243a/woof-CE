@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ "$(which winecfg)" == "" ]; then
+/usr/lib/gtkdialog/box_ok "Notice" info "Please install WINE to enable this feature" "Wine is a compatibility layer. You can get it on Puppy Package Manager or download it from the internet"
+exit
+fi
+
+exec winecfg

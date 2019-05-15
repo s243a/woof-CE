@@ -1,0 +1,128 @@
+#!/bin/sh
+
+#if [ $# -eq 0 ]; then
+#DEB=`$(Xdialog --title "Select file" --wrap --fselect *.DSL 0 0 2>&1)`
+#else
+#fi
+
+if [ $# -eq 0 ]; then
+echo "Usage: dsl2pet <filename>"
+echo "Converts Damn Small Linux Package to PET Package"
+else
+DSL=$1
+
+echo "Converting DSL to PET..."
+if [ -e "$DSL" ]; then
+
+FOLDR=`basename $DSL .dsl`
+
+mkdir "$FOLDR"
+cp "$DSL" "$FOLDR"
+cd "$FOLDR"
+cpath=`pwd`
+DSL=`ls | grep ".dsl"`
+undsl "$DSL"
+rm "$DSL"
+
+iconpath=""
+
+
+	if [ -f $cpath/tmp/mydsl.menu/$FOLDR ]; then
+	
+	
+	while IFS='' read -r line || [[ -n $line ]]
+	do
+	
+		execfound=`echo $line | cut -f 2 -d "[" | cut -f 1 -d "]"`
+
+		if [ "$execfound" == "exec" ]; then
+		
+		echo "$line"
+
+		appname=`echo $line | cut -f 2 -d "(" | cut -f 1 -d ")"`
+		binname=`echo $line | cut -f 2 -d "{" | cut -f 1 -d "}"`
+
+		if [ ! -d $cpath/usr ]; then
+		mkdir $cpath/usr
+		fi
+
+		if [ ! -d $cpath/usr/share ]; then
+		mkdir $cpath/usr/share	
+		fi
+
+		if [ -d $cpath/tmp/mydsl.icons ]; then
+
+			if [ ! -d $cpath/usr/share/pixmaps ]; then
+			mkdir $cpath/usr/share/pixmaps	
+			fi
+
+			if [ -f $cpath/tmp/mydsl.icons/$FOLDR.xpm ]; then
+			iconpath="$cpath/tmp/mydsl.icons/$FOLDR.xpm"
+			iconb=`basename $iconpath`
+			elif [ -f $cpath/tmp/mydsl.icons/$FOLDR.png ]; then
+			iconpath="$cpath/tmp/mydsl.icons/$FOLDR.png"
+			iconb=`basename $iconpath`
+			elif [ -f $cpath/usr/share/pixmaps/$FOLDR.xpm ]; then
+			iconpath="$cpath/usr/share/pixmaps/$FOLDR.xpm"
+			iconb=`basename $iconpath`
+			elif [ -f $cpath/usr/share/pixmaps/$FOLDR.png ]; then
+			iconpath="$cpath/usr/share/pixmaps/$FOLDR.png"
+			iconb=`basename $iconpath`
+			fi
+			
+			if [ "$iconpath" != "" ]; then
+			cp $iconpath $cpath/usr/share/pixmaps/$iconb
+			iconpath="/usr/share/pixmaps/$iconb"
+			fi
+		fi
+
+
+		if [ ! -d $cpath/usr/share/applications ]; then
+		mkdir $cpath/usr/share/applications	
+		fi
+
+		PKGNAME="$appname"
+
+		echo "[Desktop Entry]" > $cpath/usr/share/applications/${PKGNAME}.desktop
+		echo "Encoding=UTF-8" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+		echo "Type=Application" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+		echo "Name=$appname" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+		echo "Comment=Damn Small Linux application" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+		echo "Exec=$binname" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+
+			if [ "$iconpath" != "" ]; then
+			echo "Icon=$iconpath" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+			else
+			echo "Icon=mini-dog.xpm" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+			fi
+
+		echo "Terminal=false" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+		echo "Categories=Utility;All;Applications;App;Apps;Program" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+		echo "StartupNotify=false" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+
+		fi
+	
+	done < $cpath/tmp/mydsl.menu/$FOLDR
+
+	rm -rf $cpath/tmp/mydsl.menu
+	rm -rf $cpath/tmp/mydsl.icons
+
+	fi
+
+
+FOLDR=`basename "$FOLDR"`
+echo "PETMENUDESCR=''" > "$FOLDR.pet.specs"
+echo "PETOFFICIALDEPS=''" >> "$FOLDR.pet.specs"
+echo "PETREGISTER='yes'" >> "$FOLDR.pet.specs"
+
+cd ..
+tar -cf "$FOLDR.tar" "$FOLDR"
+gzip "$FOLDR.tar"
+tgz2pet "$FOLDR.tar.gz"
+rm -R -f "$FOLDR"
+rm "$FOLDR.dsl"
+#petget "$FOLDR.pet"
+#rox
+fi
+
+fi

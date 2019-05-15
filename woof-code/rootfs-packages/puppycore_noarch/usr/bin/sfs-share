@@ -1,0 +1,88 @@
+#!/bin/bash -x
+#Simple File Sharing v3.0
+#June 5 2013 by rg66 and Geoffrey
+#Feb 18 2016 rg66 edit for Samba 4
+
+if [ "$(which smbd)" == "" ]; then
+/usr/lib/gtkdialog/box_ok "Simple File Sharing" error "Install samba first to use this application"
+exit
+fi
+
+if [ "$(whoami)" != "root" ]; then
+exec sudo -A $0 $@
+exit
+fi
+
+[ ! -f /etc/simple-filesharing-setup.conf ] && sfs-setup && exit
+
+DIR="$1"
+
+SNAME=`basename $DIR`
+
+[ "$DIR" = "" ] && DIR=`cat /tmp/sfs-path`
+echo $DIR > /tmp/sfs-path
+
+if [ "$DIR" = / ]; then
+TEXT="<b>\n You cannot share '"$DIR"' \n</b>"
+yad --title="SFS" --window-icon="folder-publicshare" --fixed --text="$TEXT" --timeout="2" --borders="5" --no-buttons 
+exit 0
+fi
+
+[ "`grep -x "path = $DIR\|;path = $DIR" /etc/samba/smb.conf`" ] && sfs-edit && exit 0
+
+CONFIG=$(yad --center --title="SFS New Share" --fixed --window-icon="folder-publicshare" --form  \
+--field="Shared Folder:EB" "$DIR" --field="Share Name:EB" "$SNAME" --field="Make shared folder writable:CHK" "" \
+--field="Show hidden files and folders:CHK" "" --field="Do not require users to login:CHK" "" \
+--separator=" " --buttons-layout="center" --button="gtk-apply:0" --button="Setup:1" --button="gtk-close:2")
+
+case $? in
+0) NEWSHARE=`echo $CONFIG | awk '{print $2}'`
+   SHARENAME=`grep -F "[$NEWSHARE]" /etc/samba/smb.conf | tr -d '[]'`
+   if [ "$NEWSHARE" = root ]; then
+     TEXT="<b>\n You cannot use '"$NEWSHARE"' as a share name \n</b>"
+     yad --center --title="SFS" --window-icon="folder-publicshare" --text="$TEXT" --timeout="2" --borders="5" --no-buttons
+     sed -i '$ d' /etc/samba/smb.conf
+     sfs-share && exit 0
+   elif [ "$SHARENAME" != "" ]; then
+     TEXT="<b>\n '"$NEWSHARE"' is already a share name \n</b>"
+     yad --center --title="SFS" --fixed --window-icon="folder-publicshare" --text="$TEXT" --timeout="2" --no-buttons
+     sed -i '$ d' /etc/samba/smb.conf
+     sfs-share && exit 0
+   elif [ "$NEWSHARE" = "" ]; then
+     TEXT="<b>\n You must enter a share name \n</b>"
+     yad --center --title="SFS" --fixed --window-icon="folder-publicshare" --text="$TEXT" --timeout="2" --no-buttons
+     sed -i '$ d' /etc/samba/smb.conf
+     sfs-share && exit 0
+   fi
+ 
+   echo -e "\n[$NEWSHARE]" >> /etc/samba/smb.conf
+   echo path = $DIR >> /etc/samba/smb.conf
+   MAKEWRITE=`echo $CONFIG | awk '{print $3}'`
+   [ "$MAKEWRITE" = TRUE ] && echo writable = yes >> /etc/samba/smb.conf || echo writable = no >> /etc/samba/smb.conf
+   SHOWHIDDEN=`echo $CONFIG | awk '{print $4}'`
+   [ "$SHOWHIDDEN" = TRUE ] && echo hide dot files = no >> /etc/samba/smb.conf || echo hide dot files = yes >> /etc/samba/smb.conf
+   NOLOGIN=`echo $CONFIG | awk '{print $5}'`
+   [ "$NOLOGIN" = TRUE ] && echo guest ok = yes >> /etc/samba/smb.conf || echo guest ok = no >> /etc/samba/smb.conf
+   if [ "$MAKEWRITE" = TRUE ] && [ "$NOLOGIN" = TRUE ]; then
+     echo force user = root >> /etc/samba/smb.conf
+   else
+     echo ";force user = root" >> /etc/samba/smb.conf
+   fi
+   echo "#enabled" >> /etc/samba/smb.conf
+
+   gvfs-set-attribute -t stringv "$DIR" metadata::emblems emblem-shared
+   touch "$DIR" ;;
+  
+1) sfs-setup && exit 0 ;;
+
+*) exit 0 ;;
+esac 
+
+PID="$(pidof smbd)"
+if [ "$PID" != "" ]; then
+  killall smbd nmbd
+  smbd -D
+  nmbd -D
+fi
+
+exit 0
