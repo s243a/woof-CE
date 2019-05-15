@@ -29,80 +29,120 @@
 #
 
 # essential packages
-%pkgs_by_priority "required" ".*lib.*|^tzdata|^bash|^dash|^lsb-base|^ncurses.*|^bsdutils|^kmod|^mount|^insserv|^mount|^sysvinit-utils|^procps|^makedev" "^klibc|.*plymouth.*|mountall"
+#%pkgs_by_priority "required" ".*lib.*|^tzdata|^bash|^dash|^lsb-base|^ncurses.*|^bsdutils|^kmod|^mount|^insserv|^mount|^sysvinit-utils|^procps|^makedev" "^klibc|.*plymouth.*|mountall"
 #%pkgs_by_priority "required"
 #%dpkg             # use dpkg installer instead of bootstrap
 #%dpkgchroot       # use dpkg-chroot installer instead of bootstrap
+%addpkg tinycore_base_gz
+%addpkg puppycore_noarch
+%addpkg puppycore_i386_strech
+%addpkg PKG
 %depend            # turn on dependency
-coreutils
-grep 
-gawk
-mawk
-sed
-tar
-gzip
-cpio
+#coreutils
+#grep 
+#gawk
+#mawk
+#sed
+#tar
+#gzip
+#cpio
 dialog
 gettext
 
 # extra packages
-screen             # useful for debugging
-file               # for checking file types
-locales            # locale files
+#screen             # useful for debugging
+#file               # for checking file types
+#locales            # locale files
 
 # xorg packages
 #%nodepend          # disable dep for udev, otherwise brings loads of dependencies
-libkmod2           # debian needs this
-eudev
+#libkmod2           # debian needs this
+#eudev
 #%depend            # enable dep for xorg, makes life simpler for us
+aterm           #Same name in tinycore
+libfltk1.3      #Instead of fltk-1.3 (from tinycore)
+flwm            #Instead of flwm_topside (from tinycore) 
+libfreetype6    #Instead of freetype (from tinycore) 
+libimlib2       #Instead of imlib2-bin & imlib2  (from tinycore) 
+libfontenc1     #Instead of libfontenc (from tinycore) 
+libice6         #Instead of libICE (from Tinycore) 
+libjpeg62-turbo #Instead of libjpeg-turbo (from Tinycore) 
+libpng16-16     #Instead of libpng (from tinycore)
+libsm6          #Instead of libSM (from tinycore) 
+libx11-6        #Instead of libX11 (from Tinycore) 
+libxau6         #Instead of libXau (from tinycore) 
+
+libxdmcp6       #Instead of libXdmcp (From tinycore) 
+libxext6        #Instead of libXext (From tinycore) 
+libxfont1       #Instead of libXfont (From tinycore) 
+libxi6          #Instead of libXi (From tinycore) 
+libxmu6         #Instead of libXmu (From tinycore) 
+libxpm4         #Instead of libXpm (From tinycore) 
+libxrandr2      #Instead of libXrandr (From tinycore) 
+libxrender1     #Instead of libXrender (From tinycore) 
+libxt6          #Instead of libXt (From tinycore) 
+wbar            #Same name on tinycore
+
+
+ 
+
+
+####### Maybe keep this since we dont' have matches for Xlibs, Xprogs, Xvesa but turn off dependency tracking 
+%nodepend 
 xserver-xorg
 xinit
 x11-utils
 x11-xserver-utils
 fonts-dejavu-core  # standard font
+#######
 
+%depend            # turn on dependency
 # debian dependencies
-libxcb-shm0
-
+libxcb-shm0 #Instead of libxcb (FromTinycore)
+%nodepend 
 # window managers etc
 jwm 
-rox-filer          # this will pull-in gtk2
-rxvt-unicode
 
-# extra libs
-librsvg2-2
-%nodepend          # librsvg2-bin will pull gtk3 if told not to.
-librsvg2-bin       # to convert puppy SVG icons to png
-%depend
-librsvg2-common    # pixbuf loaders, so GTK2 can shows SVG icons
+%depend            # turn on dependency
+mc #Replaces rox-filer          # this will pull-in gtk2
+
+
+#rxvt-unicode using aterm instead
+
+## extra libs
+#librsvg2-2
+#%nodepend          # librsvg2-bin will pull gtk3 if told not to.
+#librsvg2-bin       # to convert puppy SVG icons to png
+#%depend
+#librsvg2-common    # pixbuf loaders, so GTK2 can shows SVG icons
 #libgnome-menu2    # for jwm-xdgmenu, openbox-xdgmenu, etc
 
 # apps
-mtpaint
+# mtpaint
 
-# apt and friends - with its run-time dependencies (among others)
-diffutils
-util-linux 
-e2fsprogs 
-findutils 
-perl-base 
-module-init-tools
-libatm1
-passwd
-isc-dhcp-common
-iproute2
-isc-dhcp-client 
-psmisc
-libxtables10 
-gcc-6-base
-apt-utils
-apt
-gnupg
-devuan-keyring
+## apt and friends - with its run-time dependencies (among others)
+#diffutils
+#util-linux 
+#e2fsprogs 
+#findutils 
+#perl-base 
+#module-init-tools
+#libatm1
+#passwd
+#isc-dhcp-common
+#iproute2
+#isc-dhcp-client 
+#psmisc
+#libxtables10 
+#gcc-6-base
+#apt-utils
+#apt
+#gnupg
+#devuan-keyring
 
 # enable proper support for package signing
-%dpkgchroot
-%reinstall devuan-keyring apt
+#%dpkgchroot
+#%reinstall devuan-keyring apt
 %bootstrap
 
 # network tools to make SNS happy
@@ -117,6 +157,7 @@ wpasupplicant
 %bootstrap         # switch back to bootstrap installer - faster
 
 synaptic # this will pull-in gtk3
+%depend 
 dbus
 
 # puppy specific packages
@@ -136,23 +177,28 @@ gtkdialog          # note: only i386 arch available
 %dummy  busybox-initramfs initramfs-tools-bin klibc-utils initramfs-tools
 %dummy  adduser base-files
 
-# install busybox and its symlinks, fallback for missing utilities
-busybox-static
-%bblinks
+## install busybox and its symlinks, fallback for missing utilities
+#busybox-static
+#%bblinks
 
-# install extra built-in packages
-%addpkg pthemes
-%addpkg rox-filer-data
+## install extra built-in packages
+#%addpkg pthemes
+#%addpkg rox-filer-data
 
 # install puppy-base - MUST BE LAST - unless overriding puppy-base
 %mkdir /dev
 %dpkg_configure --force-all -a
-%rm /dev
-%addbase
+%rm /dev #s243a: Do we want to remove /dev?
+#%addbase #THe next four lines are instead of add base
+%addpkg tinycore_base_gz
+%addpkg puppycore_noarch
+%addpkg puppycore_i386_strech
+%addpkg PKG
+
 %addpkg debian-setup # specific debian setup, overriding puppy-base
 %lock puppy-base puppy-base-arch libc6 # example: never update puppy base and libc6
 
-%addpkg james-staging # temporary area to changes before they get merged to rootfs
+#%addpkg james-staging # temporary area to changes before they get merged to rootfs
 
 # cutdown the size
 %cutdown doc gtkdoc nls # all # maximum cutdown
