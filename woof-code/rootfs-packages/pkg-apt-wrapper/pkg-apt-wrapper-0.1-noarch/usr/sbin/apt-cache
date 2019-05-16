@@ -1,0 +1,62 @@
+#!/bin/sh
+
+for aptcachecmd in "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
+do
+	[ "$aptcachecmd" = '' ] && continue
+	
+	case $aptcachecmd in
+		search*)
+		
+			pkg search-all "$2"
+		
+		;;
+		
+		pkgnames*)
+		
+			pkg names-all "$2"
+		
+		;;
+		
+		showpkg*)
+		
+			pkg status "$2"
+		
+		;;
+		
+		depends*)
+		
+			pkg list-deps "$2"
+		
+		;;
+		
+		rdepends*)
+		
+			pkg what-needs "$2"
+		
+		;;
+		
+		show*)
+		
+			pkg status "$2"
+		
+		;;
+		
+		stats)
+		
+			pkg show-config
+		
+		;;
+		
+		autoclean)
+		
+			[ "$2" = 'yes' ] && pkg --autoclean yes
+			[ "$2" = 'no'  ] && pkg --autoclean no
+		;;
+		
+	esac
+done
+
+exit 0
+	
+	
+	

@@ -1,0 +1,78 @@
+#!/bin/sh
+
+for aptcmd in "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
+do
+	[ "$aptcmd" = '' ] && continue
+	
+	case $aptcmd in
+		install*)
+		
+			cmd='get'
+			for opt in $2 $3 $4 $5 $6 $7 $8 $9
+			do
+				[ "$opt" = '-d' ] && cmd='get-only'
+			done
+
+			force=''
+			for opt in $2 $3 $4 $5 $6 $7
+			do
+				[ "$opt" = '-f' ] && force='--force'
+				[ "$opt" = '--force' ] && force='--force'
+				[ "$opt" = '--reinstall' ] && force='--force'
+			done
+
+			pkg $force $cmd "$2"
+		
+		;;
+		
+		remove*)
+
+			pkg uninstall "$2"
+		
+		;;
+		
+		update)
+
+			pkg update-sources; pkg repo-update "$2" ; 
+		
+		;;
+		
+		upgrade)
+
+			pkg update-all "$2"
+		
+		;;
+		
+		check*)
+		
+			pkg --deps-check "$2"
+		
+		;;
+
+		source*)
+		
+			echo 'Not yet implemented'
+		;;
+		
+		clean)
+		
+			pkg clean
+		;;
+		
+		autoremove)
+			echo "Not yet implemented in Pkg"   # remove unneeded pkgs
+		;;
+
+		autoclean)
+		
+			[ "$2" = 'yes' ] && pkg --autoclean yes
+			[ "$2" = 'no'  ] && pkg --autoclean no
+		;;
+		
+	esac
+done
+
+exit 0
+	
+	
+	

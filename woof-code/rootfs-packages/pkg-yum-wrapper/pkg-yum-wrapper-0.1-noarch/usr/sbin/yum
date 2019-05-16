@@ -1,0 +1,119 @@
+#!/bin/sh
+
+for yumcmd in "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
+do
+	[ "$yumcmd" = '' ] && continue
+	
+	case $yumcmd in
+		installed);;
+		
+		install*|localinstall*)
+		
+			ask='--ask'
+			for opt in $2 $3 $4 $5 $6 $7 $8 $9
+			do
+				[ "$opt" = '-y' ] && ask=''
+			done
+
+			pkg $ask get "$2"
+		
+		;;
+		
+		remove*)
+
+			ask='--ask'
+			for opt in $2 $3 $4 $5 $6 $7 $8 $9
+			do
+				[ "$opt" = '-y' ] && ask=''
+			done
+
+			pkg $ask uninstall "$2"
+		
+		;;
+		
+		update)
+
+			pkg update-sources; pkg repo-update "$2" ; 
+		
+		;;
+		
+		check-update)
+
+			pkg update-all "$2"
+		
+		;;
+		
+		provides|whatprovides)
+
+			pkg which "$2"
+		
+		;;
+		
+		search)
+
+			pkg search-all "$2"
+		
+		;;
+		
+		list*)
+			
+			if [ "$2" = 'installed' ];then
+				pkg li
+			else
+				pkg names-all "$2"
+			fi
+		;;
+		
+		info*)
+		
+			pkg status "$2"
+		;;
+		
+		repolist*all)
+		
+			pkg rl
+		;;
+		
+		repolist*)
+		
+			pkg rl "$2"
+		;;
+		
+		resolvedep*)
+		
+			pkg names-all "$2"
+		;;
+		
+		check*)
+		
+			pkg --deps-check "$2"
+		
+		;;
+
+		source*)
+		
+			echo 'Not yet implemented'
+		;;
+		
+		clean*all)
+		
+			pkg clean
+		;;
+		
+		autoremove)
+			echo "Not yet implemented in Pkg"   # remove unneeded pkgs
+		;;
+
+		autoclean)
+		
+			[ "$2" = 'yes' ] && pkg --autoclean yes
+			[ "$2" = 'no'  ] && pkg --autoclean no
+		;;
+		
+	esac
+done
+
+exit 0
+	
+	
+	

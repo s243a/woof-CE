@@ -30,6 +30,7 @@
 
 # essential packages
 #%pkgs_by_priority "required" ".*lib.*|^tzdata|^bash|^dash|^lsb-base|^ncurses.*|^bsdutils|^kmod|^mount|^insserv|^mount|^sysvinit-utils|^procps|^makedev" "^klibc|.*plymouth.*|mountall"
+%pkgs_by_priority "required" ".*lib.*|^tzdata|^bash|^dash|^lsb-base|^ncurses.*|^bsdutils|^kmod|^mount|^insserv|^sysvinit-utils|^makedev" "^klibc|.*plymouth.*"
 #%pkgs_by_priority "required"
 #%dpkg             # use dpkg installer instead of bootstrap
 #%dpkgchroot       # use dpkg-chroot installer instead of bootstrap
@@ -37,6 +38,7 @@
 %addpkg puppycore_noarch
 %addpkg puppycore_i386_strech
 %addpkg PKG
+%add pkg-apt-wrapper
 %depend            # turn on dependency
 #coreutils
 #grep 
