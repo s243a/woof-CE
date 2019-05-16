@@ -1,0 +1,58 @@
+'../workdir' already exists, running this script again will obliterate it.
+Continue? (yes/no) Your host arch:  i686
+Please choose target arch: 
+1) x86
+2) x86_64
+Enter your selection: 
+Please select source distro: 
+1) debian
+2) devuan
+3) slackware
+4) tiny_devuan
+5) ubuntu
+Enter your selection: 
+Please select version: 
+1) ascii
+Enter your selection: 
+Getting list of available kernels from distro.ibiblio.org ...
+Please select kernel
+1) huge-3.0.103-tahr_noPAE_retro.tar.bz2
+2) huge-3.12.21-slacko4G-i686.tar.bz2
+3) huge-3.12.21-slacko4G-i686.tar.bz2
+4) huge-3.12.22-tahr-PAE-i686.tar.bz2
+5) huge-3.12.22-tahr-PAE-i686.tar.bz2
+6) huge-3.14.20-tahr_PAE.tar.bz2
+7) huge-3.14.20-tahr_noPAE.tar.bz2
+8) huge-3.14.54-slacko32_noPAE.tar.bz2
+9) huge-3.14.55-slacko_noPAE.tar.bz2
+10) huge-3.14.56-tahr_PAE.tar.bz2
+11) huge-3.14.56-tahr_noPae.tar.bz2
+12) huge-3.14.79-tahr_noPAE.tar.bz2
+13) huge-3.16.43-s32-700.tar.bz2
+14) huge-3.18.22-slacko_noPAE.tar.bz2
+15) huge-3.4.103-tahr_nopae.tar.bz2
+16) huge-3.4.94-slacko4G2-i686.tar.bz2
+17) huge-3.4.94-slacko4G2-i686.tar.bz2
+18) huge-4.1.11-slacko_PAE.tar.bz2
+19) huge-4.1.30-xenial_PAE.tar.bz2
+20) huge-4.4.70-s32-700_PAE.tar.bz2
+21) huge-4.4.95-xenial.tar.bz2
+22) huge-4.9.13-xenial_noPAE.tar.bz2
+23) huge-4.9.163-lxpup.tar.bz2 
+24) I will build my own later.
+Enter your selection: 
+Directory '../workdir' has been prepare for your build.
+Your configuration is as follows:
+---
+Host arch:      i686
+Target arch:    x86
+Source distro:  tiny_devuan
+Source version: ascii
+Cross-build:    yes
+---
+The default pkglist and repo-url has been copied to '../workdir'. 
+You can use these files as they are, or you can modify them 
+as you see fit.
+
+If this doesn't sound right, re-run the script to re-create 
+the configuration.

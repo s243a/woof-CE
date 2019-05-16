@@ -10,6 +10,7 @@
 #           WITHOUT_DPKG=1 - don't use system dpkg
 
 ### end-user configuration
+set -x
 PKGLIST=${PKGLIST:-pkglist}
 ARCH=${ARCH:-i386} # or amd64
 VERSION=${VERSION:-trusty}
@@ -54,12 +55,12 @@ cleanup() {
 ### prepare critical dirs
 prepare_dirs() {
 	rm -rf $CHROOT_DIR
-	mkdir -p $REPO_DIR $CHROOT_DIR $CHROOT_DIR/$APT_SOURCES_DIR $CHROOT_DIR/$APT_PKGDB_DIR
+	mkdir -p $REPO_DIR $CHROOT_DIR $CHROOT_DIR$APT_SOURCES_DIR $CHROOT_DIR$APT_PKGDB_DIR
 	for p in info parts alternatives methods updates; do
-		mkdir -p $CHROOT_DIR/$ADMIN_DIR/$p
+		mkdir -p $CHROOT_DIR$ADMIN_DIR/$p
 	done
-	! [ -e $CHROOT_DIR/$ADMIN_DIR/status ]    && echo > $CHROOT_DIR/$ADMIN_DIR/status
-	! [ -e $CHROOT_DIR/$ADMIN_DIR/available ] && echo > $CHROOT_DIR/$ADMIN_DIR/available
+	! [ -e $CHROOT_DIR$ADMIN_DIR/status ]    && echo > $CHROOT_DIR$ADMIN_DIR/status
+	! [ -e $CHROOT_DIR$ADMIN_DIR/available ] && echo > $CHROOT_DIR$ADMIN_DIR/available
 	
 	if ! [ -e helpers ]; then
 		mkdir -p helpers
@@ -93,21 +94,21 @@ add_repo() {
 		fi
 
 		# add apt sources and database
-		echo "deb $1 $2 $p" > $CHROOT_DIR/$APT_SOURCES_DIR/"$apt_source"
+		echo "deb $1 $2 $p" > $CHROOT_DIR$APT_SOURCES_DIR/"$apt_source"
 		[ $WITH_APT_DB ] && echo Copying "$p $1" database for apt ...
 		case $4 in
 			*gz)  gunzip -c  $REPO_DIR/$localdb ;;
 			*bz2) bunzip2 -c $REPO_DIR/$localdb ;;
 			*xz)  unxz -c    $REPO_DIR/$localdb ;;
 			*)    cat        $REPO_DIR/$localdb ;;
-		esac > $CHROOT_DIR/$APT_PKGDB_DIR/"$apt_pkgdb"
+		esac > $CHROOT_DIR$APT_PKGDB_DIR/"$apt_pkgdb"
 
 		if ! grep -F -m1 -q "$MARKER" $REPO_DIR/$LOCAL_PKGDB 2>/dev/null; then	
 			echo Processing database for "$2 $p" ...
 			echo "$MARKER" >> $REPO_DIR/$LOCAL_PKGDB
 			# awk version is 10x faster than bash/ash/dash version, even with LANG=C
 			# format: pkg|pkgver|pkgfile|pkgpath|pkgprio|pkgsection|pkgmd5|pkgdep			
-			< $CHROOT_DIR/$APT_PKGDB_DIR/"$apt_pkgdb" >> $REPO_DIR/$LOCAL_PKGDB \
+			< $CHROOT_DIR$APT_PKGDB_DIR/"$apt_pkgdb" >> $REPO_DIR/$LOCAL_PKGDB \
 			awk -v repo_url="$1" '
 function fixdepends(s) {
 	split(s,a,","); s="";
@@ -132,7 +133,7 @@ function fixdepends(s) {
 			awk -F"|" '{if (!a[$1]) b[n++]=$1; a[$1]=$0} END {for (i=0;i<n;i++) {print a[b[i]]}}'
 			mv /tmp/t.$$ $REPO_DIR/$LOCAL_PKGDB
 		fi
-		if [ -z "$WITH_APT_DB" ] || [ $DRY_RUN ]; then rm -f $CHROOT_DIR/APT_PKGDB_DIR/"$apt_pkgdb"; fi
+		if [ -z "$WITH_APT_DB" ] || [ $DRY_RUN ]; then rm -f $CHROOT_DIR$APT_PKGDB_DIR/"$apt_pkgdb"; fi
 	done
 }
 
@@ -171,7 +172,7 @@ get_pkgs_by_priority() {
 ###
 # $1-pkg
 is_already_installed() {
-	test -e $CHROOT_DIR/$ADMIN_DIR/info/"${1}".list
+	test -e $CHROOT_DIR$ADMIN_DIR/info/"${1}".list
 }
 
 ###
@@ -255,7 +256,7 @@ install_pkg() {
 }
 ### choice of bootstrap or dpkg 
 dpkg_install() {
-	dpkg --root=$CHROOT_DIR --admindir=$CHROOT_DIR/$ADMIN_DIR --force-all --unpack "$REPO_DIR/$PKGFILE";
+	dpkg --root=$CHROOT_DIR --admindir=$CHROOT_DIR$ADMIN_DIR --force-all --unpack "$REPO_DIR/$PKGFILE";
 	return 0
 }
 ### choice of bootstrap or dpkg 
@@ -280,7 +281,7 @@ bootstrap_install() {
 		esac
 		ar p "$REPO_DIR/$PKGFILE" $data | $decompressor | tar -xv -C $CHROOT_DIR
 	fi |
-	sed '1 s|^.*$|/.|; s|^\.||' > "$CHROOT_DIR/$ADMIN_DIR/info/${PKG}.list" &&
+	sed '1 s|^.*$|/.|; s|^\.||' > "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" &&
 	update_pkg_status "$PKG" "$PKGPRIO" "$PKGSECTION" "$PKGVER" "$PKGDEP"
 }
 # $1-PKG $2-PKGPRIO $3-PKGSECTION $4-PKGVER $5-PKGDEP
@@ -297,7 +298,7 @@ Version: $4"
 [ "${5%,}" ] && echo "Depends: ${5%,}" 
 echo "Description: $1 installed by deb-build.sh
 "
-	} >> "$CHROOT_DIR/$ADMIN_DIR/status"
+	} >> "$CHROOT_DIR$ADMIN_DIR/status"
 
 }
 
@@ -307,9 +308,9 @@ install_from_dir() {
 	! [ -d ${1} ] && echo $2 not found ... && return 1 # dir doesn't exist
 	is_already_installed $pkgname && return 1
 
-	echo "/." > "$CHROOT_DIR/$ADMIN_DIR/info/${pkgname}.list"
+	echo "/." > "$CHROOT_DIR$ADMIN_DIR/info/${pkgname}.list"
 	cp -av --remove-destination "${1}"/* $CHROOT_DIR | sed "s|.*${CHROOT_DIR}||; s|'\$||" \
-	>> "$CHROOT_DIR/$ADMIN_DIR/info/${pkgname}.list"
+	>> "$CHROOT_DIR$ADMIN_DIR/info/${pkgname}.list"
 	[ -f "$CHROOT_DIR"/pinstall.sh ] && ( cd "$CHROOT_DIR"; sh pinstall.sh )
 	rm -f $CHROOT_DIR/pinstall.sh
 	update_pkg_status "$pkgname" "required" "$3" "1.0" ""
@@ -329,14 +330,14 @@ import_dir() {
 remove_pkg() {
 	while [ "$1" ]; do
 		if [ -z "$WITHOUT_DPKG" ]; then
-			dpkg --root=$CHROOT_DIR --admindir=$CHROOT_DIR/$ADMIN_DIR --force-all -P "$1"
+			dpkg --root=$CHROOT_DIR --admindir=$CHROOT_DIR$ADMIN_DIR --force-all -P "$1"
 		else
 			# manual removal - first remove entries from status
-			sed -i -e "/^Package: ${1}\$/,/^$/d" "$CHROOT_DIR/$ADMIN_DIR/status"
+			sed -i -e "/^Package: ${1}\$/,/^$/d" "$CHROOT_DIR$ADMIN_DIR/status"
 
 			# then delete installed files
-			if [ -e "$CHROOT_DIR/$ADMIN_DIR/info/${1}.list" ]; then
-				< "$CHROOT_DIR/$ADMIN_DIR/info/${1}.list" sort -r |
+			if [ -e "$CHROOT_DIR$ADMIN_DIR/info/${1}.list" ]; then
+				< "$CHROOT_DIR$ADMIN_DIR/info/${1}.list" sort -r |
 				> /tmp/removepkg.$$ awk -v chroot="$CHROOT_DIR" '$0=="/." {next} { printf("%s%s\0",chroot,$0)}'
 				< /tmp/removepkg.$$ xargs -0 rm -f 2>/dev/null
 				< /tmp/removepkg.$$ xargs -0 rmdir 2>/dev/null
@@ -344,7 +345,7 @@ remove_pkg() {
 			fi
 
 			# then remove all database files
-			rm -f "$CHROOT_DIR/$ADMIN_DIR/info/${1}".* 2>/dev/null
+			rm -f "$CHROOT_DIR$ADMIN_DIR/info/${1}".* 2>/dev/null
 		fi
 		shift
 	done
@@ -356,7 +357,7 @@ lock_pkg() {
 	if [ $WITHOUT_DPKG ]; then
 		# dpkg-less lock method
 		while [ "$1" ]; do
-			sed -i -e "/^Package: ${1}\$/,/^$/ {/^Status:/ s/install/hold/}" "$CHROOT_DIR/$ADMIN_DIR/status"	
+			sed -i -e "/^Package: ${1}\$/,/^$/ {/^Status:/ s/install/hold/}" "$CHROOT_DIR$ADMIN_DIR/status"	
 			shift
 		done
 	else
@@ -364,7 +365,7 @@ lock_pkg() {
 		while [ "$1" ]; do
 			echo "$1" hold
 			shift
-		done | dpkg --root=$CHROOT_DIR --admindir=$CHROOT_DIR/$ADMIN_DIR --set-selections
+		done | dpkg --root=$CHROOT_DIR --admindir=$CHROOT_DIR$ADMIN_DIR --set-selections
 	fi
 }
 
@@ -376,7 +377,7 @@ install_dummy() {
 		[ -z $PKG ] && continue
 		is_already_installed $PKG && continue
 		echo Installing dummy for $PKG ...
-		echo "/." > "$CHROOT_DIR/$ADMIN_DIR/info/${PKG}.list"
+		echo "/." > "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list"
 		update_pkg_status "$PKG" "$PKGPRIO" "$PKGSECTION" "$PKGVER" ""
 	done
 }
@@ -391,12 +392,12 @@ install_bb_links() {
 		nousr|nouser) nousr=usr/ ;;
 	esac
 	
-	echo "/." > "$CHROOT_DIR/$ADMIN_DIR/info/bblinks.list"
+	echo "/." > "$CHROOT_DIR$ADMIN_DIR/info/bblinks.list"
 	if [ -e $CHROOT_DIR/bin/busybox ] && $CHROOT_DIR/bin/busybox > /dev/null; then
 		$CHROOT_DIR/bin/busybox --list-full | while read -r p; do
 			pp=${p#$nousr}
 			[ -e $CHROOT_DIR/$pp ] && continue # don't override existing binaries
-			echo /$pp >> "$CHROOT_DIR/$ADMIN_DIR/info/bblinks.list"
+			echo /$pp >> "$CHROOT_DIR$ADMIN_DIR/info/bblinks.list"
 			case $pp in 
 				usr*) ln -s ../../bin/busybox $CHROOT_DIR/$pp 2>/dev/null ;; 
 				*)    ln -s ../bin/busybox $CHROOT_DIR/$pp 2>/dev/null ;; 
