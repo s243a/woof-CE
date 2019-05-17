@@ -8,7 +8,7 @@ export VERSION=${VERSION:-ascii}
 export DISTRO_PREFIX=${DISTRO_PREFIX:-puppy}
 export DISTRO_VERSION=${DISTRO_VERSION:-700} # informative only
 
-export DEFAULT_REPOS=${REPO_URLS:-http://deb.devuan.org/merged/dists/|$VERSION|main:universe|Packages.xz}
+export DEFAULT_REPOS=${REPO_URLS:-http://deb.devuan.org/merged/dists|$VERSION|main:universe|Packages.xz}
 #KEEP_DUPLICATES=1 # keep multiple versions of package in pkgdb
 #WITH_APT_DB= # default is don't include apt-db
 

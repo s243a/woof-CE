@@ -6,7 +6,7 @@ mkdir -p /tmp/pkg 2>/dev/null
 
 # dont overwrite the existing ~/.pkg/sources[-all] files, if they exist
 
-for existing_file in /root/.pkg/sources /root/.pkg/sources-all /root/.pkg/sources-user
+for existing_file in /root/.pkg/sources /root/.pkg/sources-all /root/.pkg/sources-user /var/lib/dpkg/info
 do
   [ -f "$existing_file" ] && mv "$existing_file" /tmp/pkg/
 done

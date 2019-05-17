@@ -30,16 +30,35 @@
 
 # essential packages
 #%pkgs_by_priority "required" ".*lib.*|^tzdata|^bash|^dash|^lsb-base|^ncurses.*|^bsdutils|^kmod|^mount|^insserv|^mount|^sysvinit-utils|^procps|^makedev" "^klibc|.*plymouth.*|mountall"
-%pkgs_by_priority "required" ".*lib.*|^tzdata|^bash|^dash|^lsb-base|^ncurses.*|^bsdutils|^kmod|^mount|^insserv|^sysvinit-utils|^makedev" "^klibc|.*plymouth.*"
+#%pkgs_by_priority "required" ".*lib.*|^tzdata|^bash|^dash|^lsb-base|^ncurses.*|^bsdutils|^kmod|^mount|^insserv|^sysvinit-utils|^makedev" "^klibc|.*plymouth.*"
 #%pkgs_by_priority "required"
 #%dpkg             # use dpkg installer instead of bootstrap
 #%dpkgchroot       # use dpkg-chroot installer instead of bootstrap
+#%depend   
+%bootstrap
+%nodepend 
+libc6
+libtinfo5
+debianutils 
+#base-files #Tinycore probably already has these
+#zlib1g #Already linked to busybox
+#tar #Already linked to busybox
+#liblzma5  #Already linked to busybox
 %addpkg tinycore_base_gz
+dpkg
+%dpkgchroot 
+dash
+bash
+gettext
+dialog
+#Let's reconfigure stuff before running post install scripts
+%dpkg_configure --force-all -a
 %addpkg puppycore_noarch
 %addpkg puppycore_i386_strech
-%addpkg PKG
-%add pkg-apt-wrapper
-%depend            # turn on dependency
+#%addpkg PKG #Uncomment this later once we add support for pkg
+%add pkg-apt-wrapper 
+#At this point we coudl run pkg insead of dpkg but we havn't added support for this yet. 
+         # turn on dependency
 #coreutils
 #grep 
 #gawk
@@ -48,8 +67,7 @@
 #tar
 #gzip
 #cpio
-dialog
-gettext
+
 
 # extra packages
 #screen             # useful for debugging
@@ -190,6 +208,7 @@ gtkdialog          # note: only i386 arch available
 # install puppy-base - MUST BE LAST - unless overriding puppy-base
 %mkdir /dev
 %dpkg_configure --force-all -a
+%addpkg PKG #Comment this out once we add suport for PKG and uncomment the related line above
 %rm /dev #s243a: Do we want to remove /dev?
 #%addbase #THe next four lines are instead of add base
 %addpkg tinycore_base_gz

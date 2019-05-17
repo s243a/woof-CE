@@ -56,12 +56,14 @@ cleanup() {
 prepare_dirs() {
 	rm -rf $CHROOT_DIR
 	mkdir -p $REPO_DIR $CHROOT_DIR $CHROOT_DIR$APT_SOURCES_DIR $CHROOT_DIR$APT_PKGDB_DIR
-	for p in info parts alternatives methods updates; do
+	for p in info parts alternatives methods updates usr/share/locale usr/lib/locale; do
 		mkdir -p $CHROOT_DIR$ADMIN_DIR/$p
 	done
 	! [ -e $CHROOT_DIR$ADMIN_DIR/status ]    && echo > $CHROOT_DIR$ADMIN_DIR/status
 	! [ -e $CHROOT_DIR$ADMIN_DIR/available ] && echo > $CHROOT_DIR$ADMIN_DIR/available
-	
+	for p in /usr/share/locale /usr/lib/locale; do
+		mkdir -p $CHROOT_DIR$p
+	done
 	if ! [ -e helpers ]; then
 		mkdir -p helpers
 		(cd helpers; ln -sf $(which true) update-rc.d)
