@@ -345,9 +345,23 @@ install_from_dir() {
 	      source $PINSTALL_VARS #Can
 	  fi
 	  if [ $PINSTALL_MODE = 'relative' ]; then
-	    [ -f "$CHROOT_DIR"/pinstall.sh ] && ( cd "$CHROOT_DIR"; sh pinstall.sh )
+	       echo "installing ${pkgname} in relative mode."
+	       if [ -x "$CHROOT_DIR/pinstall.sh" ]; then
+	         cd "$CHROOT_DIR"; ./pinstall.sh
+	       elif [ -e "$CHROOT_DIR/pinstall.sh" ]; then
+	         echo "Script not executable: $CHROOT_DIR/pinstall.sh"
+	         echo "Using "sh" to execute"
+	         cd "$CHROOT_DIR"; sh pinstall.sh
+	       fi 
 	  elif [ $PINSTALL_MODE = 'chroot' ]; then
-	    [ -f "$CHROOT_DIR"/pinstall.sh ] && ( chroot "$CHROOT_DIR" /pinstall.sh )
+	    echo "installing ${pkgname} in chroot mode."
+	    if [ -x "$CHROOT_DIR/pinstall.sh" ]; then
+	      [ -f "$CHROOT_DIR"/pinstall.sh ] && ( chroot "$CHROOT_DIR" /pinstall.sh )
+	    elif [ -e "$CHROOT_DIR/pinstall.sh" ]; then
+	      echo "Script not executable: $CHROOT_DIR/pinstall.sh"
+	      echo "Using "sh" to execute"     
+	      chroot "$CHROOT_DIR" sh -c "cd /; /pinstall.sh"
+	    fi
 	  else
 	    echo "Error: invalid PINSTALL_MODE"	
 	  fi
