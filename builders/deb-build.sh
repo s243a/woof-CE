@@ -319,7 +319,7 @@ echo "Description: $1 installed by deb-build.sh
 
 # $1-dir to install $2-name $3-category
 install_from_dir() {
-	#s243a: TODO, remove this once we add a direcive for this command
+	bind_ALL #s243a: TODO, remove this once we add a direcive for this command
 	local pkgname=${DISTRO_PREFIX}-$2
 	! [ -d ${1} ] && echo $2 not found ... && return 1 # dir doesn't exist
 	is_already_installed $pkgname && return 1
