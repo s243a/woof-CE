@@ -222,7 +222,10 @@ gtkdialog          # note: only i386 arch available
 #%addpkg james-staging # temporary area to changes before they get merged to rootfs
 
 # cutdown the size
-%cutdown doc gtkdoc nls # all # maximum cutdown
+#%cutdown doc gtkdoc nls # all # maximum cutdown
+#Temporary fix since the lack of nlc causes the script to exit.
+#See issue: https://github.com/puppylinux-woof-CE/woof-CE/issues/1387#issuecomment-493708743
+%cutdown doc gtkdoc# all # maximum cutdown
 
 # make the sfs (optional)
 %makesfs iso/iso-root/puppy.sfs -comp gzip # -Xcompression-level 1

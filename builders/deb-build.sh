@@ -78,9 +78,9 @@ prepare_dirs() {
 	done
 	! [ -e $CHROOT_DIR$ADMIN_DIR/status ]    && echo > $CHROOT_DIR$ADMIN_DIR/status
 	! [ -e $CHROOT_DIR$ADMIN_DIR/available ] && echo > $CHROOT_DIR$ADMIN_DIR/available
-	for p in /usr/share/locale /usr/lib/locale; do
-		mkdir -p $CHROOT_DIR$p
-	done
+	#for p in /usr/share/locale /usr/lib/locale; do
+	#	mkdir -p $CHROOT_DIR$p
+	#done
 	if ! [ -e helpers ]; then
 		mkdir -p helpers
 		(cd helpers; ln -sf $(which true) update-rc.d)
@@ -224,6 +224,7 @@ download_pkg() {
 
 # $@-all, doc, gtkdoc, locales, cache
 cutdown() {
+	set -x
 	local options="$*" LIBDIR=lib
 	[ "$1" = "all" ] && options="doc gtkdoc locales cache man"
 	for p in $options; do
@@ -248,7 +249,7 @@ cutdown() {
 				for p in $(ls $CHROOT_DIR/usr/share/locale); do
 					[ $p != en ] && mv $CHROOT_DIR/usr/share/locale/$p $NLS_DIR/usr/share/locale
 				done
-				for p in $(ls $CHROOT_DIR/usr/$LIBDIR/locale); do
+				for p in $(ls $CHROOT_DIR/usr/$LIBDIR/locale); do #TODO: add check to see if the directory is empty, otherwise the script might unexpectly exit
 					case $p in
 						en_US|en_AU|en_US.*|en_AU.*|C|C.*) ;; # skip
 						*) mv $CHROOT_DIR/usr/$LIBDIR/locale/$p $NLS_DIR/usr/$LIBDIR/locale
@@ -465,6 +466,7 @@ install_bb_links() {
 ###
 # $1-output $2 onwards - squashfs_param
 make_sfs() {
+	set -x
 	local output="$1" dir=${1%/*}
 	shift
 	[ "$dir" ] && [ "$dir" != "$output" ] && mkdir -p $dir
@@ -568,6 +570,7 @@ process_pkglist() {
 				echo Installing busybox symlinks ...
 				install_bb_links "$@" ;;
 			%makesfs)
+			    set -x
 				shift # $1-output $@-squashfs params
 				echo Creating $1 ...
 				make_sfs "$@" ;;
@@ -596,6 +599,7 @@ process_pkglist() {
 				shift # $1-pkgname, pkgname ...
 				lock_pkg "$@" ;;
 			%cutdown)
+			    set -x
 				shift # $@ various cutdown options
 				cutdown "$@" ;;
 			%import)
