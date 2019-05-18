@@ -12,7 +12,19 @@
 ### end-user configuration
 #set -x
 
-source ./chroot_and_tmpfs_fns #Some postinst scrips might require networking
+#When SAFE_MODE=1, the pinstall script (in a directory based install) cannot change
+#the mode between relative vs chroot
+#s243a:TODO add directive to turn safe mode on and off. Give prompt to indicate that
+#      safe mode is being turned off. 
+export SAFE_MODE=1 #Not sure if we need to export this
+
+#Some directory packages will only work properly in a chroot enviornment and others
+#will not work properly if the script is ran from /. In the latter case the script
+#assumes that the rootfs is relative to the current directory and not robust enough
+#to handle a chroot enviornment. 
+#s243a: TODO add directives to change PINSTALL_MODE
+export PINSTALL_MODE='chroot' #Not sure if we need to export this
+source $WOOFCE/builders/chroot_and_tmpfs_fns.sh #Some postinst scrips might require networking
                               #also if chroot has it's own device files it could
                               #conflict with the system
 
@@ -201,7 +213,8 @@ download_pkg() {
 	fi
 	
 	# check md5sum
-	echo "$PKGMD5  \"`realpath "$REPO_DIR"`/$PKGFILE\"" > /tmp/md5.$$
+	#echo "$PKGMD5  \"`realpath "$REPO_DIR"`/$PKGFILE\"" > /tmp/md5.$$
+	echo "$PKGMD5  `realpath "$REPO_DIR"`/$PKGFILE" > /tmp/md5.$$
 	md5sum -c /tmp/md5.$$ >/dev/null; retval=$? 
 	rm -f /tmp/md5.$$
 	[ $retval -ne 0 -a -z "$1" ] && rm -f "$REPO_DIR/$PKGFILE" && download_pkg retry && retval=0
@@ -319,6 +332,7 @@ echo "Description: $1 installed by deb-build.sh
 
 # $1-dir to install $2-name $3-category
 install_from_dir() {
+	set -x
 	bind_ALL #s243a: TODO, remove this once we add a direcive for this command
 	local pkgname=${DISTRO_PREFIX}-$2
 	! [ -d ${1} ] && echo $2 not found ... && return 1 # dir doesn't exist
@@ -327,9 +341,20 @@ install_from_dir() {
 	echo "/." > "$CHROOT_DIR$ADMIN_DIR/info/${pkgname}.list"
 	cp -av --remove-destination "${1}"/* $CHROOT_DIR | sed "s|.*${CHROOT_DIR}||; s|'\$||" \
 	>> "$CHROOT_DIR$ADMIN_DIR/info/${pkgname}.list"
-	[ -f "$CHROOT_DIR"/pinstall.sh ] && ( cd "$CHROOT_DIR"; sh pinstall.sh )
+	( if [ -f "$CHROOT_DIR"/$PINSTALL_VARS ] && [ $SAFE_MODE -eq 0 ]; then
+	      source $PINSTALL_VARS #Can
+	  fi
+	  if [ $PINSTALL_MODE = 'relative' ]; then
+	    [ -f "$CHROOT_DIR"/pinstall.sh ] && ( cd "$CHROOT_DIR"; sh pinstall.sh )
+	  elif [ $PINSTALL_MODE = 'chroot' ]; then
+	    [ -f "$CHROOT_DIR"/pinstall.sh ] && ( chroot "$CHROOT_DIR" /pinstall.sh )
+	  else
+	    echo "Error: invalid PINSTALL_MODE"	
+	  fi
+	)
 	rm -f $CHROOT_DIR/pinstall.sh
 	update_pkg_status "$pkgname" "required" "$3" "1.0" ""
+	set +x
 	return 0
 }
 

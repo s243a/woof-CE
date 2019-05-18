@@ -1,7 +1,7 @@
 #!/bin/sh
 WORK_DIR=${WORK_DIR:-"`realpath .`"} #We'll export this if needed
 CURDIR="$(dirname "`realpath "$0"`")"  #We'll export this if needed
-
+export WOOFCE="`realpath "$CURDIR/.."`"
 export PKGLIST=${PKGLIST:-pkglist}
 export ARCH=${ARCH:-i386} # or amd64
 export VERSION=${VERSION:-ascii}
