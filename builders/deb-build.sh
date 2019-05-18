@@ -10,7 +10,12 @@
 #           WITHOUT_DPKG=1 - don't use system dpkg
 
 ### end-user configuration
-set -x
+#set -x
+
+source ./chroot_and_tmpfs_fns #Some postinst scrips might require networking
+                              #also if chroot has it's own device files it could
+                              #conflict with the system
+
 PKGLIST=${PKGLIST:-pkglist}
 ARCH=${ARCH:-i386} # or amd64
 VERSION=${VERSION:-trusty}
@@ -151,12 +156,14 @@ add_multiple_repos() {
 # $1-pkg returns PKG PKGVER PKGFILE PKGPATH PKGPRIO PKGMD5 PKGSECTION PKGDEP
 # format: pkg|pkgver|pkgfile|pkgpath|pkgprio|pkgsection|pkgmd5|pkgdep
 get_pkg_info() {
+	set -x
 	local pkg="$1"	
 	OIFS="$IFS"; IFS="|"
 	set -- $(grep -m1 "^$pkg|" $REPO_DIR/$LOCAL_PKGDB)
     [ -z "$1" ] && set --  $(grep -m1 "|${pkg}.t.z|" $REPO_DIR/$LOCAL_PKGDB)
 	IFS="$OIFS"
 	PKG="$1" PKGVER="$2" PKGFILE="$3" PKGPATH="$4" PKGPRIO="$5" PKGSECTION="$6" PKGMD5="$7" PKGDEP="$8"
+	set +x
 	#echo $PKG $PKGVER $PKGFILE $PKGPATH $PKGPRIO $PKGSECTION $PKGMD5 $PKGDEP
 }
 
@@ -180,20 +187,25 @@ is_already_installed() {
 ###
 # $1-retry, $PKGFILE, $PKGPATH, $PKGMD5
 download_pkg() {
-	local retval=0 local
+	set -x
+	local retval=0 #local
 	[ "$1" ] && echo "Bad md5sum $PKGFILE, attempting to re-download ..."
 	if ! [ -e "$REPO_DIR/$PKGFILE" ] && echo Downloading "$PKGFILE" ...; then
 		case "$PKGPATH" in
 			file://*) cp "${PKGPATH#file://}" $REPO_DIR/$PKGFILE ;;
-			*) wget -q --no-check-certificate -O $REPO_DIR/$PKGFILE "$PKGPATH" ;;
+			*)
+			   #echo "wget -q --no-check-certificate -O \"$REPO_DIR/$PKGFILE\" \"$PKGPATH\"" 
+			   wget -q --no-check-certificate -O "`realpath "$REPO_DIR"`/$PKGFILE" "$PKGPATH" 
+			   sleep 1 ;;
 		esac
 	fi
 	
 	# check md5sum
-	echo "$PKGMD5  $REPO_DIR/$PKGFILE" > /tmp/md5.$$
+	echo "$PKGMD5  \"`realpath "$REPO_DIR"`/$PKGFILE\"" > /tmp/md5.$$
 	md5sum -c /tmp/md5.$$ >/dev/null; retval=$? 
 	rm -f /tmp/md5.$$
 	[ $retval -ne 0 -a -z "$1" ] && rm -f "$REPO_DIR/$PKGFILE" && download_pkg retry && retval=0
+	set +x
 	return $retval
 }
 
@@ -263,6 +275,7 @@ dpkg_install() {
 }
 ### choice of bootstrap or dpkg 
 dpkgchroot_install() {
+	bind_ALL #s243a: TODO, remove this once we add a direcive for this command
 	! [ -d $CHROOT_DIR/tmp ] && mkdir -p $CHROOT_DIR/tmp
 	cp "$REPO_DIR/$PKGFILE" $CHROOT_DIR/tmp
 	chroot $CHROOT_DIR /usr/bin/dpkg --force-all --unpack /tmp/"$PKGFILE"
@@ -306,6 +319,7 @@ echo "Description: $1 installed by deb-build.sh
 
 # $1-dir to install $2-name $3-category
 install_from_dir() {
+	#s243a: TODO, remove this once we add a direcive for this command
 	local pkgname=${DISTRO_PREFIX}-$2
 	! [ -d ${1} ] && echo $2 not found ... && return 1 # dir doesn't exist
 	is_already_installed $pkgname && return 1
