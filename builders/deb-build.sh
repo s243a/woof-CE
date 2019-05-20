@@ -251,6 +251,7 @@ cutdown() {
 				for p in $(ls $CHROOT_DIR/usr/share/locale); do
 					[ $p != en ] && mv $CHROOT_DIR/usr/share/locale/$p $NLS_DIR/usr/share/locale
 				done
+			  fi
 			  if [ -d "$CHROOT_DIR/usr/$LIBDIR/locale" ] &&
 				 [ `ls | grep -c -m 1 '.*'` -eq 1 ]; then 
 				for p in $(ls $CHROOT_DIR/usr/$LIBDIR/locale); do #TODO: add check to see if the directory is empty, otherwise the script might unexpectly exit
@@ -258,8 +259,8 @@ cutdown() {
 						en_US|en_AU|en_US.*|en_AU.*|C|C.*) ;; # skip
 						*) mv $CHROOT_DIR/usr/$LIBDIR/locale/$p $NLS_DIR/usr/$LIBDIR/locale
 					esac
-				done ;;
-			  fi
+				done 
+			  fi ;;
 			dev)
 				# recreates dir structure, move headers and static libs to devx dir
 				rm -rf $DEVX_DIR
