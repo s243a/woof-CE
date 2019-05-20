@@ -37,7 +37,7 @@
 #%depend   
 %bootstrap
 %nodepend 
-libc6
+#libc6 #Tinycore has it's own c libraries. Maybe add symbolic links. 
 libtinfo5
 debianutils 
 #base-files #Tinycore probably already has these
@@ -116,14 +116,14 @@ x11-xserver-utils
 fonts-dejavu-core  # standard font
 #######
 
-%depend            # turn on dependency
+#%depend            # turn on dependency
 # debian dependencies
 libxcb-shm0 #Instead of libxcb (FromTinycore)
 %nodepend 
 # window managers etc
 jwm 
 
-%depend            # turn on dependency
+#%depend            # turn on dependency
 mc #Replaces rox-filer          # this will pull-in gtk2
 
 
@@ -225,7 +225,7 @@ gtkdialog          # note: only i386 arch available
 #%cutdown doc gtkdoc nls # all # maximum cutdown
 #Temporary fix since the lack of nlc causes the script to exit.
 #See issue: https://github.com/puppylinux-woof-CE/woof-CE/issues/1387#issuecomment-493708743
-%cutdown doc gtkdoc# all # maximum cutdown
+%cutdown doc gtkdoc
 
 # make the sfs (optional)
 %makesfs iso/iso-root/puppy.sfs -comp gzip # -Xcompression-level 1
