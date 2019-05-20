@@ -245,7 +245,7 @@ cutdown() {
 				done ;;
 			nls)
 			  if [ -d "$CHROOT_DIR/usr/share/locale" ] &&
-				 [ `ls | grep -c -m 1 '.*'` -eq 1 ]; then 
+				 [ `ls "$CHROOT_DIR/usr/share/locale" | grep -c -m 1 '.*'` -eq 1 ]; then 
 				[ -d $CHROOT_DIR/usr/lib64/locale ] && LIBDIR=lib64
 				rm -rf $NLS_DIR; mkdir -p $NLS_DIR/usr/share/locale $NLS_DIR/usr/$LIBDIR/locale
 				for p in $(ls $CHROOT_DIR/usr/share/locale); do
@@ -253,7 +253,7 @@ cutdown() {
 				done
 			  fi
 			  if [ -d "$CHROOT_DIR/usr/$LIBDIR/locale" ] &&
-				 [ `ls | grep -c -m 1 '.*'` -eq 1 ]; then 
+				 [ `ls "$CHROOT_DIR/usr/$LIBDIR/locale" | grep -c -m 1 '.*'` -eq 1 ]; then 
 				for p in $(ls $CHROOT_DIR/usr/$LIBDIR/locale); do #TODO: add check to see if the directory is empty, otherwise the script might unexpectly exit
 					case $p in
 						en_US|en_AU|en_US.*|en_AU.*|C|C.*) ;; # skip
