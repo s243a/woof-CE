@@ -44,13 +44,14 @@ debianutils
 %dummy zlib1g #Already linked to busybox
 %dummy tar #Already linked to busybox
 %dummy liblzma5  #Already linked to busybox
-%addpkg tinycore_base_gz
+%addpkg tinycore9_base_gz
 dpkg
 %dpkgchroot 
 dash
 bash
 gettext
 dialog
+strace #add this for debugging purposes
 #Let's reconfigure stuff before running post install scripts
 %dpkg_configure --force-all -a
 %addpkg puppycore_noarch
@@ -348,7 +349,7 @@ gtkdialog          # note: only i386 arch available
 %addpkg PKG #Comment this out once we add suport for PKG and uncomment the related line above
 %rm /dev #s243a: Do we want to remove /dev?
 #%addbase #THe next four lines are instead of add base
-%addpkg tinycore_base_gz
+%addpkg tinycore9_base_gz
 %addpkg puppycore_noarch
 %addpkg puppycore_i386_strech
 %addpkg PKG
