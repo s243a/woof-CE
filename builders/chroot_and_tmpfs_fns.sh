@@ -118,7 +118,7 @@ bind_ALL(){
   bind_PROC; bind_SYS; [ $INTERACT_DEV -eq 1 ] && bind_DEV
 }
 unbind_PROC(){
-  if [ "$(mount | grep "$CHROOT_DIR/proc")" = "" ]; then
+  if [ "$(mount | grep "$CHROOT_DIR/proc")" != "" ]; then
     umount -l $CHROOT_DIR/proc
   fi
 }
@@ -132,7 +132,9 @@ unbind_DEV(){
     umount -l $CHROOT_DIR/dev
   fi
 }
-
+unbind_ALL(){
+  unbind_PROC; unbind_SYS; unbind_DEV
+}
 
 unmount_vfs(){
  unbind_proc

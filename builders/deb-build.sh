@@ -274,6 +274,7 @@ cutdown() {
 				find $DEVX_DIR -type d | sort -r | xargs rmdir 2>/dev/null ;;
 		esac
 	done
+	set +x
 }
 
 
@@ -434,6 +435,7 @@ lock_pkg() {
 ### so that apt-get is happy
 # $1 dummy pkgname. Note dependencies of dummy packages are not pulled.
 install_dummy() {
+	set -x
 	while [ "$1" ]; do
 		get_pkg_info "$1"; shift
 		[ -z $PKG ] && continue
@@ -442,6 +444,7 @@ install_dummy() {
 		echo "/." > "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list"
 		update_pkg_status "$PKG" "$PKGPRIO" "$PKGSECTION" "$PKGVER" ""
 	done
+	set +x
 }
 
 ###
@@ -494,6 +497,9 @@ padsfs() {
 flatten_pkglist() {
 	local pkglist="$1"
 	while read -r pp; do
+	    echo "flattening $pp" >&2 #We can't print to standard out here because
+	    #this function is used as follows "flatten_pkglist $PKGLIST > $FLATTEN"
+	    #near the end of thisscript. 
 		p=${pp%%#*}; eval set -- $p; p="$1"
 		[ -z $p ] && continue
 		
@@ -553,6 +559,7 @@ process_pkglist() {
 	
 	# process
 	while read -r p; do
+	    echo "Processing: $p"
 		p=${p%%#*}; eval set -- $p; p="$1"
 		[ -z $p ] && continue
 		
@@ -577,6 +584,7 @@ process_pkglist() {
 				install_bb_links "$@" ;;
 			%makesfs)
 			    set -x
+			    unbind_ALL
 				shift # $1-output $@-squashfs params
 				echo Creating $1 ...
 				make_sfs "$@" ;;
@@ -596,8 +604,11 @@ process_pkglist() {
 					shift
 				done ;;
 			%dummy)
+			    set -x
 				shift # $1-pkgname, pkgname ...
-				install_dummy "$@" ;;
+				install_dummy "$@" 
+				set +x 
+				;;
 			%dpkg_configure)
 				shift # $@-configure flags
 				DEBIAN_FRONTEND=noninteractive chroot $CHROOT_DIR /usr/bin/dpkg --configure "$@" ;;
