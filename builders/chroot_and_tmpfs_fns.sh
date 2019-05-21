@@ -119,21 +119,37 @@ bind_ALL(){
 }
 unbind_PROC(){
   if [ "$(mount | grep "$CHROOT_DIR/proc")" != "" ]; then
-    umount -l $CHROOT_DIR/proc
+    umount -R -f $CHROOT_DIR/proc
   fi
 }
 unbind_SYS(){
-  if [ "$(mount | grep "$curdir/$rel_rootfs/sys")" != "" ]; then
-    umount -l $CHROOT_DIR/sys
+  if [ "$(mount | grep "$CHROOT_DIR/sys")" != "" ]; then
+    umount -R -f $CHROOT_DIR/sys
   fi
 }
 unbind_DEV(){
-  if [ "$(mount | grep "$curdir/$rel_rootfs/dev")" != "" ]; then
-    umount -l $CHROOT_DIR/dev
+  if [ "$(mount | grep "$CHROOT_DIR/dev")" != "" ]; then
+    umount -R -f $CHROOT_DIR/dev
   fi
 }
-unbind_ALL(){
-  unbind_PROC; unbind_SYS; unbind_DEV
+unbind_ALL_lazy(){
+  unbind_PROC_lazy; unbind_SYS_lazy; unbind_DEV_lazy
+
+}
+unbind_PROC_lazy(){
+  if [ "$(mount | grep "$CHROOT_DIR/proc")" != "" ]; then
+    umount -R -l $CHROOT_DIR/proc
+  fi
+}
+unbind_SYS_lazy(){
+  if [ "$(mount | grep "$CHROOT_DIR/sys")" != "" ]; then
+    umount -R -l $CHROOT_DIR/sys
+  fi
+}
+unbind_DEV_lazy(){
+  if [ "$(mount | grep "$CHROOT_DIR/dev")" != "" ]; then
+    umount -R -l $CHROOT_DIR/dev
+  fi
 }
 
 unmount_vfs(){

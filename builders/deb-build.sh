@@ -274,7 +274,10 @@ cutdown() {
 				find $DEVX_DIR -type d | sort -r | xargs rmdir 2>/dev/null ;;
 		esac
 	done
+	unbind_ALL_lazy
 	set +x
+	echo "finished cutting the fat"
+	read -p "Press enter to continue"
 }
 
 
