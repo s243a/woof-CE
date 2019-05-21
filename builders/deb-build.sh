@@ -275,9 +275,17 @@ cutdown() {
 		esac
 	done
 	unbind_ALL_lazy
-	set +x
+
+
+	mkdir -p /tmp/deb-build/
+	exec 10<> /tmp/deb-build/fd_10
+	1>&10
 	echo "finished cutting the fat"
 	read -p "Press enter to continue"
+	10>&1
+	exec 10>&-
+	rm /tmp/deb-build/fd_10
+	set +x
 }
 
 
