@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # DEB chroot installer for making Woof-based puppy
 # Copyright (C) James Budiono 2014
 # License: GNU GPL Version 3 or later.
@@ -64,9 +64,12 @@ BUILD_CONFIG=${BUILD_CONFIG:-./build.conf}
 
 ### helpers ###
 
-trap 'cleanup; exit' INT HUP TERM 0
+#trap 'cleanup; exit' INT HUP TERM 0
 cleanup() {
 	rm -f $TRACKER $FLATTEN
+	exec 14>&-
+	unbind_ALL_lazy
+	#rm /tmp/deb-build/fd_14
 }
 
 ### prepare critical dirs
@@ -277,14 +280,14 @@ cutdown() {
 	unbind_ALL_lazy
 
 
-	mkdir -p /tmp/deb-build/
-	exec 10<> /tmp/deb-build/fd_10
-	1>&10
+	#mkdir -p /tmp/deb-build/
+	#exec 12<>/tmp/deb-build/fd_11
+	#exec 1>&12
 	echo "finished cutting the fat"
 	read -p "Press enter to continue"
-	10>&1
-	exec 10>&-
-	rm /tmp/deb-build/fd_10
+	#exec 12>&1
+	#exec 12>&-
+	#rm /tmp/deb-build/fd_11
 	set +x
 }
 
@@ -566,10 +569,14 @@ list_dependency() {
 # $1-pkglist
 process_pkglist() {
 	# count
+	#set -x 
 	local pkglist="$1" COUNT=$(wc -l < "$1") COUNTER=0
+	mkdir -p /tmp/deb-build/
+	exec 15<> /tmp/deb-build/fd_15
+	
 	
 	# process
-	while read -r p; do
+	while read -r -u15 p; do
 	    echo "Processing: $p"
 		p=${p%%#*}; eval set -- $p; p="$1"
 		[ -z $p ] && continue
@@ -674,7 +681,9 @@ process_pkglist() {
 				install_pkg "$2" || { echo Installation of $p failed. && exit 1; }			
 				;;
 		esac		
-	done < $pkglist
+	done 15< <( cat "$pkglist" ) #< $pkglist
+	exec 15>&-
+	#rm /tmp/deb-build/fd_14
 	return 0
 }
 

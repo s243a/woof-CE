@@ -165,12 +165,12 @@ bind_dev(){
   mkdir -p $CHROOT_DIR/dev
   mount -o rbind /dev $curdir/$rel_rootfs/dev
 }
-TRAP_ON=0 #s243a: TODO consider adding a trap stack
+#TRAP_ON=0 #s243a: TODO consider adding a trap stack
 #s243a: TODO add code to remove the trap once we unbind stuff
-if [ $TRAP_ON -eq 0 ]; then #s243a: todo, add a better test here
-  echo "Traps turned off for testing"
-  #trap unmount_vfs EXIT
-  #trap unmount_vfs SIGKILL
-  #trap unmount_vfs SIGTERM
-fi 
+#if [ $TRAP_ON -eq 0 ]; then #s243a: todo, add a better test here
+#  echo "Traps turned off for testing"
+#  #trap unmount_vfs EXIT
+#  #trap unmount_vfs SIGKILL
+#  #trap unmount_vfs SIGTERM
+#fi 
 
