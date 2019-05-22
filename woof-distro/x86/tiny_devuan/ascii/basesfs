@@ -37,7 +37,7 @@
 #%depend   
 %bootstrap
 %nodepend 
-#libc6 #Tinycore has it's own c libraries. Maybe add symbolic links. 
+%dummy libc6 #Tinycore has it's own c libraries. Maybe add symbolic links. 
 libtinfo5
 #multiarch-support #Dependency of libpcre3
 libpcre3    #Dependency of libselinux1
@@ -56,6 +56,7 @@ dpkg
 %dpkgchroot 
 dash
 bash
+coreutils
 dialog
 strace #add this for debugging purposes
 #Let's reconfigure stuff before running post install scripts
@@ -66,7 +67,6 @@ strace #add this for debugging purposes
 %add pkg-apt-wrapper 
 #At this point we coudl run pkg insead of dpkg but we havn't added support for this yet. 
          # turn on dependency
-%dummy coreutils
 %dummy grep 
 %dummy gawk
 %dummy mawk
@@ -96,7 +96,7 @@ libimlib2       #Instead of imlib2-bin & imlib2  (from tinycore)
 ####### Maybe keep this since we dont' have matches for Xlibs, Xprogs, Xvesa but turn off dependency tracking 
 %nodepend 
 libgpg-error0   #Required for libgcrypt20
-libgcrypt20     #Required for xserver-xorg-core
+libgcrypt20     #Required for xserver-xorg-core, libssh2-1
 
 %dummy libexpat1      #Dependency for dbus, libegl1-mesa, libgbm1
 %dummy libwayland-client0 #Dependency for libegl1-mesa, libgbm1
@@ -149,7 +149,7 @@ xserver-xorg-input-all #Dependency for xserver-xorg-core (To cut down further se
 lsb-base        #Required for libdbus-1-3
 libdbus-1-3     #Dependency of xserver-xorg-core,dbus
 dbus            #Recommended dependency for libdbus-1-3
-zlib1g          #Needed for libpng16-16, libpciaccess0
+zlib1g          #Needed for libpng16-16, libpciaccess0, libssh2-1
 libpciaccess0   #Required for xserver-xorg-core
 libpixman-1-0   #Required for xserver-xorg-core
 #libudev1       #Dependency for xserver-xorg-core
@@ -244,10 +244,10 @@ wbar            #Same name on tinycore
 
 #%nodepend 
 # window managers etc
-jwm 
+
 
 #%depend            # turn on dependency
-mc #Replaces rox-filer          # this will pull-in gtk2
+
 
 
 #rxvt-unicode using aterm instead
@@ -260,8 +260,7 @@ mc #Replaces rox-filer          # this will pull-in gtk2
 #librsvg2-common    # pixbuf loaders, so GTK2 can shows SVG icons
 #libgnome-menu2    # for jwm-xdgmenu, openbox-xdgmenu, etc
 
-# apps
-# mtpaint
+
 
 ## apt and friends - with its run-time dependencies (among others)
 #diffutils
@@ -314,7 +313,7 @@ libpng16-16        #Instead of libpng (from tinycore)
                    #Needed for libgtk2.0-0
 libjpeg62-turbo    #Instead of libjpeg-turbo (from Tinycore) 
                    #Needed for libgtk2.0-0
-libglib2.0-0       #Needed for libgtk2.0-0, libgdk-pixbuf2.0-0
+libglib2.0-0       #Needed for libgtk2.0-0, libgdk-pixbuf2.0-0, mc
 #shared-mime-info  #Dependency of libgdk-pixbuf2.0-0
 #libtiff5          #Dependency of libgdk-pixbuf2.0-0
 libgdk-pixbuf2.0-0 #Needed for libgtk2.0-0
@@ -325,7 +324,7 @@ xdialog            # note: only i386 arch available
 libglade2-0        # dependency of gtkdialog
 libvte9            # dependency of gtkdialog 
 gtkdialog          # note: only i386 arch available
-%nodepend 
+#%nodepend 
 
 
 
@@ -352,17 +351,36 @@ gtkdialog          # note: only i386 arch available
 pmount
 %dpkg_configure --force-all -a
 %addpkg PKG #Comment this out once we add suport for PKG and uncomment the related line above
+jwm 
+
+#rox
+
+#dependencies for midnight commander
+#libslang2 #Dependency of mc
+libssh2-1 #Required for mc
+libgpm2 #Required for mc
+#mc-data #Dependency of mc
+e2fslibs #Required for mc
+#dpkg isn't installing "mc" for me
+%bootstrap 
+mc #Replaces rox-filer          # this will pull-in gtk2
+%dpkgchroot
 
 #%addbase #THe next four lines are instead of add base
+# apps
+# mtpaint
+
 %addpkg tinycore9_base_gz
 %addpkg puppycore_noarch
 %addpkg puppycore_i386_strech
 ## install extra built-in packages
-%addpkg pthemes
-%addpkg rox-filer-data
-%rox_config
+#%addpkg pthemes
+#%addpkg rox-filer-data
+#%rox_config
 %addpkg jwm_config
 %addpkg PKG
+
+
 
 %addpkg debian-setup # specific debian setup, overriding puppy-base
 %lock puppy-base puppy-base-arch libc6 # example: never update puppy base and libc6
