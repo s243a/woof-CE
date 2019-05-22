@@ -49,6 +49,8 @@ gettext
 tar 
 liblzma5  
 libbz2-1.0
+libattr1
+libacl1
 %addpkg tinycore9_base_gz
 dpkg
 %dpkgchroot 
