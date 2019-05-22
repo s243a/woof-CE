@@ -6,5 +6,5 @@ Exec=javaif
 Icon=java.png
 Terminal=false
 Type=Application
-Categories=System
+Categories=X-Utility-development;
 NoDisplay=false

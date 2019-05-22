@@ -7,13 +7,7 @@
 
 export TEXTDOMAIN=wmstartups
 export OUTPUT_CHARSET=UTF-8
-. gettext.sh
-
-[ "`whoami`" != "root" ] && exec sudo -A ${0} ${@}
-
-if [ "$XDG_CONFIG_HOME" == "" ]; then
- XDG_CONFIG_HOME=/etc/xdg
-fi 
+. gettext.sh 
 
 LIST1=`ls $XDG_CONFIG_HOME/autostart|grep \.desktop$`
 LIST2=`ls $XDG_CONFIG_HOME/autostart|grep \.bak$`
@@ -135,12 +129,12 @@ refresh_func
 export wmStartups='
 <window title="'$(gettext "Startup Apps")'" icon-name="gtk-refresh">
 <vbox>
-  '"`/usr/lib/gtkdialog/xml_info fixed startup_app.svg 60 "$(gettext "This applications controls what apps are set to start when X windows starts on your system.")"`"'
+  '"`/usr/lib/gtkdialog/xml_info fixed startup_app.svg 60 "$(gettext "This applications controls what apps are set to start when X windows starts on your system. These apps include the notification icons in the system tray and some other hidden services that need the graphical server to be running.")"`"'
   <notebook labels="'$(gettext 'Enable, Disable or Delete')'|'$(gettext 'Add to Startup')'" space-expand="true" space-fill="true">
-    <vbox margin="8">
+    <frame '$(gettext "Current Startup Apps")'>
       <vbox border-width="10" space-expand="false" space-fill="false">
-        <text wrap="false" xalign="0" use-markup="true" space-expand="false" space-fill="false"><label>"'$(gettext "<b>Remove</b> an app from startup by highlighting in the left pane and pressing <b>RIGHT</b>.")'"</label></text>
-        <text wrap="false" xalign="0" use-markup="true" space-expand="false" space-fill="false"><label>"'$(gettext "<b>Add</b> an app to startup by highlighting in the right pane and pressing <b>LEFT</b>.")'"</label></text>
+        <text wrap="false" xalign="0" use-markup="true" space-expand="false" space-fill="false"><label>"'$(gettext "<b>Remove</b> an app from startup by highlighting in the left pane and pressing <b>−</b>.")'"</label></text>
+        <text wrap="false" xalign="0" use-markup="true" space-expand="false" space-fill="false"><label>"'$(gettext "<b>Add</b> an app to startup by highlighting in the right pane and pressing <b>+</b>.")'"</label></text>
         <text wrap="false" xalign="0" use-markup="true" space-expand="false" space-fill="false"><label>"'$(gettext "To <b>delete</b> an app, highlight it in the left pane and press the trash icon.")' <b>'$(gettext "Use with caution.")'</b>"</label></text>
       </vbox>
      <hbox height-request="150" space-fill="true" space-expand="true">
@@ -154,14 +148,14 @@ export wmStartups='
        <vbox homogeneous="true" space-fill="false" space-expand="false">
          <vbox space-fill="false" space-expand="false">
            <button border-width="3">
-             '"`/usr/lib/gtkdialog/xml_button-icon go-forward`"'
+             '"`/usr/lib/gtkdialog/xml_button-icon remove`"'
              <action>move_right</action>
              <action>refresh_func</action>
              <action>refresh:YLIST</action>
              <action>refresh:NLIST</action>
            </button>
            <button border-width="3">
-             '"`/usr/lib/gtkdialog/xml_button-icon go-back`"'
+             '"`/usr/lib/gtkdialog/xml_button-icon add`"'
              <action>move_left</action>
              <action>refresh_func</action>
              <action>refresh:YLIST</action>
@@ -182,9 +176,9 @@ export wmStartups='
          <input>cat '"$TMP2"'</input>
      </tree>
    </hbox>
-  </vbox>
+  </frame>
  
-  <vbox margin="8">
+  <frame '$(gettext "Add Startup Apps")'>
     <vbox border-width="10" space-expand="false" space-fill="false">
       <text wrap="false" xalign="0" use-markup="true" space-expand="false" space-fill="false"><label>"'$(gettext "To add an app to startup type its executable name and press ")'<b>+</b>."</label></text>
       <text wrap="false" xalign="0" space-expand="false" space-fill="false"><label>"'$(gettext "Add an optional argument in the second field.")'"</label></text>
@@ -210,18 +204,18 @@ export wmStartups='
     </hbox>
     </vbox>
     <text space-expand="true" space-fill="true"><label>""</label></text>
-  </vbox>
+  </frame>
   </notebook>
   <hbox space-expand="false" space-fill="false">
-    <button space-expand="false" space-fill="false">
-      <label>'$(gettext "Ok")'</label>
-      '"`/usr/lib/gtkdialog/xml_button-icon ok`"'
-      <action>exit:OK</action>
-    </button>
     <button space-expand="false" space-fill="false">
       <label>'$(gettext "Cancel")'</label>
       '"`/usr/lib/gtkdialog/xml_button-icon cancel`"'
       <action>exit:Cancel</action>
+    </button>
+    <button space-expand="false" space-fill="false">
+      <label>'$(gettext "Ok")'</label>
+      '"`/usr/lib/gtkdialog/xml_button-icon ok`"'
+      <action>exit:OK</action>
     </button>
   </hbox>
  </vbox>

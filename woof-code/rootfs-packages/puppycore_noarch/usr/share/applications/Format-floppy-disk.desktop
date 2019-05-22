@@ -6,5 +6,5 @@ Comment=Format floppy disk
 Exec=floppy-format.sh
 Terminal=false
 Type=Application
-Categories=System
+Categories=X-System-storage
 GenericName=Format floppy disk

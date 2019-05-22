@@ -101,7 +101,7 @@ fi
 
 
 export DLG_REPONAME='
- <window title="Name of repository" icon-name="gtk-index" resizable="false">
+ <window title="Name of repository" icon-name="gtk-index" window_position="1">
   <vbox>
     <text use-markup="true">
      <label>"This field is intended to have a unique single-word that identifies the repository where the PET package is being hosted. For example, we have used the word <b>official</b> for PETs hosted at ibiblio.org and the official mirrors. 
@@ -117,7 +117,7 @@ However, this field is not being used for anything, so currently does not serve 
  </window>'
 
 export DLG_FOLDER='
- <window title="Folder path" icon-name="gtk-index" resizable="false">
+ <window title="Folder path" icon-name="gtk-index" window_position="1">
   <vbox>
     <text use-markup="true">
      <label>"The Puppy Package Manager knows the URLs of the repositories, however, individual PET packages may be in different folders within the repo.
@@ -135,10 +135,8 @@ It is recommended to leave this field empty."</label>
  </window>'
 
 export DLG_DEPS='
- <window title="Dependencies" icon-name="gtk-index" resizable="false">
+ <window title="Dependencies" icon-name="gtk-index" window_position="1">
   <vbox>
-  <vbox width-request="430" height-request="400">
-  <vbox scrollable="true">
     <text use-markup="true">
      <label>"Enter a list of package names that this package is dependent on. If you know that the packages are already builtin to Puppy, then no need to list them. Here is an example:
 
@@ -159,22 +157,16 @@ Note3: You can find out the names of inbuilt packages in file /root/.packages/wo
 Note4: As Puppy can use packages from many different distros, sometimes the same application will have a different name, even something as simple as alsa-lib or alsa_lib. When analyzing dependencies, Puppy has a list of package-name aliases to handle this. See variable PKG_NAME_ALIASES in file PKGS_MANAGEMENT (also in /root/.packages/ in a running Puppy."</label>
       <variable>VAR_DEPS</variable>
     </text>
-    </vbox>
-  </vbox>
-   
     <button>
       <label>Close</label>
       <action type="closewindow">VAR_DEPS</action>
     </button>
- </vbox>
-  </window>'
+  </vbox>
+ </window>'
 
 export DLG_CAT='
- <window title="Categories" icon-name="gtk-index" resizable="false">
- <vbox>
- <vbox width-request="430" height-request="400">
- <vbox scrollable="true">
- 
+ <window title="Categories" icon-name="gtk-index" window_position="1">
+  <vbox>
     <text use-markup="true">
      <label>"These are the top-level categories:
 
@@ -190,9 +182,6 @@ Note that the Puppy Package Manager will recognize category and subcategory, and
 A category, with optional subcategory, does not mean that the application has a menu entry. A menu entry will only exist if an appropriate .desktop file exists in /usr/share/applications -- this is provided in the package. The .desktop file specifies whereabouts in the menu the entry is located, and ideally we would expect it to correspond to the category;subcategory field described above, however in theory the .desktop file can place it anywhere else."</label>
       <variable>VAR_C</variable>
     </text>
-    </vbox>
-    </vbox>
-    
     <button>
       <label>Close</label>
       <action type="closewindow">VAR_C</action>
@@ -203,7 +192,7 @@ A category, with optional subcategory, does not mean that the application has a 
 
 
 export MAIN_DIALOG="
-<window title=\"Package database-entry creator\" icon-name=\"gtk-index\" resizable=\"false\">
+<window title=\"Package database-entry creator\" icon-name=\"gtk-index\">
  <vbox>
  
   <text use-markup=\"true\"><label>\"<b>The fields marked with '*' are required, the rest fill in as much as possible or if uncertain leave blank.</b>\"</label></text>
@@ -309,12 +298,10 @@ export MAIN_DIALOG="
 
    <hbox>
     <button>
-     "`/usr/lib/gtkdialog/xml_button-icon help`"
      <label>Help</label>
-     <action>defaulthtmlviewer http://puppylinux.com/woof/pkg-db-format.htm & </action>
+     <action>defaulthtmlviewer http://barryk.org/woof/pkg-db-format.htm & </action>
     </button>
     <button>
-      "`/usr/lib/gtkdialog/xml_button-icon execute`"
      <label>Generate package database entry</label>
      <action type=\"exit\">GENERATE_DB</action>
     </button>

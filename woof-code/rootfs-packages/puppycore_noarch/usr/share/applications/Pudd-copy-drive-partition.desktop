@@ -6,5 +6,5 @@ Comment=Pudd copy drive/partition
 Exec=Pudd
 Terminal=false
 Type=Application
-Categories=System
+Categories=Archiving
 GenericName=Pudd copy drive/partition

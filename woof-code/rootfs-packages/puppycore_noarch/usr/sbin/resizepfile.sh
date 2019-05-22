@@ -16,13 +16,15 @@ export OUTPUT_CHARSET=UTF-8
 
 . gettext.sh
 
-[ "`whoami`" != "root" ] && exec sudo -A ${0} ${@} #110505
-
-mkdir -p /tmp/resizepfile-proc
-
 #variables created at bootup by /initrd/usr/sbin/init...
 . /etc/rc.d/PUPSTATE
 . /etc/DISTRO_SPECS #v412
+
+if [ -f /initrd/tmp/no_resize2fs ] ; then #set by the initrd init script...
+	/usr/lib/gtkdialog/box_ok "$(gettext 'Resize Personal Storage File')" error \
+	"$(gettext 'The resize2fs binary is not present in initrd.gz... cannot continue')"
+	exit 1
+fi
 
 SAVELOC=$(echo $PUPSAVE | cut -f3 -d ',')
 [ -d /mnt/home$SAVELOC ] && /usr/lib/gtkdialog/box_ok "$(gettext 'Resize personal storage file')" info "<b>$(gettext "Puppy is currently using a savefolder. There is no need to resize it")</b>" " " && exit 0 
@@ -62,11 +64,16 @@ APATTERN="/dev/${SAVEPART} "
 PARTSIZE=`df -m | grep "$APATTERN" | tr -s " " | cut -f 2 -d " "`
 PARTFREE=`df -m | grep "$APATTERN" | tr -s " " | cut -f 4 -d " "`
 
-. /usr/lib/gtkdialog/svg_bar 200 "$(((($ACTUALSIZE-$SIZEFREE)*200/$ACTUALSIZE)))" "$ACTUALSIZE Mb / $SIZEFREE Mb $(gettext 'free')"  > /tmp/resizepfile-proc/resizepfile_pfile.svg
-. /usr/lib/gtkdialog/svg_bar 200 "$(((($PARTSIZE-$PARTFREE)*200/$PARTSIZE)))" "$PARTSIZE Mb / $PARTFREE Mb $(gettext 'free')"  > /tmp/resizepfile-proc/resizepfile_partition.svg
- 
+. /usr/lib/gtkdialog/svg_bar 200 "$(((($ACTUALSIZE-$SIZEFREE)*200/$ACTUALSIZE)))" "$ACTUALSIZE Mb / $SIZEFREE Mb $(gettext 'free')"  > /tmp/resizepfile_pfile.svg
+. /usr/lib/gtkdialog/svg_bar 200 "$(((($PARTSIZE-$PARTFREE)*200/$PARTSIZE)))" "$PARTSIZE Mb / $PARTFREE Mb $(gettext 'free')"  > /tmp/resizepfile_partition.svg
+
+for i in 32 64 128 256 512 1024 2048 4096 8192 12288 16384 24576 32768 65536
+do
+	[ $i -lt $PARTFREE ] && MBCOMBO="$MBCOMBO <item>${i}</item>"
+done
+
 x='
-<window title="'$(gettext 'Resize Personal Storage File')'" icon-name="gtk-refresh" resizable="false"> 
+<window title="'$(gettext 'Resize Personal Storage File')'" icon-name="gtk-refresh"> 
 <vbox space-expand="true" space-fill="true">
   '"$(/usr/lib/gtkdialog/xml_info fixed puppy_increase.svg 60 "$(eval_gettext "<b>Your personal file is \${NAMEPFILE},</b> and this contains user data, configuration files, email, newsgroup cache, history files and installed packages...")" "$(eval_gettext "If you see that you are running low on space in \$NAMEPFILE, you can make it bigger, but of course there must be enough space in \$SAVEPART.")")"'
   <vbox space-expand="true" space-fill="true">
@@ -77,12 +84,12 @@ x='
           <hbox>
             <text xalign="0" use-markup="true"><label>"<b>'$(gettext 'Personal File')'</b>: '$NAMEPFILE'"</label></text>
             <text space-expand="true" space-fill="true"><label>""</label></text>
-            <pixmap><input file>/tmp/resizepfile-proc/resizepfile_pfile.svg</input></pixmap>
+            <pixmap><input file>/tmp/resizepfile_pfile.svg</input></pixmap>
           </hbox>
           <hbox>
             <text xalign="0" use-markup="true"><label>"<b>'$(gettext 'Partition')'</b>: '$SAVEPART'"</label></text>
             <text space-expand="true" space-fill="true"><label>""</label></text>
-            <pixmap><input file>/tmp/resizepfile-proc/resizepfile_partition.svg</input></pixmap>
+            <pixmap><input file>/tmp/resizepfile_partition.svg</input></pixmap>
           </hbox>
         </vbox>
         <text height-request="5" space-expand="true" space-fill="true"><label>""</label></text>
@@ -91,14 +98,7 @@ x='
             <text xalign="0" space-expand="true" space-fill="true"><label>'$(eval_gettext "Increase size of \$NAMEPFILE by amount (Mb). You cannot make it smaller.")'</label></text>
             <comboboxtext width-request="100" space-expand="false" space-fill="false">
               <variable>KILOBIG</variable>
-              <item>32</item>
-              <item>64</item>
-              <item>128</item>
-              <item>256</item>
-              <item>512</item>
-              <item>1024</item>
-              <item>2048</item>
-              <item>4096</item>
+              '${MBCOMBO}'
             </comboboxtext>
           </hbox>
         </vbox>
@@ -110,14 +110,14 @@ x='
     '"`/usr/lib/gtkdialog/xml_pixmap nb`"'
     <text xalign="0" use-markup="true" space-expand="true" space-fill="true"><label>"<b>'$(gettext 'Resizing requires a system reboot')'</b>"</label></text>
     <button space-expand="false" space-fill="false">
-      <label>'$(gettext "Ok")'</label>
-      '"`/usr/lib/gtkdialog/xml_button-icon ok`"'
-      <action type="exit">save</action>
-    </button>
-    <button space-expand="false" space-fill="false">
       <label>'$(gettext "Cancel")'</label>
       '"`/usr/lib/gtkdialog/xml_button-icon cancel`"'
       <action type="exit">EXIT_NOW</action>
+    </button>
+    <button space-expand="false" space-fill="false">
+      <label>'$(gettext "Ok")'</label>
+      '"`/usr/lib/gtkdialog/xml_button-icon ok`"'
+      <action type="exit">save</action>
     </button>
   </hbox>
 </vbox>

@@ -18,7 +18,12 @@ export OUTPUT_CHARSET=UTF-8
 
 ICON=help.svg
 ICON_WM=gtk-help
-HEADING="$(gettext 'Puppy Help')"
+
+if [ "$1" ] ; then
+	HEADING="$1"
+else
+	HEADING="$(gettext 'Puppy Help')"
+fi
 
 if [ "`grep "svg$" <<< "$2"`" ]; then
 	ICON="$2"
@@ -43,21 +48,18 @@ elif [ "$2" ]; then
 fi
 if [ "`grep -F 'info.svg' <<< "$ICON"`" ]; then
 	ICON_WM=gtk-file
-	HEADING="$(gettext 'Puppy Info')"
-fi
-
-if [ -f /tmp/box_help ]; then
-sed -i -e "s#<b>##g" -e "s#</b>##g" -e "s#<i>##g" -e "s#</i>##g" -e "s#<u>##g" -e "s#</u>##g" /tmp/box_help
+	HEADING="$(gettext 'Info') - $1"
 fi
 
 export Help='
-<window title="'$HEADING'" icon-name="'$ICON_WM'" default_height="400" default_width="500">
+<window title="'$HEADING'" icon-name="'$ICON_WM'" default-height="450" default-width="550">
 <vbox space-expand="true" space-fill="true">
-  '"`/usr/lib/gtkdialog/xml_info fixed $ICON 60 "<b>$HEADING</b>" "$1"`"'
   '$XML_URL'
   <vbox space-expand="true" space-fill="true">
     <vbox scrollable="true" shadow-type="3" space-expand="true" space-fill="true">
-        <edit editable="false" space-expand="true" space-fill="true" wrap-mode="3"><input file>/tmp/box_help</input></edit>
+      <vbox space-expand="false" space-fill="false">
+        <text xpad="10" ypad="15" use-markup="true"><input file>/tmp/box_help</input></text>
+      </vbox>
     </vbox>
   </vbox>
   <hbox space-expand="false" space-fill="false">
@@ -69,5 +71,6 @@ export Help='
 </vbox>
 </window>'
 
-. /usr/lib/gtkdialog/xml_info gtk
 gtkdialog --center -p Help
+
+### END ###

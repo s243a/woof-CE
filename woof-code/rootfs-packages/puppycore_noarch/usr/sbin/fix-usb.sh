@@ -2,15 +2,31 @@
 # This small script will fix the "missing space" caused by dd-ing fatdog isohybrid to a flash drive
 # making the rest of the space available again for use.
 # Only run this after dd-ing fatdog iso and not after anything else.
-# (C) jamesbond 2013
+# (C) jamesbond 2013, Jake SFR 2018
+
+#set -x
 
 ### configuration
-RESERVED_SPACE=786432	# reserve this amount of sectors by default, it will be made larger if necessary.
+#RESERVED_SPACE=1048576 # reserve 512MB (1024k secotors) by default, it will be made larger if necessary.
+RESERVED_SPACE=262144 #128 MB
 
-### can't run from X to prevent accident
-if ! [ -t 0 ]; then
-	Xdialog --title "Error!" --infobox "Please run this from console." 0 0 10000
-	exit
+OPTS=
+for i in $@
+do
+	case $1 in
+		-yes|-y) OPT_YES=1 ; OPTS=1 ; shift ;;
+		-fs)    FS_TYPE=$2 ; OPTS=1 ; shift 2 ;;
+		-*) shift ;;
+		*) break ;;
+	esac
+done
+
+if [ ! "$OPTS" ] ; then
+	### can't run from X to prevent accident
+	if ! [ -t 0 ]; then
+		Xdialog --title "Error!" --infobox "Please run this from console." 0 0 10000
+		exit
+	fi
 fi
 
 ### usage
@@ -30,6 +46,14 @@ EOF
 	exit
 fi
 DEV=${1##*/}
+
+# determine partition number
+UEFI_ISO=$(sfdisk -uS  -l ${1} 2>/dev/null | grep "^${1}2" | grep ' EFI ')
+if [ "$UEFI_ISO" ] ; then
+	PARTNUM=3
+else
+	PARTNUM=2
+fi
 
 ### paranoia check - make sure sfdisk exist
 if ! which sfdisk > /dev/null; then
@@ -70,17 +94,26 @@ case $(readlink -f /sys/block/$DEV) in
 		exit
 esac
 
-### paranoia check - partition 3 must be empty
-check=$(sfdisk -uS -l $1 2>/dev/null| awk -v dev=${1}3 '$1==dev {print $6}')
+### paranoia check - partition $PARTNUM must be empty
+check=$(sfdisk -uS -l $1 2>/dev/null| grep "^${1}${PARTNUM}")
 case $check in
-	Empty) ;;
-	*)	echo "Partition 3 of $1 (${1}3) is not empty."
+    *"Empty"*|'') ;;    # 1st for old sfdisk's output, 2nd for new sfdisk's output
+	*)	echo "Partition ${PARTNUM} of $1 (${1}${PARTNUM}) is not empty."
 		echo "Aborting."
 		exit
 esac
 
 ### ask filesystem type
-cat << EOF
+if [ "$FS_TYPE" ] ; then
+	case "$FS_TYPE" in
+		ext*) partition='L' ;;
+		fat) partition='b' ;;
+		ntfs|exfat) partition='7' ;;
+		uefi) partition='ef' ;;
+		*) echo error ; exit 1;;
+	esac
+else
+	cat << EOF
 Specify filesystem type (in hex number). These are common ones:
 L  - linux (ext2/3/4)
 b  - FAT32
@@ -88,40 +121,63 @@ b  - FAT32
 ef - UEFI boot partition
 Default is FAT32
 EOF
-read partition
-if [ -z "$partition" ]; then
-	echo "No partition type is supplied, will assume FAT32"
-	partition=b
+	read partition
+	if [ -z "$partition" ]; then
+		echo "No partition type is supplied, will assume FAT32"
+		partition=b
+	fi
+	echo You choose \"$partition\" as the type.
 fi
-echo You choose \"$partition\" as the type.
 
 ### check reserved space
-ACTUAL_USED=$(sfdisk -uS -l $1 2>/dev/null | awk '/\*/ {print $4}')
+ACTUAL_USED=$(sfdisk -uS -l $1 2>/dev/null | awk '/^\/.*\*/ {print $4}')
 if [ $RESERVED_SPACE -lt $ACTUAL_USED ]; then
 	RESERVED_SPACE=$(( (($ACTUAL_USED/4096)+4)*4096 )) # round up to next nearest 4096 
 fi
 echo "Reserving space for $RESERVED_SPACE sectors."
 
 ### all checks go, one more time to confirm
-read -p "Last chance to abort - are you sure to you want to fix $1 [y/N]? " check
-case "$check" in
-	y|Y|yes|Yes|YES) ;;
-	*)	echo "Aborting."
-		exit ;;
-esac
+if [ ! "$OPT_YES" ] ; then
+	read -p "Last chance to abort - are you sure to you want to fix $1 [y/N]? " check
+	case "$check" in
+		y|Y|yes|Yes|YES) ;;
+		*)	echo "Aborting."
+			exit ;;
+	esac
+fi
 
 ### create the partition
-echo "$RESERVED_SPACE,$(( $(sfdisk -s $1 2>/dev/null) * 2 - $RESERVED_SPACE)),$partition" | sfdisk -f -N3 -uS $1
+echo "$RESERVED_SPACE,$(( $(sfdisk -s $1 2>/dev/null) * 2 - $RESERVED_SPACE)),$partition" | \
+	sfdisk -f -N${PARTNUM} -uS $1
+
+if [ ! -b ${1}${PARTNUM} ] ; then
+	echo "Could not create partition (${1}${PARTNUM})"
+	exit 1
+fi
+
+if [ "$FS_TYPE" ] ; then
+	case "$FS_TYPE" in
+		fat|vfat) mkdosfs ${1}${PARTNUM} ;;
+		ntfs) mkntfs -F ${1}${PARTNUM} ;;
+		ext*) mkfs.${FS_TYPE} -F ${1}${PARTNUM} ;;
+		*) exit 1 ;;
+	esac
+	res=$?
+	sync
+	sleep 1
+	echo change > /sys/block/${DEV}/uevent 
+	exit $res
+fi
 
 ### final message
 cat << EOF
 
 Done. Now you need to make filesystem in it. How to do it depends on the
 filesystem you have chosen.
-For FAT32, do "mkdosfs ${1}3"
-For NTFS,  do "mkntfs ${1}3"
-For exFAT, do "mkfs -t exfat ${1}3"
-For Linux, do "mkfs -t ext4 ${1}3" (or ext3 or ext2 as you wish)
+For FAT32, do "mkdosfs ${1}${PARTNUM}"
+For NTFS,  do "mkntfs ${1}${PARTNUM}"
+For exFAT, do "mkfs -t exfat ${1}${PARTNUM}"
+For Linux, do "mkfs -t ext4 ${1}${PARTNUM}" (or ext3 or ext2 as you wish)
 For other filesystem - I assume you know what you're doing :)
 
 If you already have a previous filesystem there (ie you dd fatdog.iso to 

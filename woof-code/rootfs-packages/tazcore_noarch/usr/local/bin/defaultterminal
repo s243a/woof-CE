@@ -1,0 +1,10 @@
+#!/bin/sh
+if [ ! -z "`which lxterminal`" ]; then
+  exec lxterminal "$@"
+elif [ ! -z "`which sakura`" ]; then
+  exec sakura "$@"
+elif [ ! -z "`which urxvt`" ]; then
+  exec urxvt "$@"
+else
+  xterm "$@"
+fi

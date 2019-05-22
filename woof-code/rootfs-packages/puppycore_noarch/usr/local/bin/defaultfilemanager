@@ -1,7 +1,2 @@
-#!/bin/sh
-if [ ! -z "`which rox`" ]; then
-  exec rox "$@"
-elif [ ! -z "`which pcmanfm`" ]; then
-  exec pcmanfm "$@"
-fi
-
+#!/bin/ash
+exec roxfiler "$@"

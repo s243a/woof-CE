@@ -1,0 +1,16 @@
+#!/bin/sh
+if [ ! -z "`which opera`" ]; then
+  if [ "`id -u`" -eq 0 ]; then
+    exec opera --no-sandbox
+  else
+    exec opera "$@"
+  fi
+elif [ -f "/opt/palemoon/palemoon" ]; then
+  exec /opt/palemoon/palemoon
+elif [ -f "/opt/mozilla/firefox/firefox" ]; then
+  #Firefox craches when you drag tabs
+  exec apulse /opt/mozilla/firefox/firefox "$@"
+elif [ ! -z "`which midori`" ]; then
+  #The midori in the repo doesn't work. Maybe try one from a debian repo. 
+  exec midori "$@"
+fi

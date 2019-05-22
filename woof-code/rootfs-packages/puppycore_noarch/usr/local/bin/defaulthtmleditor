@@ -1,2 +1,2 @@
-#!/bin/sh
-exec geany "$@"
+#!/bin/ash
+exec mozedit "$@"

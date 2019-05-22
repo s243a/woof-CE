@@ -1,2 +1,2 @@
-#!/bin/sh
-exec gpicview "$@"
+#!/bin/ash
+exec viewnior "$@"

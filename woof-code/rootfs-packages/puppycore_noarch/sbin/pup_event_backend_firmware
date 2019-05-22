@@ -11,11 +11,6 @@
 
 export LANG=C #w004
 
-if [ "$(whoami)" != "root" ]; then
- exec sudo -A $0 $@
- exit
-fi
-
 baseFIRMWARE="`basename $FIRMWARE`" #v409
 fndFIRMWARE="`find /lib/firmware -type f -name ${baseFIRMWARE}`"
 

@@ -6,5 +6,5 @@ Comment=ALSA sound Wizard
 Exec=alsawizard
 Terminal=false
 Type=Application
-Categories=X-Setup-wizard;System
+Categories=X-Setup-wizard
 GenericName=ALSA sound Wizard

@@ -339,12 +339,11 @@ gtkdialog          # note: only i386 arch available
 #busybox-static
 #%bblinks
 
-## install extra built-in packages
-#%addpkg pthemes
-#%addpkg rox-filer-data
+
 
 # install puppy-base - MUST BE LAST - unless overriding puppy-base
-%mkdir /dev
+#%mkdir /dev
+pmount
 %dpkg_configure --force-all -a
 %addpkg PKG #Comment this out once we add suport for PKG and uncomment the related line above
 
@@ -352,7 +351,13 @@ gtkdialog          # note: only i386 arch available
 %addpkg tinycore9_base_gz
 %addpkg puppycore_noarch
 %addpkg puppycore_i386_strech
+## install extra built-in packages
+%addpkg pthemes
+%addpkg rox-filer-data
+%rox_config
+%addpkg jwm_config
 %addpkg PKG
+
 %addpkg debian-setup # specific debian setup, overriding puppy-base
 %lock puppy-base puppy-base-arch libc6 # example: never update puppy base and libc6
 #%addpkg james-staging # temporary area to changes before they get merged to rootfs

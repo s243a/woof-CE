@@ -6,4 +6,4 @@ Exec=pupcamera
 Icon=/usr/share/pixmaps/puppy/photocamera.svg
 Terminal=false
 Type=Application
-Categories=AudioVideo;
+Categories=X-Graphic-camera

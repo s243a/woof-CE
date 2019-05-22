@@ -1,2 +1,2 @@
-#!/bin/sh
-exec puppyapps defaultwordprocessor "$@"
+#!/bin/ash
+exec abiword "$@"

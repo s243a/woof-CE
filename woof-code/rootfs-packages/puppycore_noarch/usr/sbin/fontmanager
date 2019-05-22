@@ -40,12 +40,12 @@ install (){
 export -f install
 
 S='
-<window title="'$(gettext 'Font Manager')'" icon-name="gtk-execute" resizable="false"> 
+<window title="'$(gettext 'Font Manager')'" icon-name="gtk-execute"> 
 <vbox space-expand="true" space-fill="true">
   <notebook tab-pos="2" page="'$PAGE_NR'" labels="'$(gettext 'Size')'|'$(gettext 'Appearance')'|'$(gettext 'Install fonts')'">
 
 
-    <vbox margin="8">
+    <frame '$(gettext 'Global font size')'>
       '"`/usr/lib/gtkdialog/xml_info scale font_size.svg 60 "$(gettext 'Please choose dpi (dots per inch) for the screen. The larger the value, the bigger that antialiased fonts will render on the screen. Adjust up or down if fonts are rendering too small or too big on screen.')" " " "<b>$(gettext 'Note!')</b> $(gettext 'Some apps do not use antialiased rendering and will not be affected by this setting.')" "<b>$(gettext 'Note!')</b> $(gettext 'Restart X for changes to take effect')"`"'        
       <vbox space-expand="false" space-fill="false">
         <text height-request="20"><label>""</label></text>
@@ -76,10 +76,10 @@ S='
         </hbox>
         <text height-request="5"><label>""</label></text>
       </vbox>
-    </vbox>
+    </frame>
 
 
-    <vbox margin="8">
+    <frame '$(gettext 'Font appearance')'>
       '"`/usr/lib/gtkdialog/xml_info scale font.svg 60 "$(gettext "You can change the way fonts appear on your screen: make them either sharper or smoother.")" "$(gettext "For LCD it is recommend to turn everything on. For CRT screens, do the opposite.")" " " "<b>$(gettext 'Note!')</b> $(gettext 'Restart application for changes to take affect.')"`"'        
       <vbox space-expand="false" space-fill="false">
         <text height-request="20"><label>""</label></text>
@@ -109,10 +109,10 @@ S='
 		</hbox>
         <text height-request="5"><label>""</label></text>
         </vbox>
-      </vbox>
+      </frame>
 
 
-      <vbox margin="8">
+      <frame '$(gettext 'Install font')'>
         '"`/usr/lib/gtkdialog/xml_info scale font_add.svg 60 "$(gettext 'Define a *.TTF file by browsing, or just drag it to the field below. Then click install. Windows TTF-files are fine.')" "$(gettext 'To install several fonts at once, copy new *.TTF files to the font directory') (<i>/usr/share/fonts/default/TTF</i>), $(gettext 'and click install.')"  " " "$(gettext 'You find a lot of free fonts on the web. - ie. at')" "<i>http://www.1001freefonts.com/</i>"`"'        
         <vbox space-expand="false" space-fill="false">
           <text height-request="20"><label>""</label></text>
@@ -125,10 +125,10 @@ S='
             </button>
           </hbox>
           <hbox>'
-            type rox > /dev/null 2>&1 && S=$S'<button space-expand="false" space-fill="false">
+            S=$S'<button space-expand="false" space-fill="false">
               '"`/usr/lib/gtkdialog/xml_button-icon open`"'
               <label>'$(gettext 'Open font directory')'</label>
-              <action>rox -d /usr/share/fonts/default/TTF</action>
+              <action>defaultfilemanager_x /usr/share/fonts/default/TTF</action>
             </button>'
             S=$S'<button>
 	          '"`/usr/lib/gtkdialog/xml_button-icon font_add.svg`"'
@@ -139,7 +139,7 @@ S='
           </hbox>
           <text height-request="5"><label>""</label></text>
         </vbox>
-      </vbox>
+      </frame>
 
 
     </notebook>
@@ -151,14 +151,14 @@ S='
       </button>'
       S=$S'<text space-expand="true" space-fill="true"><label>""</label></text>
     <button space-expand="false" space-fill="false">
-      <label>'$(gettext "Ok")'</label>
-      '"`/usr/lib/gtkdialog/xml_button-icon ok`"'
-      <action type="exit">save</action>
-    </button>
-    <button space-expand="false" space-fill="false">
       <label>'$(gettext "Cancel")'</label>
       '"`/usr/lib/gtkdialog/xml_button-icon cancel`"'
       <action type="exit">EXIT_NOW</action>
+    </button>
+    <button space-expand="false" space-fill="false">
+      <label>'$(gettext "Ok")'</label>
+      '"`/usr/lib/gtkdialog/xml_button-icon ok`"'
+      <action type="exit">save</action>
     </button>
   </hbox>
   </vbox>

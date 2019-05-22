@@ -14,16 +14,26 @@ mkdir -p /tmp/xcur2png
 
 func_switch (){
 	[ "$1" ] || return
-	if [[ "$(grep -iE "ORIGINAL THEME|X" <<< "$1")" ]] ; then
+	if [[ "$(grep -iE "ORIGINAL THEME" <<< "$1")" ]] ; then
 		rm -f $HOME/.icons/default
-		rm -f /root/spot/.icons/default
+		if [ `id -u` -eq 0 ] ; then
+			rm -f /home/spot/.icons/default
+		fi
 	elif [[ -d $HOME/.icons/"$1" ]]; then
 		ln -snf "$1" $HOME/.icons/default
-		mkdir -p /root/spot/.icons/
-		(cd /root/spot/.icons; ln -snf ../../.icons/"$1" default)
-		chown -R spot:spot /root/spot/.icons
+		if [ `id -u` -eq 0 ] ; then
+			mkdir -p /home/spot/.icons/
+			ln -snf /root/.icons/"$1" /home/spot/.icons/default
+			chown -R spot:spot /home/spot/.icons
+		fi
 	fi
-	[[ "$(</etc/windowmanager)" = "jwm" && "$UPDATE_JWM" != "false" ]] && jwm -restart
+	if [ "$UPDATE_WM" != "false" ] ; then
+		if pidof jwm &>/dev/null ; then
+			jwm -restart
+		elif pidof openbox &>/dev/null ; then
+			openbox --restart
+		fi
+	fi
 }
 
 func_download (){
@@ -47,7 +57,7 @@ while [ $# != 0 ]; do
 			-t) export THEME="$2"
 				[ ! "$THEME" ] && export THEME="X"
 				shift;;
-			-u) export UPDATE_JWM=false;;
+			-u) export UPDATE_WM=false;;
 			-h|--help)
 echo 'Usage: pcur [OPTIONS]
 
@@ -80,10 +90,11 @@ for ONEITEM in `ls -1 $HOME/.icons | grep -Ev 'ROX|^default$'`; do
 	else
 		CURLIST="${CURLIST}<item icon=\"${ONEITEM}\">${ONEITEM}</item>"
 	fi
-	LISTHEIGHT=`expr $LISTHEIGHT + 25`
+	LISTHEIGHT=$(( $LISTHEIGHT + 25 ))
 done
 
-[ $LISTHEIGHT -gt 550 ] && LISTHEIGHT=550
+[ $LISTHEIGHT -gt 400 ] && LISTHEIGHT=400
+
 CURITEMS='
 <tree>
   <label>'$(gettext 'Cursor theme')'</label>
@@ -119,7 +130,7 @@ fi
 S='
 <window title="Pcur - '$(gettext 'Cursor theme setter')'">
 <vbox space-fill="true" space-expand="true">
-  '"`/usr/lib/gtkdialog/xml_info fixed mouse_cursor.svg 60 "$(gettext "$TXT")"`"'
+  '"`/usr/lib/gtkdialog/xml_info fixed mouse_cursor.svg 20 "$(gettext "$TXT")"`"'
   <vbox space-fill="true" space-expand="true">
     '${CURITEMS}'
    <hbox space-expand="false" space-fill="false">

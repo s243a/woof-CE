@@ -1,0 +1,56 @@
+#Notify user of interface state changes
+
+display_notice()
+{
+	export DISPLAY=:0
+	export TEXTDOMAIN=dhcpcd_notify
+	export OUTPUT_CHARSET=UTF-8
+	. gettext.sh
+	case "$reason" in
+	BOUND|REBOOT|STATIC) #up
+		if [ "$(which notify)" == "" ]; then
+		gtkdialog-splash -placement top -timeout 4 -bg green -text "`eval_gettext \"\\\$new_ip_address acquired on \\\$interface\"`"
+		else
+		notify "`eval_gettext \"\\\$new_ip_address acquired on \\\$interface\"`"
+		fi
+		;;
+	CARRIER) #ifup
+		ssid="$(wpa_cli -i $interface status 2>/dev/null | grep ^ssid | cut -f 2 -d =)"
+		
+		if [ "$(which notify)" == "" ]; then
+		gtkdialog-splash -placement top -timeout 4 -bg orange -text "`eval_gettext \"Requesting IP address for \\\$interface \\\$ssid\"`" &
+		else
+		notify "`eval_gettext \"Requesting IP address for \\\$interface \\\$ssid\"`"
+		fi
+		
+		 ;;
+	RELEASE) #release
+		if [ "$(which notify)" == "" ]; then
+		gtkdialog-splash -placement top -timeout 4 -bg orange -text "`eval_gettext \"Releasing \\\$interface\"`" 
+		else
+		notify "`eval_gettext \"Releasing \\\$interface\"`"
+		fi
+		;;
+	NOCARRIER) #down
+		
+		if [ "$(which notify)" == "" ]; then
+		gtkdialog-splash -placement top -timeout 4 -bg hotpink -text "`eval_gettext \"\\\$interface is down\"`"
+		else
+		notify "`eval_gettext \"\\\$interface is down\"`"
+		fi
+		;;
+	IPV4LL|TIMEOUT|FAIL) #timeout
+		if [ "$(which notify)" == "" ]; then
+		gtkdialog-splash -placement top -timeout 4 -bg red -text "`eval_gettext \"IP address request failed on \\\$interface\"`"
+		else
+		notify "`eval_gettext \"IP address request failed on \\\$interface\"`"
+		fi
+		 ;;
+	esac
+}
+
+
+if echo "$reason" | grep -q -E 'BOUND|REBOOT|STATIC|CARRIER|RELEASE|NOCARRIER|IPV4LL|TIMEOUT|FAIL';then
+	[ -f /etc/dhcpcd_state_notify ] && display_notice
+fi
+

@@ -6,5 +6,5 @@ Comment=Load Squash files
 Exec=sfs_load
 Terminal=false
 Type=Application
-Categories=System;
+Categories=X-SetupEntry;PackageManager
 GenericName=SFS file Loader

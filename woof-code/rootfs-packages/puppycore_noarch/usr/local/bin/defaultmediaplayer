@@ -1,2 +1,2 @@
-#!/bin/sh
-exec puppyapps defaultmediaplayer "@"
+#!/bin/ash
+exec gnomemplayershell "$@"

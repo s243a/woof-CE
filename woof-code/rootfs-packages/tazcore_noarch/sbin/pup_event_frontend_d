@@ -1,0 +1,17 @@
+#!/bin/sh
+#have replaced pup_event_frontend_d script with compiled daemon.
+#this script is called from /root/.xinitrc
+
+ev1="$(busybox ps | grep "/usr/local/pup_event/pup_event_frontend_d" | grep -v "grep")"
+
+if [ "$ev1" != "" ]; then
+ exit
+fi
+
+if [ "`whoami`" != "root" ]; then
+exec sudo -A /usr/local/pup_event/pup_event_frontend_d ${@} #110505
+else
+exec /usr/local/pup_event/pup_event_frontend_d $@
+fi
+
+###END###

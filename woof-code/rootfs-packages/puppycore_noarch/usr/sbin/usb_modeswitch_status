@@ -10,12 +10,6 @@
 #120202 rodin.s: internationalized.
 #130326 note: DEVICE variable no longer in 3.5+ kernel, as /proc/bus/usb removed.
 
-if [ "$(whoami)" != "root" ]; then
- exec sudo -A $0 $@
- exit
-fi
-
-
 export TEXTDOMAIN=usb_modeswitch_status
 export OUTPUT_CHARSET=UTF-8
 export LANG="`cat /etc/profile|grep '^LANG='| cut -d '=' -f2`"

@@ -103,8 +103,6 @@ while :; do
  mount | grep "/dev/fd0" > /dev/null 2>&1
  if [ $? -eq 0 ];then #=0 if string found
   CURRENTMNT="`mount | grep "/dev/fd0" | cut -f 3 -d ' '`"
-  #this tells Rox to close any window with this directory and subdirectories open...
-  rox -D "$CURRENTMNT"
   sync
   umount "$CURRENTMNT" #/mnt/floppy
   if [ $? -ne 0 ];then
@@ -117,7 +115,7 @@ $(gettext 'Puppy found that the floppy disk was mounted, but has now unmounted i
  fi
 
  pressMSG="$(gettext 'Press a button:')"
- pupdialog --colors --background '#e0ffe0' --title "$(gettext 'Puppy Floppy Formatter')" --extra-button --yes-label "$(gettext 'Low-level Format')" --extra-label "$(gettext 'EXIT')" --no-label "$(gettext 'Msdos/vfat filesystem')" --yesno "${INTROMSG}
+ pupdialog --colors --background '#e0ffe0' --title "$(gettext 'Puppy Floppy Formatter')" --extra-button --yes-label "$(gettext 'Low-level Format')" --no-label "$(gettext 'EXIT')" --extra-label "$(gettext 'Msdos/vfat filesystem')" --yesno "${INTROMSG}
 ${MNTDMSG}
 ${pressMSG}" 0 0
 
@@ -127,10 +125,10 @@ ${pressMSG}" 0 0
   0) #low-level format
    zapfloppy 1440
   ;;
-  1) #vfat
+  3) #vfat
    fsfloppy 1440
   ;;
-  3) #exit
+  1) #exit
    break
   ;;
   *)

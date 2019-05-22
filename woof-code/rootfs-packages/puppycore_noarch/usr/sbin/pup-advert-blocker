@@ -127,7 +127,7 @@ Blocking ad servers protects your privacy, saves you bandwidth, greatly improves
 }
 export -f msg_help
 
-export PupAdvertBlocker='<window title="'$title' '$appver'" icon-name="gtk-execute" resizable="false">
+export PupAdvertBlocker='<window title="'$title' '$appver'" icon-name="gtk-execute">
 <vbox space-expand="true" space-fill="true">
   '"`/usr/lib/gtkdialog/xml_info scale dialog_stop.svg 60 "<b>$title</b>" "$(gettext "Block online ads in all browsers with this simple tool")"`"'
   <frame '$(gettext 'Choose your preferred service(s) or select them all for maximum ad blocking')'>

@@ -1,2 +1,2 @@
-#!/bin/sh
-exec puppyapps defaultrun "$@"
+#!/bin/ash
+exec xrun "$@"

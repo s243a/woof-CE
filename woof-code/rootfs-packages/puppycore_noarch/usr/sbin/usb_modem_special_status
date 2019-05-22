@@ -2,12 +2,6 @@
 #BK called from udev rule in /etc/udev/rules.d/52-usb_modem_puppy.rules
 #120109 usb_modeswitch 1.2.1: my optus 3g modem, not creating /dev/gsmmodem. call usb_modeswitch_status to do all the work.
 
-if [ "$(whoami)" != "root" ]; then
- exec sudo -A $0 $@
- exit
-fi
-
-
 PARAM1=""
 [ $1 ] && PARAM1="$1"
 
