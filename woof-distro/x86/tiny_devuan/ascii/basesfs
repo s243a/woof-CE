@@ -361,6 +361,7 @@ libssh2-1 #Required for mc
 libgpm2 #Required for mc
 #mc-data #Dependency of mc
 e2fslibs #Required for mc
+libslang2 #Required for mc
 #dpkg isn't installing "mc" for me
 %bootstrap 
 mc #Replaces rox-filer          # this will pull-in gtk2
