@@ -347,7 +347,7 @@ gtkdialog          # note: only i386 arch available
 %mkdir /dev
 %dpkg_configure --force-all -a
 %addpkg PKG #Comment this out once we add suport for PKG and uncomment the related line above
-%rm /dev #s243a: Do we want to remove /dev?
+
 #%addbase #THe next four lines are instead of add base
 %addpkg tinycore9_base_gz
 %addpkg puppycore_noarch
@@ -360,5 +360,6 @@ gtkdialog          # note: only i386 arch available
 # cutdown the size
 %cutdown doc gtkdoc nls # lets see if nls cutdown works now
 
+#%rm /dev #s243a: Do we want to remove /dev?
 # make the sfs (optional)
 %makesfs iso/iso-root/puppy.sfs -comp gzip # -Xcompression-level 1
