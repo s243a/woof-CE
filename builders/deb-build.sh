@@ -16,6 +16,7 @@
 #the mode between relative vs chroot
 #s243a:TODO add directive to turn safe mode on and off. Give prompt to indicate that
 #      safe mode is being turned off. 
+export LD_LIBRARY_PATH=/lib:/usr/lib:/root/my-applications/lib:/usr/local/lib:/lib/i386-linux-gnu
 export SAFE_MODE=1 #Not sure if we need to export this
 
 #Some directory packages will only work properly in a chroot enviornment and others
@@ -64,7 +65,7 @@ BUILD_CONFIG=${BUILD_CONFIG:-./build.conf}
 
 ### helpers ###
 
-#trap 'cleanup; exit' INT HUP TERM 0
+trap 'cleanup; exit' INT HUP TERM 0
 cleanup() {
 	rm -f $TRACKER $FLATTEN
 	exec 14>&-

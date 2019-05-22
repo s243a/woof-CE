@@ -1,4 +1,5 @@
 #!/bin/sh
+source /etc/profile #added by s243a
 NOAUTOLOGIN=/etc/sysconfig/noautologin
 if [ -f "$NOAUTOLOGIN" ]; then
 	if [ -s "$NOAUTOLOGIN" ]; then

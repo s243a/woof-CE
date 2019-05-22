@@ -39,17 +39,20 @@
 %nodepend 
 #libc6 #Tinycore has it's own c libraries. Maybe add symbolic links. 
 libtinfo5
+#multiarch-support #Dependency of libpcre3
+libpcre3    #Dependency of libselinux1
+libselinux1
 debianutils 
+gettext
 %dummy base-files #Tinycore probably already has these
 %dummy zlib1g #Already linked to busybox
 %dummy tar #Already linked to busybox
-%dummy liblzma5  #Already linked to busybox
+liblzma5  #Already linked to busybox
 %addpkg tinycore9_base_gz
 dpkg
 %dpkgchroot 
 dash
 bash
-gettext
 dialog
 strace #add this for debugging purposes
 #Let's reconfigure stuff before running post install scripts

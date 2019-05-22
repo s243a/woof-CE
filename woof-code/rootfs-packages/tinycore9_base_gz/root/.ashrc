@@ -1,0 +1,6 @@
+PATH="/usr/local/sbin:/usr/local/bin:/apps/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+LD_LIBRARY_PATH="/lib:/usr/lib:/root/my-applications/lib:/usr/local/lib"
+if [ -d /lib/i386-linux-gnu ]; then #added by s243a
+  LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/lib/i386-linux-gnu" 
+fi 
+export PATH LD_LIBRARY_PATH
