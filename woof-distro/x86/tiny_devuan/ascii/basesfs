@@ -46,7 +46,7 @@ debianutils
 gettext
 %dummy base-files #Tinycore probably already has these
 %dummy zlib1g #Already linked to busybox
-%dummy tar #Already linked to busybox
+tar 
 liblzma5  
 libbz2-1.0
 %addpkg tinycore9_base_gz
