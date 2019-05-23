@@ -356,14 +356,16 @@ jwm
 #rox
 
 #dependencies for midnight commander
-#libslang2 #Dependency of mc
+
+
+#mc-data #Dependency of mc
+
+#dpkg isn't installing "mc", libslang2, e2fslibs, libgpm2, libssh2-1  for me
+%bootstrap 
 libssh2-1 #Required for mc
 libgpm2 #Required for mc
-#mc-data #Dependency of mc
 e2fslibs #Required for mc
 libslang2 #Required for mc
-#dpkg isn't installing "mc" for me
-%bootstrap 
 mc #Replaces rox-filer          # this will pull-in gtk2
 %dpkgchroot
 
