@@ -46,8 +46,8 @@ debianutils
 gettext
 %dummy base-files #Tinycore probably already has these
 %dummy zlib1g #Already linked to busybox
-tar 
-liblzma5  
+tar
+liblzma5
 libbz2-1.0
 libattr1
 libacl1
@@ -85,6 +85,7 @@ strace #add this for debugging purposes
 
 %dummy libkmod2           # debian needs this
 
+#rxvt-unicode using aterm instead
 #%depend            # enable dep for xorg, makes life simpler for us
 aterm           #Same name in tinycore
 libfltk1.3      #Instead of fltk-1.3 (from tinycore)
@@ -236,21 +237,28 @@ fonts-dejavu-core  # standard font
 libxfont1       #Instead of libXfont (From tinycore) 
 wbar            #Same name on tinycore
 
-
 #######
 
-#%depend            # turn on dependency
-# debian dependencies
-
-#%nodepend 
 # window managers etc
+jwm 
+%dpkg_configure --force-all -a
+%addpkg jwm_config
 
+#rox
+#%addpkg pthemes
+#%addpkg rox-filer-data
+#%rox_config
 
-#%depend            # turn on dependency
-
-
-
-#rxvt-unicode using aterm instead
+#dependencies for midnight commander
+#mc-data #Dependency of mc
+#dpkg isn't installing "mc", libslang2, e2fslibs, libgpm2, libssh2-1  for me
+%bootstrap 
+libssh2-1 #Required for mc
+libgpm2 #Required for mc
+e2fslibs #Required for mc
+libslang2 #Required for mc
+mc #Replaces rox-filer          # this will pull-in gtk2
+%dpkgchroot
 
 ## extra libs
 #librsvg2-2
@@ -259,8 +267,6 @@ wbar            #Same name on tinycore
 #%depend
 #librsvg2-common    # pixbuf loaders, so GTK2 can shows SVG icons
 #libgnome-menu2    # for jwm-xdgmenu, openbox-xdgmenu, etc
-
-
 
 ## apt and friends - with its run-time dependencies (among others)
 #diffutils
@@ -344,46 +350,23 @@ gtkdialog          # note: only i386 arch available
 #busybox-static
 #%bblinks
 
-
-
 # install puppy-base - MUST BE LAST - unless overriding puppy-base
 #%mkdir /dev
 pmount
 %dpkg_configure --force-all -a
 %addpkg PKG #Comment this out once we add suport for PKG and uncomment the related line above
-jwm 
-
-#rox
-
-#dependencies for midnight commander
-
-
-#mc-data #Dependency of mc
-
-#dpkg isn't installing "mc", libslang2, e2fslibs, libgpm2, libssh2-1  for me
-%bootstrap 
-libssh2-1 #Required for mc
-libgpm2 #Required for mc
-e2fslibs #Required for mc
-libslang2 #Required for mc
-mc #Replaces rox-filer          # this will pull-in gtk2
-%dpkgchroot
 
 #%addbase #THe next four lines are instead of add base
-# apps
-# mtpaint
-
 %addpkg tinycore9_base_gz
 %addpkg puppycore_noarch
 %addpkg puppycore_i386_strech
 ## install extra built-in packages
-#%addpkg pthemes
-#%addpkg rox-filer-data
-#%rox_config
-%addpkg jwm_config
+
+# apps
+# mtpaint
+
+%addpkg puppy_ppm_configs_devaun_ascii
 %addpkg PKG
-
-
 
 %addpkg debian-setup # specific debian setup, overriding puppy-base
 %lock puppy-base puppy-base-arch libc6 # example: never update puppy base and libc6
