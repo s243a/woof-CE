@@ -99,7 +99,7 @@ libimlib2       #Instead of imlib2-bin & imlib2  (from tinycore)
 libgpg-error0   #Required for libgcrypt20
 libgcrypt20     #Required for xserver-xorg-core, libssh2-1
 
-%dummy libexpat1      #Dependency for dbus, libegl1-mesa, libgbm1
+libexpat1      #Dependency for dbus, libegl1-mesa, libgbm1, xdialog
 %dummy libwayland-client0 #Dependency for libegl1-mesa, libgbm1
 %dummy libwayland-server0 #Dependency for libegl1-mesa, libgbm1
 libxau6            #Instead of libXau (from tinycore) 
@@ -110,8 +110,8 @@ libxshmfence1    #Required for libegl1-mesa, libgl1-mesa-glx, xserver-xorg-core
  
 
 
-%dummy libxfixes3        #Dependency for libxdamage1, libgl1-mesa-glx  
-%dummy libxdamage1     #Dependency for libgl1-mesa-glx
+libxfixes3             #Dependency for libxdamage1, libgl1-mesa-glx, xdialog  
+libxdamage1            #Dependency for libgl1-mesa-glx, xdialog
 %dummy libxcb-dri2-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
 %dummy libxcb-dri3-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
 %dummy libxcb-present0 #Dependency for libegl1-mesa, libgl1-mesa-glx
@@ -159,10 +159,10 @@ libxfont2       #Dependency for xserver-xorg-core
 #eudev
 #udev           #Dependency for xserver-xorg-core
 x11-common      #Dependency for xserver-common
+%dummy xserver-common #Dependency for xserver-xorg-core
 xserver-common  #Dependency for xserver-common
 
 x11-xkb-utils   #Dependency for 
-%dummy xserver-common #Dependency for xserver-xorg-core
 xserver-xorg-core #Dependency of xorg-input-abi-24 
 xkb-data        #Depency of 
 libxkbfile1     #Dependency of x11-xkb-utils, x11-xkb-utils
@@ -180,23 +180,20 @@ xserver-xorg
 
 
 
-%dummy libxxf86dga1   #Dependency of x11-utils
-%dummy libxv1         #Dependency of x11-utils
-%dummy libxtst6       #Dependency of x11-utils
-%dummy libxmuu1       #Dependency of x11-utils
-libxinerama1    #Dependency of x11-utils
-%dummy libxft2        #Dependency of x11-utils
-%dummy libxcomposite1 #Dependency of x11-utils
+
+libxinerama1          #Dependency of x11-utils
+
+libxcomposite1        #Dependency of x11-utils, xdialog
 %dummy libx11-xcb1    #Dependncy of x11-utils, libegl1-mesa
-%dummy libxcb-shape0  #Dependency of x11-utils
+
 
 libfreetype6    #Instead of freetype (from tinycore) 
                 #Dependency of x11-utils
 libfontenc1     #Instead of libfontenc (from tinycore)
                 #Needed for x11-utils 
-%dummy libfontconfig1 #Dependency of x11-utils
+libfontconfig1 #Dependency of x11-utils, xdialog
 
-%dummy libxxf86vm1    #Dependency of x11-xserver-utils
+
 %dummy libbsd0         #Dependency o libice6, xserver-xorg-core, libxdmcp6
 libice6         #Instead of libICE (from Tinycore) 
                 #Needed for libxt6
@@ -212,7 +209,8 @@ libxdmcp6          #Instead of libXdmcp (From tinycore)
                    #Dependency of libxcb1 (display manager related)
 libxcb1            #Instead of libxcb (FromTinycore)
                    #Needed for libx11-6, libegl1-mesa,libxcb1
-#libxcb-shm0
+libxcb-shm0
+%dummy libx11-data       #Dependency of libx11-6 (inernationalization)
 libx11-6           #Instead of libX11 (from Tinycore) 
                    #Needed for libgdk-pixbuf2.0-0, x11-xserver-utils, libxaw7, x11-utils, libxkbfile1, libxxf86vm1, x11-xkb-utils
 ######## A lot of stuff below is for x11-utils. Consider removing this ########
@@ -226,9 +224,14 @@ libxcursor1        #Needed for x11-xserver-utils,
 libxpm4            #Instead of libXpm (From tinycore) 
                    #Needed for libxaw7
 libxaw7            #Needed for x11-xserver-utils, x11-utils, x11-xkb-utils
-%dummy libx11-data       #Dependency of libx11-6 (inernationalization)
-
+%dummy libxft2        #Dependency of x11-utils
+%dummy libxxf86dga1   #Dependency of x11-utils
+%dummy libxv1         #Dependency of x11-utils
+%dummy libxtst6       #Dependency of x11-utils
+%dummy libxmuu1       #Dependency of x11-utils
+%dummy libxcb-shape0  #Dependency of x11-utils
 x11-utils
+#%dummy libxxf86vm1    #Dependency of x11-xserver-utils
 x11-xserver-utils
 ############################# Consider installing xinit ##############
 #TODO consider adding tinycore anc create a layer here
@@ -339,11 +342,18 @@ libglib2.0-0       #Needed for libgtk2.0-0, libgdk-pixbuf2.0-0, mc
 #dpkg: error: parsing file '/var/lib/dpkg/status' near line 1994 package 'libxxf86vm1':
 # mixed non-coinstallable and coinstallable package instances present; most probably due to an upgrade from an unofficial dpkg
 %bootstrap         #
-libgdk-pixbuf2.0-0 #Needed for libgtk2.0-0, mc
+libcairo2
+libgdk-pixbuf2.0-0  #Needed for libgtk2.0-0, mc
+libpango-1.0-0      #Required for xdialog
+libpangocairo-1.0-0 #Required for xdialog
+libpangoft2-1.0-0  #Required for xdialog
 %dpkgchroot
+libmount1           #Required for xdialog
+libharfbuzz0b       #Required for xdialog
+libdatrie1          #Required for xdialog
+libgraphite2-3      #Required for xdialog
 
-
-libgtk2.0-0        #need for both xdialog and gtk dialog
+libgtk2.0-0        #Required for both xdialog and gtk dialog
 xdialog            # note: only i386 arch available
 
 #libgtk-3-0         # xdialog depends on libgtk2.0-0. See if we can use this instead.
