@@ -312,18 +312,21 @@ dpkg_install() {
 }
 ### choice of bootstrap or dpkg 
 dpkgchroot_install() {
+	set -x
 	bind_ALL #s243a: TODO, remove this once we add a direcive for this command
 	! [ -d $CHROOT_DIR/tmp ] && mkdir -p $CHROOT_DIR/tmp
 	cp "$REPO_DIR/$PKGFILE" $CHROOT_DIR/tmp
 	chroot $CHROOT_DIR /usr/bin/dpkg --force-all --unpack /tmp/"$PKGFILE"
 	rm -f $CHROOT_DIR/tmp/"$PKGFILE"
-	if [ DPKG_CHROOT_FALLBACK = '%bootstrap' ] &&
+	if [ "$DPKG_CHROOT_FALLBACK" = '%bootstrap' ] &&
 	[ ! -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" ]; then
 	  bootstrap_install
 	fi
+	set +x
 	return 0
 }
 bootstrap_install() {
+	set -x
 	local data decompressor
 	if [ -z "$WITHOUT_DPKG" ]; then
 		dpkg-deb -X "$REPO_DIR/$PKGFILE" $CHROOT_DIR
@@ -339,6 +342,7 @@ bootstrap_install() {
 	fi |
 	sed '1 s|^.*$|/.|; s|^\.||' > "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" &&
 	update_pkg_status "$PKG" "$PKGPRIO" "$PKGSECTION" "$PKGVER" "$PKGDEP"
+	set +x
 }
 # $1-PKG $2-PKGPRIO $3-PKGSECTION $4-PKGVER $5-PKGDEP
 update_pkg_status() {
