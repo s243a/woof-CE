@@ -32,9 +32,7 @@
 #%pkgs_by_priority "required" ".*lib.*|^tzdata|^bash|^dash|^lsb-base|^ncurses.*|^bsdutils|^kmod|^mount|^insserv|^mount|^sysvinit-utils|^procps|^makedev" "^klibc|.*plymouth.*|mountall"
 #%pkgs_by_priority "required" ".*lib.*|^tzdata|^bash|^dash|^lsb-base|^ncurses.*|^bsdutils|^kmod|^mount|^insserv|^sysvinit-utils|^makedev" "^klibc|.*plymouth.*"
 #%pkgs_by_priority "required"
-#%dpkg             # use dpkg installer instead of bootstrap
-#%dpkgchroot       # use dpkg-chroot installer instead of bootstrap
-#%depend   
+
 %bootstrap
 %nodepend 
 %dummy libc6 #Tinycore has it's own c libraries. Maybe add symbolic links. 
@@ -67,11 +65,12 @@ strace #add this for debugging purposes
 %add pkg-apt-wrapper 
 #At this point we coudl run pkg insead of dpkg but we havn't added support for this yet. 
          # turn on dependency
-%dummy grep 
-%dummy gawk
+grep
+libsigsegv2 #required for gawk 
+gawk
 %dummy mawk
-%dummy sed
-%dummy tar
+sed
+tar
 %dummy gzip
 %dummy cpio
 
@@ -86,7 +85,6 @@ strace #add this for debugging purposes
 %dummy libkmod2           # debian needs this
 
 #rxvt-unicode using aterm instead
-#%depend            # enable dep for xorg, makes life simpler for us
 aterm           #Same name in tinycore
 libfltk1.3      #Instead of fltk-1.3 (from tinycore)
 flwm            #Instead of flwm_topside (from tinycore) 
@@ -95,7 +93,7 @@ libimlib2       #Instead of imlib2-bin & imlib2  (from tinycore)
 
 
 ####### Maybe keep this since we dont' have matches for Xlibs, Xprogs, Xvesa but turn off dependency tracking 
-%nodepend 
+
 libgpg-error0   #Required for libgcrypt20
 libgcrypt20     #Required for xserver-xorg-core, libssh2-1
 
@@ -110,7 +108,7 @@ libxshmfence1    #Required for libegl1-mesa, libgl1-mesa-glx, xserver-xorg-core
  
 
 
-libxfixes3             #Dependency for libxdamage1, libgl1-mesa-glx, xdialog  
+libxfixes3             #Dependency for libxdamage1, libgl1-mesa-glx, xdialog
 libxdamage1            #Dependency for libgl1-mesa-glx, xdialog
 %dummy libxcb-dri2-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
 %dummy libxcb-dri3-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
@@ -178,14 +176,10 @@ xserver-xorg-video-vmware #This also works in virtualbox and qemu
 xserver-xorg
 #TODO Create a base sfs layere here. Add other packages as a higher up layer
 
-
-
-
 libxinerama1          #Dependency of x11-utils
-
 libxcomposite1        #Dependency of x11-utils, xdialog
 %dummy libx11-xcb1    #Dependncy of x11-utils, libegl1-mesa
-
+%dummy libxcb-shape0  #Dependency of x11-utils
 
 libfreetype6    #Instead of freetype (from tinycore) 
                 #Dependency of x11-utils
@@ -234,7 +228,7 @@ x11-utils
 #%dummy libxxf86vm1    #Dependency of x11-xserver-utils
 x11-xserver-utils
 ############################# Consider installing xinit ##############
-#TODO consider adding tinycore anc create a layer here
+#TODO consider adding tinycore and create a layer here
 #xinit          #we can start Xorg without xinit
 ######################### Not sure about this stuff ######
 fonts-dejavu-core  # standard font
@@ -256,16 +250,11 @@ jwm
 
 #dependencies for midnight commander
 #mc-data #Dependency of mc
-#dpkg isn't installing "mc", libslang2, e2fslibs, libgpm2, libssh2-1  for me
-%bootstrap 
-
-
 libssh2-1 #Required for mc
 libgpm2 #Required for mc
 e2fslibs #Required for mc
 libslang2 #Required for mc
 mc #Replaces rox-filer          # this will pull-in gtk2
-%dpkgchroot
 
 ## extra libs
 #librsvg2-2
@@ -337,29 +326,22 @@ libglib2.0-0       #Needed for libgtk2.0-0, libgdk-pixbuf2.0-0, mc
 #shared-mime-info  #Dependency of libgdk-pixbuf2.0-0
 #libtiff5          #Dependency of libgdk-pixbuf2.0-0
 
-
-#Need to bootstrap to fix error: Installing libgdk-pixbuf2.0-0_2.36.5-2+deb9u2_i386.deb ...
-#dpkg: error: parsing file '/var/lib/dpkg/status' near line 1994 package 'libxxf86vm1':
-# mixed non-coinstallable and coinstallable package instances present; most probably due to an upgrade from an unofficial dpkg
-%bootstrap         #
-libcairo2
-libgdk-pixbuf2.0-0  #Needed for libgtk2.0-0, mc
+libcairo2           #Required for xdialog
+libgdk-pixbuf2.0-0  #Required for libgtk2.0-0, mc
 libpango-1.0-0      #Required for xdialog
 libpangocairo-1.0-0 #Required for xdialog
-libpangoft2-1.0-0  #Required for xdialog
-%dpkgchroot
+libpangoft2-1.0-0   #Required for xdialog
 libmount1           #Required for xdialog
 libharfbuzz0b       #Required for xdialog
 libdatrie1          #Required for xdialog
 libgraphite2-3      #Required for xdialog
+libgtk2.0-0         #Required for both xdialog and gtk dialog
+xdialog             #note: only i386 arch available
 
-libgtk2.0-0        #Required for both xdialog and gtk dialog
-xdialog            # note: only i386 arch available
-
-#libgtk-3-0         # xdialog depends on libgtk2.0-0. See if we can use this instead.
-libglade2-0        # dependency of gtkdialog
-libvte9            # dependency of gtkdialog 
-gtkdialog          # note: only i386 arch available
+#libgtk-3-0         #xdialog depends on libgtk2.0-0. See if we can use this instead.
+libglade2-0         #dependency of gtkdialog
+libvte9             #dependency of gtkdialog 
+gtkdialog           #note: only i386 arch available
 #%nodepend 
 
 
@@ -401,8 +383,11 @@ grep      #Dependency of PKG
 # apps
 # mtpaint
 
+%addpkg sync_pet_specs_fm_dpkg
+%chroot sync_pet_specs_fm_dpkg.sh
 %addpkg puppy_ppm_configs_devaun_ascii
 %addpkg PKG
+%chroot pkg -ru #Update the packge repos
 
 %addpkg debian-setup # specific debian setup, overriding puppy-base
 %lock puppy-base puppy-base-arch libc6 # example: never update puppy base and libc6
