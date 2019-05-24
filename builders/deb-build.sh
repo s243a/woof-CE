@@ -16,18 +16,19 @@
 #the mode between relative vs chroot
 #s243a:TODO add directive to turn safe mode on and off. Give prompt to indicate that
 #      safe mode is being turned off. 
-export LD_LIBRARY_PATH=/lib:/usr/lib:/root/my-applications/lib:/usr/local/lib:/lib/i386-linux-gnu
-export SAFE_MODE=1 #Not sure if we need to export this
+LD_LIBRARY_PATH=/lib:/usr/lib:/root/my-applications/lib:/usr/local/lib:/lib/i386-linux-gnu
+SAFE_MODE=1 #Not sure if we need to export this
 
 #Some directory packages will only work properly in a chroot enviornment and others
 #will not work properly if the script is ran from /. In the latter case the script
 #assumes that the rootfs is relative to the current directory and not robust enough
 #to handle a chroot enviornment. 
 #s243a: TODO add directives to change PINSTALL_MODE
-export PINSTALL_MODE='chroot' #Not sure if we need to export this
+PINSTALL_MODE='chroot' #Not sure if we need to export this
 source $WOOFCE/builders/chroot_and_tmpfs_fns.sh #Some postinst scrips might require networking
                               #also if chroot has it's own device files it could
                               #conflict with the system
+DPKG_CHROOT_FALLBACK='%bootstrap'
 
 PKGLIST=${PKGLIST:-pkglist}
 ARCH=${ARCH:-i386} # or amd64
@@ -316,6 +317,10 @@ dpkgchroot_install() {
 	cp "$REPO_DIR/$PKGFILE" $CHROOT_DIR/tmp
 	chroot $CHROOT_DIR /usr/bin/dpkg --force-all --unpack /tmp/"$PKGFILE"
 	rm -f $CHROOT_DIR/tmp/"$PKGFILE"
+	if [ DPKG_CHROOT_FALLBACK = '%bootstrap' ] &&
+	[ ! -e "$CHROOT_DIR/$ADMIN_DIR/info/${PKG}.list" ]; then
+	  bootstrap_install
+	fi
 	return 0
 }
 bootstrap_install() {
