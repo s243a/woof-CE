@@ -16,7 +16,7 @@
 #the mode between relative vs chroot
 #s243a:TODO add directive to turn safe mode on and off. Give prompt to indicate that
 #      safe mode is being turned off. 
-LD_LIBRARY_PATH=/lib:/usr/lib:/root/my-applications/lib:/usr/local/lib:/lib/i386-linux-gnu
+LD_LIBRARY_PATH=/lib:/usr/lib:/root/my-applications/lib:/usr/local/lib:/lib/i386-linux-gnu:/usr/lib/i386-linux-gnu:/usr/lib/i386-gnu
 SAFE_MODE=1 #Not sure if we need to export this
 
 #Some directory packages will only work properly in a chroot enviornment and others
