@@ -169,6 +169,8 @@ libxkbfile1     #Dependency of x11-xkb-utils, x11-xkb-utils
 x11-xkb-utils   #Needed for xserver-xorg
 ##################### Turn on dependency Tracking ################
 %depend           
+urxvt  #required for aterm
+       #I'll sort out the dependency of this one later. 
 xserver-xorg-video-all
 %dumy xserver-xorg-video-all #Let's pick the specific drivers that we want
 xserver-xorg-video-vesa 
@@ -253,6 +255,8 @@ jwm
 #mc-data #Dependency of mc
 #dpkg isn't installing "mc", libslang2, e2fslibs, libgpm2, libssh2-1  for me
 %bootstrap 
+
+
 libssh2-1 #Required for mc
 libgpm2 #Required for mc
 e2fslibs #Required for mc
@@ -319,10 +323,26 @@ libpng16-16        #Instead of libpng (from tinycore)
                    #Needed for libgtk2.0-0
 libjpeg62-turbo    #Instead of libjpeg-turbo (from Tinycore) 
                    #Needed for libgtk2.0-0
+                   
+#Need to bootstrap to fix: Installing libglib2.0-0_2.50.3-2_i386.deb ...
+#dpkg: error: parsing file '/var/lib/dpkg/status' near line 1994 package 'libxxf86vm1':
+# mixed non-coinstallable and coinstallable package instances present; most probably due to an upgrade from an unofficial dpkg                   
+%bootstrap                   
 libglib2.0-0       #Needed for libgtk2.0-0, libgdk-pixbuf2.0-0, mc
+%dpkgchroot
+
 #shared-mime-info  #Dependency of libgdk-pixbuf2.0-0
 #libtiff5          #Dependency of libgdk-pixbuf2.0-0
-libgdk-pixbuf2.0-0 #Needed for libgtk2.0-0
+
+
+#Need to bootstrap to fix error: Installing libgdk-pixbuf2.0-0_2.36.5-2+deb9u2_i386.deb ...
+#dpkg: error: parsing file '/var/lib/dpkg/status' near line 1994 package 'libxxf86vm1':
+# mixed non-coinstallable and coinstallable package instances present; most probably due to an upgrade from an unofficial dpkg
+%bootstrap         #
+libgdk-pixbuf2.0-0 #Needed for libgtk2.0-0, mc
+%dpkgchroot
+
+
 libgtk2.0-0        #need for both xdialog and gtk dialog
 xdialog            # note: only i386 arch available
 
@@ -353,6 +373,12 @@ gtkdialog          # note: only i386 arch available
 # install puppy-base - MUST BE LAST - unless overriding puppy-base
 #%mkdir /dev
 pmount
+
+#Dependencies for pkg (maybe create wrappers for these instead of installing them)
+findutils #Dependency of PKG
+sed       #Dependency of PKG
+grep      #Dependency of PKG
+
 %dpkg_configure --force-all -a
 %addpkg PKG #Comment this out once we add suport for PKG and uncomment the related line above
 
