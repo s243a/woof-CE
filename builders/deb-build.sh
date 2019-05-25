@@ -59,7 +59,9 @@ LOCAL_PKGDB=pkgdb
 ADMIN_DIR=/var/lib/dpkg
 TRACKER=/tmp/tracker.$$
 FLATTEN=/tmp/flatten.$$
-
+if [ -z "$LN_FLATTEN" ]; then
+  ln "$FLATTEN" "$LN_FLATTEN" 
+fi
 ###
 BUILD_CONFIG=${BUILD_CONFIG:-./build.conf}
 [ -e $BUILD_CONFIG ] && . $BUILD_CONFIG
@@ -712,19 +714,25 @@ params() {
 	case "$1" in
 		--help|-h) echo "Usage: ${0##*/} [--help|-h|pkglist]" && exit ;;
 		"") ;;
+		--sourced)
+		   SOURCED=1
+		   shift 
+		   params "$@"
 		*) PKGLIST="$1"
 	esac
 }
 
 ### main
 params "$@"
-sanity_check
-prepare_dirs
-add_multiple_repos $DEFAULT_REPOS
-echo Flattening $PKGLIST ...
-flatten_pkglist $PKGLIST > $FLATTEN
-if [ -z "$DRY_RUN" ]; then
+if [ -z "$SOURCED" ] || [ $SOURCED -ne 1 ]; then
+  sanity_check
+  prepare_dirs
+  add_multiple_repos $DEFAULT_REPOS
+  echo Flattening $PKGLIST ...
+  flatten_pkglist $PKGLIST > $FLATTEN
+  if [ -z "$DRY_RUN" ]; then
 	process_pkglist $FLATTEN
-else
+  else
 	cat $FLATTEN
+  fi
 fi

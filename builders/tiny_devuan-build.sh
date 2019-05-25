@@ -24,4 +24,4 @@ export BUILD_CONFIG=${BUILD_CONFIG:-"`realpath ./build.conf`"}
 #The following cd messes up ". ./repo-url" in build.conf
 #cd "$(dirname "`realpath "$0"`")"
 
-$CURDIR/deb-build.sh
+$CURDIR/deb-build.sh "$@"
