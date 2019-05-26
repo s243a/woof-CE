@@ -8,9 +8,9 @@ SYNC_DUMMY=${SYNC_DUMMY:-0}
 [ -z "$PUPPY_ADMIN_LIST" ] && PUPPY_ADMIN_LIST="$PUPPY_ADMIN/builtin_files"
 mkdir -p "$PUPPY_ADMIN"
 mkdir -p "$PUPPY_ADMIN_LIST"
-#trap close_FDs EXIT
-#trap close_FDs SIGKILL
-#trap close_FDs SIGTERM
+trap close_FDs EXIT
+trap close_FDs SIGKILL
+trap close_FDs SIGTERM
 spec_target=${spec_target:-"$PUPPY_ADMIN/woof-installed-packages"}
 mkdir -p /sync_pet_specs_fm_dpkg/deb-build/
 exec 15<> /sync_pet_specs_fm_dpkg/deb-build/fd_15
