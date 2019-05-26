@@ -16,7 +16,7 @@ if [ -z $PKGLIST ]; then
       esac 
    done
 fi
-export PKGLIST=${PKGLIST:-pkglist}
+export PKGLIST=${PKGLIST:-basesfs}
 
 
 export ARCH=${ARCH:-i386} # or amd64

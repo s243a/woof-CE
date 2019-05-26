@@ -59,7 +59,7 @@ LOCAL_PKGDB=pkgdb
 ADMIN_DIR=/var/lib/dpkg
 TRACKER=/tmp/tracker.$$
 FLATTEN=/tmp/flatten.$$
-if [ -z "$LN_FLATTEN" ]; then
+if [ ! -z "$LN_FLATTEN" ]; then
   ln "$FLATTEN" "$LN_FLATTEN" 
 fi
 ###
