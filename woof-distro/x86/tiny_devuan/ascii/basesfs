@@ -220,7 +220,7 @@ wget      #required for pkg
 %chroot sync_pet_specs_fm_dpkg.sh
 %addpkg puppy_ppm_configs_devaun_ascii
 %addpkg PKG
-%chroot pkg -ru #Update the packge repos
+%chroot repo-update #Update the packge repos
 
 %addpkg debian-setup # specific debian setup, overriding puppy-base
 %lock puppy-base puppy-base-arch libc6 # example: never update puppy base and libc6
