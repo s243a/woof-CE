@@ -73,22 +73,23 @@ sed
 tar
 %dummy gzip
 %dummy cpio
+libpsl5 #dependency of wget
+wget    #required for pkg
 libaudit1 #required for passwd
 
 # extra packages
 %dummy screen       # useful for debugging
 %dummy file         # for checking file types
 %dummy locales      # locale files
-%depend
 nano
+
+
 # xorg packages
 
 %dummy libkmod2           # debian needs this
 
 #rxvt-unicode using aterm instead
 aterm           #Same name in tinycore
-urxvt  #required for aterm
-       #I'll sort out the dependency of this one later.
 libfltk1.3      #Instead of fltk-1.3 (from tinycore)
 flwm            #Instead of flwm_topside (from tinycore) 
 
@@ -97,17 +98,47 @@ libimlib2       #Instead of imlib2-bin & imlib2  (from tinycore)
 
 ####### Maybe keep this since we dont' have matches for Xlibs, Xprogs, Xvesa but turn off dependency tracking 
 
+libgpg-error0   #Required for libgcrypt20
+libgcrypt20     #Required for xserver-xorg-core, libssh2-1
+
+libexpat1      #Dependency for dbus, libegl1-mesa, libgbm1, xdialog
 %dummy libwayland-client0 #Dependency for libegl1-mesa, libgbm1
 %dummy libwayland-server0 #Dependency for libegl1-mesa, libgbm1
+
+libpciaccess0  #Required for Xorg
+
+libxau6            #Instead of libXau (from tinycore) 
+                   #Needed for libxcb1, xserver-xorg-core
+libxxf86vm1    #Dependency of x11-utils, dependency for libgl1-mesa-glx 
+libgbm1         #Required for xserver-xorg-core, libegl1-mesa
+libxshmfence1    #Required for libegl1-mesa, libgl1-mesa-glx, xserver-xorg-core
+ 
+
+
+libxfixes3             #Dependency for libxdamage1, libgl1-mesa-glx, xdialog
+libxdamage1            #Dependency for libgl1-mesa-glx, xdialog
 %dummy libxcb-dri2-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
 %dummy libxcb-dri3-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
 %dummy libxcb-present0 #Dependency for libegl1-mesa, libgl1-mesa-glx
 %dummy libxcb-sync1    #Dependency for libegl1-mesa
 %dummy libxcb-xfixes0  #Dependency for libegl1-mesa
+libepoxy0        #Required for libegl1-mesa
+libgbm1          #Required for libegl1-mesa
+
+
+
+%dummy libdrm2         #Dependency for libegl1-mesa
+libegl1-mesa    #Dependency for dbus, xserver-xorg-core
 %dummy adduser        #Dependency for dbus, xserver-xorg-core
+keyboard-configuration #Dependency for xserver-xorg-core
+%dummy libaudit1      #Dependency for dbus, xserver-xorg-core
 %dummy libxcb-glx0     #Required for libgl1-mesa-glx
+libgl1-mesa-glx or libgl1 #Dependency of x11-utils,xserver-xorg-core
 %dummy xserver-xorg-core-udeb #Dependency of xorg-input-abi-24
 %dummy xorg-input-abi-24 #Virtual package: dependency of: xserver-xorg-input-libinput
+libinput10     #Required for xserver-xorg-input-libinput
+xserver-xorg-input-libinput #Required for xserver-xorg-input-all
+xserver-xorg-input-all #Dependency for xserver-xorg-core (To cut down further see comment below):
 #Can use xorg-driver-input instead of xserver-xorg-input-all, which is a virtual package
                 #that lists the indvidual XOrg input drives as dependencies
 %dummy init-system-helpers  #Dependency for dbus (systemd stuff)
@@ -120,16 +151,80 @@ libimlib2       #Instead of imlib2-bin & imlib2  (from tinycore)
 %dummy gcc-6-base     #Dependency for libgcc1: readme, licencing, todo, cangelog
                 #We mightneed to add this
 %dummy libgcc1        #Dependency for libexpat1
-dbus            #Recommended dependency for libdbus-1-3
 
+lsb-base        #Required for libdbus-1-3
+libdbus-1-3     #Dependency of xserver-xorg-core,dbus
+dbus            #Recommended dependency for libdbus-1-3
+zlib1g          #Needed for libpng16-16, libpciaccess0, libssh2-1
+libpciaccess0   #Required for xserver-xorg-core
+libpixman-1-0   #Required for xserver-xorg-core
+#libudev1       #Dependency for xserver-xorg-core
+libxfont2       #Dependency for xserver-xorg-core
+#%nodepend      # disable dep for udev, otherwise brings loads of dependencies
+#eudev
+#udev           #Dependency for xserver-xorg-core
+x11-common      #Dependency for xserver-common
+%dummy xserver-common #Dependency for xserver-xorg-core
+xserver-common  #Dependency for xserver-common
+
+x11-xkb-utils   #Dependency for 
+xserver-xorg-core #Dependency of xorg-input-abi-24 
+xkb-data        #Depency of 
+libxkbfile1     #Dependency of x11-xkb-utils, x11-xkb-utils
+x11-xkb-utils   #Needed for xserver-xorg
+##################### Turn on dependency Tracking ################
+%depend           
+urxvt  #required for aterm
+       #I'll sort out the dependency of this one later. 
+xserver-xorg-video-all
 %dumy xserver-xorg-video-all #Let's pick the specific drivers that we want
 xserver-xorg-video-vesa 
 xserver-xorg-video-vmware #This also works in virtualbox and qemu
 xserver-xorg
 #TODO Create a base sfs layere here. Add other packages as a higher up layer
 
+libxinerama1          #Dependency of x11-utils
+libxcomposite1        #Dependency of x11-utils, xdialog
+%dummy libx11-xcb1    #Dependncy of x11-utils, libegl1-mesa
+%dummy libxcb-shape0  #Dependency of x11-utils
+
+libfreetype6    #Instead of freetype (from tinycore) 
+                #Dependency of x11-utils
+libfontenc1     #Instead of libfontenc (from tinycore)
+                #Needed for x11-utils 
+libfontconfig1 #Dependency of x11-utils, xdialog
+
+
+%dummy libbsd0         #Dependency o libice6, xserver-xorg-core, libxdmcp6
+libice6         #Instead of libICE (from Tinycore) 
+                #Needed for libxt6
+libsm6          #Instead of libSM (from tinycore)
+                #Dependency of libxt6
+libxrender1     #Instead of libXrender (From tinycore) 
+                #Needed for libxrand2, libx11-6, libxcursor1, x11-utils, libxft2                
+libxext6        #Instead of libXext (From tinycore)  
+                #Needed for libxrandr2, x11-utils, libgl1-mesa-glx, libxxf86vm1
+libxrandr2      #Instead of libXrandr (From tinycore) 
+                #Needed for x11-xserver-utils, x11-utils
+libxdmcp6          #Instead of libXdmcp (From tinycore)
+                   #Dependency of libxcb1 (display manager related)
+libxcb1            #Instead of libxcb (FromTinycore)
+                   #Needed for libx11-6, libegl1-mesa,libxcb1
 libxcb-shm0
 %dummy libx11-data       #Dependency of libx11-6 (inernationalization)
+libx11-6           #Instead of libX11 (from Tinycore) 
+                   #Needed for libgdk-pixbuf2.0-0, x11-xserver-utils, libxaw7, x11-utils, libxkbfile1, libxxf86vm1, x11-xkb-utils
+######## A lot of stuff below is for x11-utils. Consider removing this ########
+libxt6          #Instead of libXt (From tinycore) 
+                #Needed for x11-xserver-utils, libx11-6, x11-utils, libegl1-mesa, x11-xkb-utils
+libxmu6         #Instead of libXmu (From tinycore) 
+                #Dependency of x11-xserver-utils, x11-utils
+libxi6          #Instead of libXi (From tinycore) 
+                #Needed for x11-xserver-utils, x11-utils
+libxcursor1        #Needed for x11-xserver-utils, 
+libxpm4            #Instead of libXpm (From tinycore) 
+                   #Needed for libxaw7
+libxaw7            #Needed for x11-xserver-utils, x11-utils, x11-xkb-utils
 %dummy libxft2        #Dependency of x11-utils
 %dummy libxxf86dga1   #Dependency of x11-utils
 %dummy libxv1         #Dependency of x11-utils
@@ -160,8 +255,45 @@ jwm
 #%addpkg rox-filer-data
 #%rox_config
 
+#dependencies for midnight commander
+#mc-data #Dependency of mc
+libssh2-1 #Required for mc
+libgpm2 #Required for mc
+e2fslibs #Required for mc
+libslang2 #Required for mc
 mc #Replaces rox-filer          # this will pull-in gtk2
 
+## extra libs
+#librsvg2-2
+#%nodepend          # librsvg2-bin will pull gtk3 if told not to.
+#librsvg2-bin       # to convert puppy SVG icons to png
+#%depend
+#librsvg2-common    # pixbuf loaders, so GTK2 can shows SVG icons
+#libgnome-menu2    # for jwm-xdgmenu, openbox-xdgmenu, etc
+
+## apt and friends - with its run-time dependencies (among others)
+#diffutils
+#util-linux 
+#e2fsprogs 
+#findutils 
+#perl-base 
+#module-init-tools
+#libatm1
+#passwd
+#isc-dhcp-common
+#iproute2
+#isc-dhcp-client 
+#psmisc
+#libxtables10 
+#gcc-6-base
+#apt-utils
+#apt
+#gnupg
+#devuan-keyring
+
+# enable proper support for package signing
+#%dpkgchroot
+#%reinstall devuan-keyring apt
 %bootstrap
 
 # network tools to make SNS happy
@@ -175,8 +307,51 @@ wpasupplicant
 %reinstall perl-base xserver-xorg-core 
 %bootstrap         # switch back to bootstrap installer - faster
 
+#synaptic # this will pull-in gtk3
+#%depend 
+
+
+
+
+
+# puppy specific packages
+#%repo http://jamesbond3142.no-ip.org/puppy-extra puppy main Packages.gz
+#%depend #Let's see if jamesbond adds any dependencies to these packages. 
+
+libpng16-16        #Instead of libpng (from tinycore)
+                   #Needed for libgtk2.0-0
+libjpeg62-turbo    #Instead of libjpeg-turbo (from Tinycore) 
+                   #Needed for libgtk2.0-0
+                   
+#Need to bootstrap to fix: Installing libglib2.0-0_2.50.3-2_i386.deb ...
+#dpkg: error: parsing file '/var/lib/dpkg/status' near line 1994 package 'libxxf86vm1':
+# mixed non-coinstallable and coinstallable package instances present; most probably due to an upgrade from an unofficial dpkg                   
+%bootstrap                   
+libglib2.0-0       #Needed for libgtk2.0-0, libgdk-pixbuf2.0-0, mc
+%dpkgchroot
+
+#shared-mime-info  #Dependency of libgdk-pixbuf2.0-0
+#libtiff5          #Dependency of libgdk-pixbuf2.0-0
+
+libcairo2           #Required for xdialog
+libgdk-pixbuf2.0-0  #Required for libgtk2.0-0, mc
+libpango-1.0-0      #Required for xdialog
+libpangocairo-1.0-0 #Required for xdialog
+libpangoft2-1.0-0   #Required for xdialog
+libmount1           #Required for xdialog
+libharfbuzz0b       #Required for xdialog
+libdatrie1          #Required for xdialog
+libgraphite2-3      #Required for xdialog
+libgtk2.0-0         #Required for both xdialog and gtk dialog
 xdialog             #note: only i386 arch available
+
+#libgtk-3-0         #xdialog depends on libgtk2.0-0. See if we can use this instead.
+libglade2-0         #dependency of gtkdialog
+libvte9             #dependency of gtkdialog 
 gtkdialog           #note: only i386 arch available
+#%nodepend 
+
+
 
 # final steps
 # remove extremely toxic packages, then setup the dummy
@@ -198,19 +373,18 @@ gtkdialog           #note: only i386 arch available
 #%mkdir /dev
 pmount
 
-%addpkg tinycore9_base_gz
-%addpkg puppycore_noarch
-%addpkg puppycore_i386_strech
-
 #Dependencies for pkg (maybe create wrappers for these instead of installing them)
 findutils #Dependency of PKG
 sed       #Dependency of PKG
 grep      #Dependency of PKG
-wget      #required for pkg
 
 %dpkg_configure --force-all -a
 %addpkg PKG #Comment this out once we add suport for PKG and uncomment the related line above
 
+#%addbase #THe next four lines are instead of add base
+%addpkg tinycore9_base_gz
+%addpkg puppycore_noarch
+%addpkg puppycore_i386_strech
 ## install extra built-in packages
 
 # apps

@@ -1,8 +1,24 @@
-#!/bin/sh
+#!/bin/bash
 WORK_DIR=${WORK_DIR:-"`realpath .`"} #We'll export this if needed
-CURDIR="$(dirname "`realpath "$0"`")"  #We'll export this if needed
+CURDIR="${CURDIR:-"$(dirname "$(realpath "$0")")"}"  #We'll export this if needed
+#CURDIR="${CURDIR:-"$(dirname "`realpath "$BASH_SOURCE[0]"`")")"  #We'll export this if needed
 export WOOFCE="`realpath "$CURDIR/.."`"
+if [ -z $PKGLIST ]; then
+   for i in "$@"; do
+      case "$i" in
+      '--'*)
+        continue
+        ;;
+      *)
+        PKGLIST="$i"
+        break
+        ;;
+      esac 
+   done
+fi
 export PKGLIST=${PKGLIST:-pkglist}
+
+
 export ARCH=${ARCH:-i386} # or amd64
 export VERSION=${VERSION:-ascii}
 export DISTRO_PREFIX=${DISTRO_PREFIX:-puppy}
@@ -23,5 +39,8 @@ export EXTRAPKG_PATH=${EXTRAPKG_PATH:-rootfs-packages}
 export BUILD_CONFIG=${BUILD_CONFIG:-"`realpath ./build.conf`"}
 #The following cd messes up ". ./repo-url" in build.conf
 #cd "$(dirname "`realpath "$0"`")"
-
-$CURDIR/deb-build.sh "$@"
+if [ $(echo "$@" | grep -cF -e "--sourced") -gt 0 ]; then
+  . $CURDIR/deb-build.sh "$@"
+else
+  $CURDIR/deb-build.sh "$@"
+fi 

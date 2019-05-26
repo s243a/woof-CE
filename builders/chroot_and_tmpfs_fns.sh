@@ -132,9 +132,11 @@ unbind_DEV(){
     umount -R -f $CHROOT_DIR/dev
   fi
 }
+unbind_ALL(){
+  unbind_PROC; unbind_SYS; unbind_DEV
+}
 unbind_ALL_lazy(){
   unbind_PROC_lazy; unbind_SYS_lazy; unbind_DEV_lazy
-
 }
 unbind_PROC_lazy(){
   if [ "$(mount | grep "$CHROOT_DIR/proc")" != "" ]; then

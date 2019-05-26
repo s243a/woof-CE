@@ -718,6 +718,7 @@ params() {
 		   SOURCED=1
 		   shift 
 		   params "$@"
+		;;
 		*) PKGLIST="$1"
 	esac
 }
