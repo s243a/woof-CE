@@ -74,7 +74,10 @@ tar
 %dummy gzip
 %dummy cpio
 libaudit1 #required for passwd
-
+libcap-ng0 #Required for passwd
+%dummy libpam0g
+%dummy libpam-modules-bin
+%dummy %dummy libpam-modules
 # extra packages
 %dummy screen       # useful for debugging
 %dummy file         # for checking file types
