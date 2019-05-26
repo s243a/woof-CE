@@ -1,0 +1,12 @@
+You can copy these files into your working directory to help with building your woofnext puppy. 
+
+THe files are:
+make_sfs_fm_rootfs.sh -- This file uses woof-next on an already
+         built sfs to modify the rootsfs and than build the iso
+make-sfs-fm-rootfs.sh -- This is the code extracted from woof
+         next to make the sfs file. You can use, mount_chroot-ascii-x86
+         to modify the rootfs before building the file.
+update-puppy-skeleton -- This will update the files in puppy-skeleton
+         from woof-CE based on the files in tazcore_noarch
+mount_chroot-ascii-x86 -- use this script to mount the rootfs and make
+        changes prior to building the iso. 

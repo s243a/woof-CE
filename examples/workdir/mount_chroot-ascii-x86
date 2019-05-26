@@ -1,0 +1,45 @@
+#!/bin/sh
+curdir=`pwd`
+export LD_LIBRARY_PATH=/lib:/usr/lib:/root/my-applications/lib:/usr/local/lib:/lib/i386-linux-gnu:/usr/lib/i386-linux-gnu:/usr/lib/i386-gnu
+
+unmount_vfs(){
+ umount -l $curdir/$rel_rootfs/dev 2>/dev/null
+ umount -l $curdir/$rel_rootfs/sys 2>/dev/null
+ umount -l $curdir/$rel_rootfs/proc 2>/dev/null
+ #umount /mnt/wktaz 2>/dev/null
+ #umount /mnt/wksfs 2>/dev/null
+}  
+
+trap unmount_vfs EXIT
+trap unmount_vfs SIGKILL
+trap unmount_vfs SIGTERM
+xinteractive=1
+prefix=""
+rel_rootfs=chroot-ascii-i386
+echo "PUPMODE='2'" > $curdir/$rel_rootfs$prefix/etc/rc.d/PUPSTATE
+mkdir -p $curdir/$rel_rootfs/proc;
+mkdir -p $curdir/$rel_rootfs/sys
+
+mount -o rbind /proc $curdir/$rel_rootfs/proc
+mount -t sysfs none $curdir/$rel_rootfs/sys
+if [ $xinteractive -eq 1 ]; then
+ echo "Removing block device files..."
+ #rm -rf $curdir/$rel_rootfs/dev/*
+ #mount bind -t devtmpfs none $curdir/$rel_rootfs/dev
+ mount -o rbind /dev $curdir/$rel_rootfs/dev
+ cp -f /etc/resolv.conf $curdir/$rel_rootfs/etc/resolv.conf 
+fi
+
+chroot $curdir/$rel_rootfs /bin/ash
+
+
+if [ "$(mount | grep "$curdir/$rel_rootfs/dev")" != "" ]; then
+ umount -l $curdir/$rel_rootfs/dev
+fi	
+
+if [ "$(mount | grep "$curdir/$rel_rootfs/sys")" != "" ]; then
+ umount -l $curdir/$rel_rootfs/sys
+fi	
+if [ "$(mount | grep "$curdir/$rel_rootfs/proc")" != "" ]; then
+ umount -l $curdir/$rel_rootfs/proc
+fi

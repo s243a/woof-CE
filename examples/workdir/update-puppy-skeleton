@@ -1,0 +1,25 @@
+#!/bin/sh
+CURDIR="`realpath .`"
+. ./build.conf
+
+SVN_REPO_BASE="svn_repo_base"
+mkdir -p "$SVN_REPO_BASE"
+cd "$SVN_REPO_BASE"
+
+#https://stackoverflow.com/questions/7106012/download-a-single-folder-or-directory-from-a-github-repo
+BASE_URL=https://github.com
+REPO=puppylinux-woof-CE/woof-CE
+BRANCH=trunk #either "trunk" or "branches/branch"
+#Checked out revision 1.
+F_PATH=woof-code
+FOLDER=rootfs-skeleton
+mkdir -p "$REPO/$BRANCH/$F_PATH"
+cd $REPO/$BRANCH/$F_PATH
+#TODO add check that dir is empty then do svn command
+if [ ! -d $FOLDER ]; then
+  svn export $BASE_URL/$REPO/$BRANCH/$F_PATH/$FOLDER
+fi
+cd $FOLDER
+F_NAME_DIR="$WOOFCE/woof-code/rootfs-packages/tazcore_noarch"
+TARGET_DIR="$WOOFCE/woof-code/rootfs-packages/puppycore_noarch"
+( cd $F_NAME_DIR; find . -name '*' ) | cpio -pd "$TARGET_DIR"
