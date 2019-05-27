@@ -92,7 +92,7 @@ perl-base #Required for debconf
 debconf #Required for openssl
 openssl #Required for ca-certificates
 ca-certificates #Recommended for wget
-libidn2  #Required for libpsl5
+libidn2-0  #Required for libpsl5
 libunistring0 #Required for libpsl5
 libpsl5 #Required for wget
 wget
