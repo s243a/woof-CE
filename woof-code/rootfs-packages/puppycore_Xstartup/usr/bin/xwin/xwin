@@ -1,0 +1,197 @@
+#!/bin/sh
+#(c) Copyright Barry Kauler 2003,2004,2005,2006,2007 www.puppylinux.com
+#2007 Lesser GPL licence v2 (http://www.fsf.org/licensing/licenses/lgpl.html)
+# called by /root/.profile
+# moved sync code for console/xorg kbd layout from xwin to /usr/sbin/input-wizard.
+#
+# $DISTRO_XORG_AUTO         : see /etc/DISTRO_SPECS.
+# /var/local/xwin_no_xorg_auto_flag:
+#   the presence of this file triggers xorg wizard (cli)
+#   if /etc/X11/xorg.conf does not exist
+#
+# /var/local/xwin_disable_xerrs_log_flag
+#   create this file to silence xerrs.log
+#   some buggy / incompatible apps flood xerrs.log mercilessly
+
+
+[ -z $DISPLAY ] || exit
+
+export TEXTDOMAIN=xwin
+export OUTPUT_CHARSET=UTF-8
+
+if ! which Xorg &>/dev/null ; then
+	echo -e "\\033[1;31m"$(gettext 'Xorg not found.. cannot continue.')"\\033[0;39m"
+	exit 1
+fi
+
+if [ -f /var/local/xwin_disable_xerrs_log_flag ] ; then
+	LOGFILE_X='/dev/null'
+else
+	LOGFILE_X='/tmp/xerrs.log'
+fi
+
+if [ `id -u` -eq 0 ] && [ -h /usr/bin/X ] ; then
+	ln -snf Xorg /usr/bin/X
+fi
+
+if [ "$1" = "-default" ] ; then
+	xorgwizard-automatic
+	shift
+fi
+
+# Ensure current directory is root, in case changed at command prompt,
+# so rox icon and menu item open only at home directory. rerwin
+cd ~/
+
+. /etc/rc.d/PUPSTATE # variables created at bootup by init script in initrd...
+. /etc/DISTRO_SPECS # PUPMODE=current operating configuration,
+. /etc/rc.d/BOOTCONSTRAINED
+
+# automatic network reconnect. refer /usr/sbin/hostname-set
+if [ -f /tmp/services/network_default_reconnect_required_flag ];then
+	rm -f /tmp/services/network_default_reconnect_required_flag
+	IFCONFIG="`ifconfig | grep '^[pwe]' | grep -v 'wmaster'`" #precaution.
+	[ "$IFCONFIG" = "" ] && network_default_connect #/usr/sbin
+fi
+
+# enables to start a specific w.m. from commandline...
+# this can also be an app that stars a desktop environment..
+if [ "$1" ] ; then
+	if [ ! "`which $1 2>/dev/null`" ] && [ ! -x $1 ] ; then
+		echo "* $1 does not exist or is not a valid executable.."
+		exit 1
+	fi
+	echo -n "$1" > /etc/windowmanager # /root/.xinitrc uses this file.
+fi
+
+# in some very strange situations this file might be empty
+[ ! -s /etc/X11/xorg.conf ] && rm -f /etc/X11/xorg.conf
+
+# Puppy Xorg Video Wizard...
+# boot param pfix=xorgwizard
+if [ -f /tmp/xwin_xorgwizard_cli ] ; then 
+	rm -f /tmp/xwin_xorgwizard_cli
+	xorgwizard-cli
+	xorgwizard-automatic
+# normal operation
+elif [ -f /etc/X11/xorg.conf ];then
+	USING_DRIVER=$(grep '#card0driver' /etc/X11/xorg.conf | grep -v '#.*Driver')
+	SPECVESA="`find /usr/lib /usr/X11R7/lib /usr/lib64 -noleaf -mount -type f -name vesa_drv.so 2>/dev/null | grep -v 'backup' | grep -m1 'vesa_drv.so'`" #1201031 bug fix.
+	if [ "$USING_DRIVER" ] ; then #find location of video chip drivers...
+		#get current driver...
+		DRVRSPATH="`dirname $SPECVESA`"
+		#one driver is mtx_drv.o hmmm, okay do it this way (pakt)...
+		CURRENT_DRIVER="`grep '#card0driver' /etc/X11/xorg.conf | cut -f 2 -d '"'`"
+		if [ "$CURRENT_DRIVER" ];then
+			ls -1 $DRVRSPATH/* | grep $CURRENT_DRIVER >/dev/null
+			#driver file not found, comment out
+			[ $? -ne 0 ] && sed -i 's|.*#card0driver|#	Driver      "vesa" #card0driver|' /etc/X11/xorg.conf
+		fi
+	fi
+else
+	#* /etc/X11/xorg.conf does not exist *
+	rm -f /root/.XLOADED 2> /dev/null #not necessary, precaution.
+	if [ "$DISTRO_XORG_AUTO" != "yes" -o -f /var/local/xwin_no_xorg_auto_flag ] ; then
+		xorgwizard-cli # 1st dialog offers to use Xorg vesa...
+	fi
+	xorgwizard-automatic
+fi
+
+# J_Reys idea (see note further down)...
+if [ -f /root/.XLOADED ];then
+	if [ "`cat /root/.XLOADED`" = "true" ];then
+		#last time X ran, PC hung and had to be rebooted...
+		dialog --timeout 30 --title "$(gettext 'Warning')" --yes-label "$(gettext 'Ignore')" --no-label "$(gettext 'Commandline')" --yesno "$(gettext 'X seems to have exited uncleanly the last time you ran Puppy.  This is usually because of an improper shutdown (such as a power failure), but may be because something is broken.')
+
+$(gettext 'If it was just something like a power failure, wait for 30 seconds or choose <Ignore> for normal startup of X...')
+
+$(gettext 'If there is a problem, such as X not working, choose <Commandline> to drop out to a commandline. There will then be further advice how to fix X...')
+
+$(gettext 'If undecided, wait 30 seconds for normal startup of X...')" 0 0
+		if [ ! $? = 1 ]; then
+			rm /root/.XLOADED
+		else
+			echo -en "\\033[1;31m" #34=blue, 33=yellow, 32=green, 31=red, 35=purple, 36=aquablue, 38=black.
+			echo '
+'$(gettext 'It seems that last time X ran, the computer hung and you had to reboot.')'
+'$(gettext 'Have now dropped down to the commandline. If you want to run the Xorg')'
+'$(gettext 'Video Wizard, type "xorgwizard", and after configuring /etc/X11/xorg.conf')'
+'$(gettext '(hopefully correctly this time!) type "xwin" to start X.')''
+			echo -e "\\033[0;39m"
+			rm -f /root/.XLOADED #otherwise cannot start X.
+			exit
+		fi
+	fi
+fi
+
+# this might cause side effects.. only use with xorg udev stuff
+# see http://murga-linux.com/puppy/viewtopic.php?t=108017&start=345
+if [ -f /var/local/xorg_udev ] ; then
+	# When udev is used one has to tell udev to reload input-related configuration
+	udevadm trigger --subsystem-match=input --action=change
+	udevadm settle
+fi
+
+if which pcmanfm &>/dev/null ; then
+	rm -f $HOME/.cache/menu-cached* $HOME/.cache/pcmanfm* $HOME/.cache/menus/*
+fi
+
+killall -9 pup_event_frontend_d 2>/dev/null
+
+#-- finally, start X... --
+# J_Rey had a good idea, flag XLOADED... and set to false on exit.
+# but if PC hangs, XLOADED will still be true, so will know it is broken.
+echo -n "true" > /root/.XLOADED
+echo "$(gettext 'Starting X, specs in /etc/X11/xorg.conf, startup apps /root/.xinitrc...')"
+#-----------------------------------------------------------------------
+if [ "$LOGFILE_X" = "/dev/null" ] ; then
+	echo 'logging of X errors is disabled' > /tmp/xerrs.log
+	echo 'remove /var/local/xwin_disable_xerrs_log_flag to enable it, then restart X' >> /tmp/xerrs.log
+fi
+/usr/bin/xinit /root/.xinitrc -- -br -nolisten tcp > $LOGFILE_X 2>&1
+#-----------------------------------------------------------------------
+echo -n "false" > /root/.XLOADED #see note above.
+rm -f /tmp/services/x_display
+
+sleep 0.5
+# ...if PC hung, run xorgwizard at next bootup (see further up).
+
+load_consolefont # load console font on exit from X.
+# console font is loaded in quicksetup if locale changed.
+echo '--------'
+echo ''$(gettext 'Exited from X. Type "xwin [jwm]" to restart X ([ ] mean optional).')''
+echo ''$(gettext 'Type "xwin -default [jwm]" to restart X with the default xorg.conf')''
+echo '-'
+echo ''$(gettext '(To shutdown PC type "poweroff", to reboot PC type "reboot")')''
+echo ''$(gettext 'If X failed to start, type "xorgwizard" to setup X')''
+
+[ -f /tmp/wmexitmode.txt ] || exit
+
+# Shutdown menu calls wmreboot, wmpoweroff, wmexit or restartwm, which create this file...
+WMEXITMODE="`cat /tmp/wmexitmode.txt`"
+if [ "$WMEXITMODE" = "exit" ];then #see /usr/bin/wmexit.
+	rm -f /tmp/wmexitmode.txt
+	exit
+fi
+[ "$WMEXITMODE" = "poweroff" ] && exec /sbin/poweroff #see /usr/bin/wmpoweroff
+[ "$WMEXITMODE" = "reboot" ] && exec /sbin/reboot #see /usr/bin/wmreboot
+
+# restart window manager...
+# make a gross assumption, if wmexitmode.txt exists, haven't already exited this script, then want
+# to restart maybe with different window manager. /etc/windowmanager already has desired w.m.
+rm -f /tmp/wmexitmode.txt #definitely delete it now.
+# thanks GuestToo for advice on this, works with chooselocale script...
+NEWLANG="`cat /etc/profile | grep '^LANG=' | cut -f 2 -d '='`"
+if [ "$NEWLANG" -a "$NEWLANG" != "$LANG" ];then #precaution
+	export LANG=$NEWLANG
+fi
+
+# hostname-set changed HOSTNAME, via quicksetup, X is restarted,
+# update $HOSTNAME (was exported at bootup in /etc/profile)...
+NEWHOSTNAME="`cat /etc/hostname | tr -d '\n'`"
+if [ "$NEWHOSTNAME" -a "$NEWHOSTNAME" != "$HOSTNAME" ];then
+	export HOSTNAME=$NEWHOSTNAME
+fi
+exec xwin
+
+### END ###

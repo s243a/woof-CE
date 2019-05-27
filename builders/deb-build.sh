@@ -10,7 +10,7 @@
 #           WITHOUT_DPKG=1 - don't use system dpkg
 
 ### end-user configuration
-#set -x
+set -x
 
 #When SAFE_MODE=1, the pinstall script (in a directory based install) cannot change
 #the mode between relative vs chroot

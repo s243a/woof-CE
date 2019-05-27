@@ -50,6 +50,9 @@ libbz2-1.0
 libattr1
 libacl1
 %addpkg tinycore9_base_gz
+#%addpkg tinycore9_base_gz_users
+%addpkg puppycore_noarch
+%addpkg puppycore_users
 dpkg
 %dpkgchroot 
 dash
@@ -60,6 +63,7 @@ strace #add this for debugging purposes
 #Let's reconfigure stuff before running post install scripts
 %dpkg_configure --force-all -a
 %addpkg puppycore_noarch
+%addpkg puppycore_users
 %addpkg puppycore_i386_strech
 #%addpkg PKG #Uncomment this later once we add support for pkg
 %add pkg-apt-wrapper 
@@ -73,11 +77,11 @@ sed
 tar
 %dummy gzip
 %dummy cpio
-libaudit1 #required for passwd
-libcap-ng0 #Required for passwd
 %dummy libpam0g
 %dummy libpam-modules-bin
-%dummy %dummy libpam-modules
+%dummy libpam-modules
+libaudit1 #required for passwd
+libcap-ng0 #Required for passwd
 # extra packages
 %dummy screen       # useful for debugging
 %dummy file         # for checking file types
@@ -203,7 +207,11 @@ pmount
 
 %addpkg tinycore9_base_gz
 %addpkg puppycore_noarch
+%addpkg puppycore_users
 %addpkg puppycore_i386_strech
+%addpkg puppycore_Xstartup
+
+%addpkg debian-setup # specific debian setup, overriding puppy-base
 
 #Dependencies for pkg (maybe create wrappers for these instead of installing them)
 findutils #Dependency of PKG
@@ -223,9 +231,9 @@ wget      #required for pkg
 %chroot sync_pet_specs_fm_dpkg.sh
 %addpkg puppy_ppm_configs_devaun_ascii
 %addpkg PKG
-%chroot repo-update #Update the packge repos
+%chroot pkg --repo-update  #Update the packge repos
 
-%addpkg debian-setup # specific debian setup, overriding puppy-base
+
 %lock puppy-base puppy-base-arch libc6 # example: never update puppy base and libc6
 #%addpkg james-staging # temporary area to changes before they get merged to rootfs
 
