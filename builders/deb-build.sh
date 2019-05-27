@@ -360,11 +360,11 @@ remove_pkg_status() {
             echo_line=1
           fi
       ;;
-     esac
+      esac
      if [ $echo_line -eq 1 ]; then
        echo $line >> "$status_new"    
      fi
-	done 
+	done < $CHROOT_DIR$ADMIN_DIR/status
 	rm "$CHROOT_DIR$ADMIN_DIR/status"
 	mv "$status_new" "$CHROOT_DIR$ADMIN_DIR/status"
 }
@@ -405,7 +405,7 @@ install_from_dir() {
 	if [ -z "$4" ] || [ "$4" != "force" ]; then
 	  is_already_installed $pkgname && return 1
 	elif is_already_installed $pkgname; then
-	  remove_pkg_status
+	  remove_pkg_status "${pkgname}"
 	else
 	  IS_INSTALLED=0
 	fi
