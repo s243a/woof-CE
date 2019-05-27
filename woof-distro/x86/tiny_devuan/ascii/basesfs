@@ -237,6 +237,7 @@ pmount
 %reinstall sed       #Dependency of PKG
 %reinstall grep      #Dependency of PKG
 %reinstall wget      #required for pkg
+%reinstall coreutils #pkg requires "sort" from coreutils
 
 %dpkg_configure --force-all -a
 
