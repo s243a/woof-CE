@@ -87,6 +87,16 @@ libcap-ng0 #Required for passwd
 %dummy file         # for checking file types
 %dummy locales      # locale files
 %depend
+
+perl-base #Required for debconf
+debconf #Required for openssl
+openssl #Required for ca-certificates
+ca-certificates #Recommended for wget
+libidn2  #Required for libpsl5
+libunistring0 #Required for libpsl5
+libpsl5 #Required for wget
+wget
+
 nano
 # xorg packages
 
