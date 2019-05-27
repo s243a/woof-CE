@@ -205,22 +205,31 @@ gtkdialog           #note: only i386 arch available
 #%mkdir /dev
 pmount
 
-%addpkg tinycore9_base_gz
-%addpkg puppycore_noarch
-%addpkg puppycore_users
-%addpkg puppycore_i386_strech
-%addpkg puppycore_Xstartup
+%addpkg --forced tinycore9_base_gz
+%addpkg --forced puppycore_noarch
 
-%addpkg debian-setup # specific debian setup, overriding puppy-base
+#%addpkg --forced tinycore9_base_gz_users #Can use instead of puppycore_users
+%addpkg --forced puppycore_users
+
+%addpkg --forced puppycore_i386_strech
+
+#Can use tinycore9_base_gz_startup instead of puppycore: _sysinit _sysinit_net _Xstartup
+#%addpkg tinycore9_base_gz_startup 
+
+%addpkg --forced puppycore_sysinit
+%addpkg --forced puppycore_sysinit_net
+%addpkg --forced puppycore_Xstartup
+
+%addpkg --forced debian-setup # specific debian setup, overriding puppy-base
 
 #Dependencies for pkg (maybe create wrappers for these instead of installing them)
-findutils #Dependency of PKG
-sed       #Dependency of PKG
-grep      #Dependency of PKG
-wget      #required for pkg
+%reinstall findutils #Dependency of PKG
+%reinstall sed       #Dependency of PKG
+%reinstall grep      #Dependency of PKG
+%reinstall wget      #required for pkg
 
 %dpkg_configure --force-all -a
-%addpkg PKG #Comment this out once we add suport for PKG and uncomment the related line above
+
 
 ## install extra built-in packages
 

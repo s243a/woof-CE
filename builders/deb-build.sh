@@ -346,8 +346,40 @@ bootstrap_install() {
 	update_pkg_status "$PKG" "$PKGPRIO" "$PKGSECTION" "$PKGVER" "$PKGDEP"
 	set +x
 }
+remove_pkg_status() {
+	pkg_name=$1
+	status_new="$CHROOT_DIR$ADMIN_DIR/status.new.$$"
+	echo "removing package status"
+	while read line; do
+	  case "$line" in
+      'Package: '*)
+          set -- "$line" 
+          if [ "$pkg_name" = "$2" ]; then
+            echo_line=0
+          else
+            echo_line=1
+          fi
+      ;;
+     esac
+     if [ $echo_line -eq 1 ]; then
+       echo $line >> "$status_new"    
+     fi
+	done 
+	rm "$CHROOT_DIR$ADMIN_DIR/status"
+	mv "$status_new" "$CHROOT_DIR$ADMIN_DIR/status"
+}
 # $1-PKG $2-PKGPRIO $3-PKGSECTION $4-PKGVER $5-PKGDEP
 update_pkg_status() {
+#Probably better just to call remove_pkg_status instead of processing args. 
+#while [ ! -z $1 ];
+#  case $1 in
+#    --status=*)
+#    shift 
+#    ;;
+#  *)
+#    break
+#    ;;
+#  esac
 	{
 echo \
 "Package: $1
@@ -370,7 +402,13 @@ install_from_dir() {
 	bind_ALL #s243a: TODO, remove this once we add a direcive for this command
 	local pkgname=${DISTRO_PREFIX}-$2
 	! [ -d ${1} ] && echo $2 not found ... && return 1 # dir doesn't exist
-	is_already_installed $pkgname && return 1
+	if [ -z "$4" ] || [ "$4" != "force" ]; then
+	  is_already_installed $pkgname && return 1
+	elif is_already_installed $pkgname; then
+	  remove_pkg_status
+	else
+	  IS_INSTALLED=0
+	fi
 
 	echo "/." > "$CHROOT_DIR$ADMIN_DIR/info/${pkgname}.list"
 	cp -av --remove-destination "${1}"/* $CHROOT_DIR | sed "s|.*${CHROOT_DIR}||; s|'\$||" \
@@ -626,13 +664,32 @@ process_pkglist() {
 				[ "$BASE_ARCH_PATH" ] && install_from_dir $BASE_ARCH_PATH base-arch core				
 				install_from_dir $BASE_CODE_PATH base core ;;
 			%addpkg)
+			    set -x
 				shift # $1-pkgname, pkgname ...
+				forced=0
+				PKGSECTION="optional"
 				while [ "$1" ]; do
-					! [ -d $EXTRAPKG_PATH/$1 ] && shift && continue
-					echo Installing extra package "$1"  ...
-					install_from_dir $EXTRAPKG_PATH/$1 $1 optional
+					case "$1" in
+					--forced)
+					  forced=1
+					  ;;
+					--category=*)
+					  PKGSECTION="${1#'--category='}";
+					  ;;
+					*)
+					  ! [ -d $EXTRAPKG_PATH/$1 ] && shift && continue
+					  echo Installing extra package "$1"  ...
+					  if [ $forced -eq 1 ]; then
+					    install_from_dir $EXTRAPKG_PATH/$1 $1 $PKGSECTION force
+					  else
+					    install_from_dir $EXTRAPKG_PATH/$1 $1 $PKGSECTION
+					  fi
+					  ;;
+					esac
 					shift
-				done ;;
+				done
+				set +x
+				 ;;
 			%dummy)
 			    set -x
 				shift # $1-pkgname, pkgname ...
