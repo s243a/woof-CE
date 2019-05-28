@@ -6,6 +6,7 @@
 # Download kernel, make initrd, output iso.
 
 ### config
+set -x
 OUTPUT_DIR=${OUTPUT_DIR:-iso}
 OUTPUT_ISO=${OUTPUT_ISO:-puppy.iso}
 ISO_ROOT=${ISO_ROOT:-$OUTPUT_DIR/iso-root}
