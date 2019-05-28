@@ -1,5 +1,5 @@
-/bin/df.new
-/bin/mount.new
-/bin/bs.new
-/bin/umount.new
-/sbin/losetup.new
+/bin/df
+/bin/mount
+/bin/bs
+/bin/umount
+/sbin/losetup
