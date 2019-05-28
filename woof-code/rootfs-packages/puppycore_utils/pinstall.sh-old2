@@ -24,33 +24,25 @@ for a_util in df mount umount ps losetup; do
    case "$a_util" in
    df) 
      [ $("$full_util_path" --help | \
-           grep -c coreutils) -gt 0 ] && \
-     [ $(file --mime-type "$full_util_path" | \
-           grep -c text/plain) -eq 0 ] && is_full=1     
+           grep -c coreutils) -gt 0 ] && is_full=1     
      ;;
    losetup|mount|umount)
      [ $("$full_util_path" -V | \
-           grep -c util-linux) -gt 0 ] && \
-     [ $(file --mime-type "$full_util_path" | \
-           grep -c text/plain) -eq 0 ] && is_full=1 
+           grep -c util-linux) -gt 0 ] && is_full=1
      ;;
    ps)
      [ $("$full_util_path" -V | \
-           grep -c procps-ng) -gt 0 ] && \
-     [ $(file --mime-type "$full_util_path" | \
-           grep -c text/plain) -eq 0 ] && is_full=1 
-     ;;     
+           grep -c procps-ng) -gt 0 ] && is_full=1   
+     ;;  
    *)
      [ $("$full_util_path" --help | \
-           grep -c BusyBox) -eq 0 ] && \
-     [ $(file --mime-type "$full_util_path" | \
-           grep -c text/plain) -eq 0 ] && is_full=1 
+           grep -c BusyBox) -eq 0 ] && is_full=1
      ;;
    esac 
    if [ $is_full = 1 ]; then
-     full_util_dir="$(dirname "$full_util_path")"
-     puppy_util_path="$(which "$a_util.new")"
-     puppy_util_dir="$(dirname "$puppy_util_path")"
+     full_util_dir="$(dirname "`$full_util_path`")"
+     puppy_util_path="$(which "`$a_util.new`")"
+     puppy_util_dir="$(dirname "`$puppy_util_path`")"
      #if [ ! -z "" ] && [ ! -z "" ]; then
      
        #TODO maybe do a more in depth check before removing this. 
