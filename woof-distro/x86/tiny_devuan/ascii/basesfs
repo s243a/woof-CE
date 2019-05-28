@@ -241,6 +241,8 @@ pmount
 
 %dpkg_configure --force-all -a
 
+%addpkg --forced puppycore_utils #Required for puppy startup
+
 
 ## install extra built-in packages
 
