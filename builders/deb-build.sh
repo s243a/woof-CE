@@ -405,7 +405,9 @@ install_from_dir() {
 	if [ -z "$4" ] || [ "$4" != "force" ]; then
 	  is_already_installed $pkgname && return 1
 	elif is_already_installed $pkgname; then
+	  set +x
 	  remove_pkg_status "${pkgname}"
+	  set -x
 	else
 	  IS_INSTALLED=0
 	fi

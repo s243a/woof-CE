@@ -18,7 +18,7 @@ exec 15<> /sync_pet_specs_fm_dpkg/deb-build/fd_15
 
 # process
 while read -r -u15 -d $'\n' line; do
-  echo "line=$line"
+  #echo "line=$line"
   #read -p "Press enter to continue"
   case "$line" in
   'Package: '*)
@@ -107,7 +107,7 @@ $pet_specs_COMPAT_DISTRO_VER|$pet_specs_REPO_NAME"
 	  #match_cnt=$( echo $specs | grep -cF "$pet_specs_PKG_NAME" )
 	  #if [ $match_cnt -eq 0 ]; then
 	  if [ -z "$specs" ]; then
-	    echo "spec_target=$spec_target"
+	    #echo "spec_target=$spec_target"
 	    mkdir -p "$(dirname "`realpath $spec_target`")" 
 	    echo "$pet_spec" >> "$spec_target"
 	  fi

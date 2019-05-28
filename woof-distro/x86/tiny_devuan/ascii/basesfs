@@ -132,7 +132,8 @@ libimlib2       #Instead of imlib2-bin & imlib2  (from tinycore)
 %dummy libaudit1      #Dependency for dbus
 %dummy libcap-ng0     #Dependency for dbus
 %dummy libselinux1    #Dependency for dbus
-%dummy libsystemd0    #Dependency for dbus, libdbus-1-3
+
+libsystemd0    #Dependency for dbus, libdbus-1-3,procps (via libprocps6)
  
 %dummy gcc-6-base     #Dependency for libgcc1: readme, licencing, todo, cangelog
                 #We mightneed to add this
@@ -238,11 +239,14 @@ pmount
 %reinstall grep      #Dependency of PKG
 %reinstall wget      #required for pkg
 %reinstall coreutils #pkg requires "sort" from coreutils
+%reinstall util-linux
+%reinstall libsystemd0    #Dependency for dbus, libdbus-1-3,procps (via libprocps6)
+%reinstall libprocps6  #Required for procps
+%reinstall procps
 
 %dpkg_configure --force-all -a
 
 %addpkg --forced puppycore_utils #Required for puppy startup
-
 
 ## install extra built-in packages
 

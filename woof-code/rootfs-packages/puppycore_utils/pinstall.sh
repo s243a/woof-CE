@@ -1,4 +1,4 @@
-#!/bin
+#!/bin/sh
 curdir="`realpath .`"
 if [ "$curdir" != '/' ]; then
   curdir="$curdir/"
@@ -47,10 +47,10 @@ for a_util in df mount umount ps losetup; do
            grep -c text/plain) -eq 0 ] && is_full=1 
      ;;
    esac 
-   if [ $is_full = 1 ]; then
      full_util_dir="$(dirname "$full_util_path")"
      puppy_util_path="$(which "$a_util.new")"
-     puppy_util_dir="$(dirname "$puppy_util_path")"
+     puppy_util_dir="$(dirname "$puppy_util_path")"   
+   if [ $is_full -eq 1 ]; then
      #if [ ! -z "" ] && [ ! -z "" ]; then
      
        #TODO maybe do a more in depth check before removing this. 
@@ -60,9 +60,10 @@ for a_util in df mount umount ps losetup; do
        mv "$full_util_dir/$a_util" "$full_util_dir/$a_util-FULL"
        mv "$puppy_util_dir/$a_util.new" "$puppy_util_dir/$a_util"     
      #fi
-   elif [ $("$full_util_path" --help | \
-           grep -c BusyBox) -gt 0 ]; then
-     rm "$full_util_path"
+   #elif [ $("$full_util_path" --help | \
+   #        grep -c BusyBox) -gt 0 ]; then
+   else
+     [ -e "$full_util_path" ] && rm "$full_util_path"
      mv "$puppy_util_dir/$a_util.new" "$puppy_util_dir/$a_util"
    fi
 done
