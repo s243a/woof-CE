@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # James way of making iso
 # Copyright (C) James Budiono 2014
 # License: GNU GPL Version 3 or later.
@@ -7,6 +7,7 @@
 
 ### config
 set -x
+ZDRV_SFS=${ZDRV_SFS:-kernel-modules.sfs}
 OUTPUT_DIR=${OUTPUT_DIR:-iso}
 OUTPUT_ISO=${OUTPUT_ISO:-puppy.iso}
 ISO_ROOT=${ISO_ROOT:-$OUTPUT_DIR/iso-root}
@@ -59,16 +60,35 @@ install_kernel() {
 		fi
 	done
 }
+#s243a:TODO add install_firmware
 install_extract_kernel() {
 	if md5sum -c ${KERNEL_TARBALL}.md5.txt 2>/dev/null; then
 		tar -xf ${KERNEL_TARBALL} -C $ISO_ROOT
 		mv $ISO_ROOT/vmlinuz-* $ISO_ROOT/vmlinuz
-		mv $ISO_ROOT/kernel-modules.sfs-* $ISO_ROOT/kernel-modules.sfs
+		mv $ISO_ROOT/kernel-modules.sfs-* $ISO_ROOT/$ZDRV_SFS
 		return 0
 	fi
 	return 1
 }
+_(){
+  eval "echo \"$1\""
+}
 
+echo_sfs_drvs(){
+  #DISTRO_ZDRVSFS=kernel-modules.sfs
+ for A_DRV in F Z Y A; do 
+  a_drv=$(echo $A_DRV | tr '[:upper:]' '[:lower:]')
+  if [ ! -z "$(_ "\$${A_DRV}DRV_SFS")" ]; then 
+    echo DISTRO_${A_DRV}DRVSFS="$(_ "\$${A_DRV}DRV_SFS")";   
+  elif [ -f $ISO_ROOT/"$a_drv"drv_sfs.sfs ]; then 
+    echo DISTRO_${A_DRV}DRVSFS="$a_drv"drv_sfs.sfs; 
+  elif [ -f $ISO_ROOT/"$a_drv"drv_"$SFS_SUFIX".sfs ]; then 
+    echo DISTRO_${A_DRV}DRVSFS="$a_drv"drv_"$SFS_SUFIX".sfs; 
+  elif [ -f $ISO_ROOT/"$a_drv"drv.sfs ]; then 
+    echo DISTRO_${A_DRV}DRVSFS="$a_drv"drv.sfs    
+  fi
+ done
+}
 install_initrd() {
 	local initrdtmp=/tmp/initrd.tmp.$$
 	mkdir -p $initrdtmp
@@ -76,6 +96,9 @@ install_initrd() {
 	# copy over source files and cleanup
 	cp -a $INITRD_ARCH/* $INITRD_CODE/* $initrdtmp
 	find $initrdtmp -name '*MARKER' -delete
+	[ ! -e "$initrdtmp/bin/bb-create-symlinks" ] && \
+	cp -f "$WOOFCE/initrd-progs/pkg/busybox_static/bb-create-symlinks" \
+	       "$initrdtmp/bin/bb-create-symlinks" 
 	( cd $initrdtmp/bin; sh bb-create-symlinks; )
 
 	# create minimal distro specs, read woof's docs to get the meaning
@@ -89,10 +112,10 @@ DISTRO_XORG_AUTO='yes'
 DISTRO_TARGETARCH='$TARGET_ARCH'
 DISTRO_DB_SUBNAME='$SOURCE'
 DISTRO_PUPPYSFS=$PUPPY_SFS
-DISTRO_ZDRVSFS=kernel-modules.sfs
+$(echo_sfs_drvs)
 EOF
 	( cd $initrdtmp; find . | cpio -o -H newc ) | gzip -9 > $ISO_ROOT/initrd.gz
-	rm -rf $initrdtmp
+	#rm -rf $initrdtmp
 }
 
 make_iso() {
