@@ -263,6 +263,9 @@ pmount
 %lock puppy-base puppy-base-arch libc6 # example: never update puppy base and libc6
 #%addpkg james-staging # temporary area to changes before they get merged to rootfs
 
+%reinstall libc-bin #contians ldconfig
+%chroot ldconfig
+
 # cutdown the size
 %cutdown doc gtkdoc nls # lets see if nls cutdown works now
 

@@ -1,5 +1,8 @@
 #!/bin/sh
 
+#mv /dev /dev2
+#mkdir /dev
+
 mount -t proc none /proc
 mount -t sysfs none /sys
 mount -t rootfs -o remount,rw rootfs /
@@ -16,6 +19,17 @@ mkdir -p /proc/bus/usb 2>/dev/null
 mount -t usbfs none /proc/bus/usb 2>/dev/null
 
 ln -s /proc/mounts /etc/mtab 2>/dev/null
+
+#s243a: added this back. Was previous deleted at: https://github.com/puppylinux-woof-CE/woof-CE/commit/54ef39153265bc8e032179f188c172d15b5f02f0#diff-35bf31dd2c04375125e7b41990ab9a77
+# if devtmpfs fails, we're probably dealing with old stuff...
+if [ ! -e /dev/tty ] ; then
+	if [ "`mount | cut -f 1 -d ' ' | grep devtmpfs`" = "" ] ; then
+		#tar -zxf /dev1.tar.gz  #no devtmpfs
+		rm /dev
+		mv /dev2 /dev
+		echo "Failed to mount devtmpfs" > /dev/console
+	fi
+fi
 
 # loop1-15
 for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do

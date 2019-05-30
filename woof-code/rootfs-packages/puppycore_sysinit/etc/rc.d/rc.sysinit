@@ -95,8 +95,25 @@ loadswap_func() { #w481 made into a function.
 #                         MAIN
 #================================================================
 # mount devtmpfs early
+
+
+[ ! -e /etc/DISTRO_SPECS ] && cp /initrd/DISTRO_SPECS /etc/DISTRO_SPECS
+
+
+
 mount -t devtmpfs devtmpfs /dev 2>/dev/null
 
+  #Coped removed code from: s243a: https://github.com/puppylinux-woof-CE/woof-CE/commit/54ef39153265bc8e032179f188c172d15b5f02f0
+  # if devtmpfs fails, we're probably dealing with old stuff...
+  # 
+  if [ ! -e /dev/tty ] ; then
+	if [ "`mount | cut -f 1 -d ' ' | grep devtmpfs`" = "" ] ; then
+		tar -zxf /dev2.tar.gz  #no devtmpfs
+		( cd / ; tar -zxf /initrd/dev2.tar.gz ; ) #no devtmpfs
+		echo "Failed to mount devtmpfs" > /dev/console
+	fi
+  fi
+  
 . /etc/rc.d/PUPSTATE
 . /etc/DISTRO_SPECS
 . /etc/rc.d/BOOTCONSTRAINED # has BOOT_DISABLESWAP, BOOT_ATIME, BOOT_DIRTYWRITE.

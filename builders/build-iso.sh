@@ -92,7 +92,12 @@ echo_sfs_drvs(){
 install_initrd() {
 	local initrdtmp=/tmp/initrd.tmp.$$
 	mkdir -p $initrdtmp
-
+    tar -xzf "$WOOFCE/woof-arch/woof-code_boot_initrd-tree0_DEVDIR.tar.gz" \
+        -C "$initrdtmp"
+    mv "$initrdtmp"/dev "$initrdtmp"/dev2
+    mkdir "$initrdtmp"/dev
+    #cp "$WOOFCE/woof-arch/woof-code_rootfs-skeleton_DEVDIR.tar.gz" "$initrdtmp/dev1.tar.gz"
+    cp "$WOOFCE/woof-arch/woof-code_rootfs-skeleton_DEVDIR.tar.gz" "$initrdtmp/dev2.tar.gz"
 	# copy over source files and cleanup
 	cp -a $INITRD_ARCH/* $INITRD_CODE/* $initrdtmp
 	find $initrdtmp -name '*MARKER' -delete
