@@ -26,25 +26,25 @@ for a_util in df mount umount ps losetup; do
      [ $("$full_util_path" --help | \
            grep -c coreutils) -gt 0 ] && \
      [ $(file --mime-type "$full_util_path" | \
-           grep -c text/plain) -eq 0 ] && is_full=1     
+           grep -c text) -eq 0 ] && is_full=1     
      ;;
    losetup|mount|umount)
      [ $("$full_util_path" -V | \
            grep -c util-linux) -gt 0 ] && \
      [ $(file --mime-type "$full_util_path" | \
-           grep -c text/plain) -eq 0 ] && is_full=1 
+           grep -c text) -eq 0 ] && is_full=1 
      ;;
    ps)
      [ $("$full_util_path" -V | \
            grep -c procps-ng) -gt 0 ] && \
      [ $(file --mime-type "$full_util_path" | \
-           grep -c text/plain) -eq 0 ] && is_full=1 
+           grep -c text) -eq 0 ] && is_full=1 
      ;;     
    *)
      [ $("$full_util_path" --help | \
            grep -c BusyBox) -eq 0 ] && \
      [ $(file --mime-type "$full_util_path" | \
-           grep -c text/plain) -eq 0 ] && is_full=1 
+           grep -c text) -eq 0 ] && is_full=1 
      ;;
    esac 
      full_util_dir="$(dirname "$full_util_path")"

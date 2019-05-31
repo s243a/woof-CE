@@ -46,13 +46,13 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/X11R7/bin
 
 status_func() {
  if [ $1 -eq 0 ];then
-  echo -n -e "\\033[74G\\033[1;32m" >/dev/console #green [done] msg. 110426: change 72 to 74.
-  echo -n "done" >/dev/console #done
-  echo -e "\\033[0;39m" >/dev/console
+  echo -n -e "\\033[74G\\033[1;32m" >/initrd/dev/console #green [done] msg. 110426: change 72 to 74.
+  echo -n "done" >/initrd/dev/console #done
+  echo -e "\\033[0;39m" >/initrd/dev/console
  else
   echo -n -e "\\033[72G\\033[1;31m" >/dev/console #red [failed]. 110426: change 70 to 72.
-  echo -n "failed" >/dev/console #failed
-  echo -e "\\033[0;39m" >/dev/console
+  echo -n "failed" >/initrd/dev/console #failed
+  echo -e "\\033[0;39m" >/initrd/dev/console
   STATUS=0
  fi
  return $1 #return with same status as entry param.
@@ -67,7 +67,7 @@ loadswap_func() { #w481 made into a function.
   SWAPSIZEBYTES=`echo "$i" | cut -f 3 -d '|'`
   SWAPSIZEBYTES=$((SWAPSIZEBYTES * 512 )) #bytes
   [ $SWAPSIZEBYTES ] && EXTRAALLOCK=$(($EXTRAALLOCK + $SWAPSIZEBYTES))
-  echo -n "Loading swap partition $ONESWAP ("$(fx_format_bytes $SWAPSIZEBYTES)")..." >/dev/console #loading swap partition
+  echo -n "Loading swap partition $ONESWAP ("$(fx_format_bytes $SWAPSIZEBYTES)")..." >/initrd/dev/console #loading swap partition
   chmod 0660 $ONESWAP
   swapon $ONESWAP
   status_func $?
@@ -101,19 +101,10 @@ loadswap_func() { #w481 made into a function.
 
 
 
-mount -t devtmpfs devtmpfs /dev 2>/dev/null
+mount -t devtmpfs devtmpfs /dev 2>/initrd/dev/console
 
-  #Coped removed code from: s243a: https://github.com/puppylinux-woof-CE/woof-CE/commit/54ef39153265bc8e032179f188c172d15b5f02f0
-  # if devtmpfs fails, we're probably dealing with old stuff...
-  # 
-  if [ ! -e /dev/tty ] ; then
-	if [ "`mount | cut -f 1 -d ' ' | grep devtmpfs`" = "" ] ; then
-		tar -zxf /dev2.tar.gz  #no devtmpfs
-		( cd / ; tar -zxf /initrd/dev2.tar.gz ; ) #no devtmpfs
-		echo "Failed to mount devtmpfs" > /dev/console
-	fi
-  fi
-  
+
+        
 . /etc/rc.d/PUPSTATE
 . /etc/DISTRO_SPECS
 . /etc/rc.d/BOOTCONSTRAINED # has BOOT_DISABLESWAP, BOOT_ATIME, BOOT_DIRTYWRITE.
@@ -134,7 +125,7 @@ export LANG=C
 if [ $PUPMODE -ne 2 ] ; then #120313 fix...
  PLANG1=`grep '^PLANG=' /etc/rc.d/PUPSTATE | cut -f 2 -d '=' | cut -f 1 -d '_'`
  [ ! "$PLANG1" ] && PLANG1='en'
- [ "$ORIGLANG1" != "$PLANG1" ] && clear > /dev/console #120331 redirection is required.
+ [ "$ORIGLANG1" != "$PLANG1" ] && clear >/initrd/dev/console #120331 redirection is required.
 fi
 load_consolefont #120301 if this was done in initrd then it would carry through, and this would not be needed.
 #...this is done in rc.country, but needs to be move above all the o/p to /dev/console.
@@ -143,10 +134,10 @@ STATUS=0
 
 ##############MAKE FILESYSTEM USABLE################
 
-echo -n "Making the filesystem usable..." >/dev/console
+echo -n "Making the filesystem usable..." > /initrd/dev/console
 
 # mount /proc before remounting / as rw (full install)
-mount -t proc none /proc 2>/dev/null; STATUS=$((STATUS+$?))
+mount -t proc none /proc 2>/initrd/dev/console; STATUS=$((STATUS+$?))
 
 FREERAM=`free | grep -o 'Mem: .*' | tr -s ' ' | cut -f 4 -d ' '` #w481 110405
 QTRFREERAM=`expr $FREERAM \/ 4`
@@ -184,12 +175,50 @@ fi
 rm -f /etc/mtab
 ln -sv /proc/mounts /etc/mtab
 
+#s243a let's move this legacy code down as far as I can because I think that devtmpfs needs some time to se things up. 
+  #Coped removed code from: s243a: https://github.com/puppylinux-woof-CE/woof-CE/commit/54ef39153265bc8e032179f188c172d15b5f02f0
+  # if devtmpfs fails, we're probably dealing with old stuff...
+  # 
+tty_wait_count=0
+while [ ! -e /dev/tty ] ; do
+    #s243a: I think inspecting the mounts requires a delay after mounting the devtmpfs
+    #so lets set a flag instead in /initrd0/usablefs
+	#if [ "`mount | cut -f 1 -d ' ' | grep devtmpfs`" = "" ] ; then
+    if [ tty_wait_count -gt 5 ]; then
+        if [ "`mount | cut -f 1 -d ' ' | grep devtmpfs`" = "" ] ; then
+         #no devtmpfs       
+		  [ -e /initrd/dev2.tar.gz ] && \
+			( cd / ; tar -zxf /initrd/dev2.tar.gz ; ) || \
+			echo "Missing: /initrd/dev2.tar.gz"
+		  echo "Failed to mount devtmpfs" > /initrd/dev/consol
+		else #devtmpfs should have create tty by now
+		  echo "devtmps abnormally slow creating tty" > /initrd/dev/consol
+		  echo "manually creating tty" > /initrd/dev/consol
+		  #TODO add code to manally create device files here: http://www.linuxfromscratch.org/lfs/view/6.1/chapter06/devices.html
+		  #Related links:
+		  #http://www.linuxfromscratch.org/lfs/view/development/chapter07/udev.html
+		  #http://www.linuxfromscratch.org/lfs/view/development/chapter08/fstab.html
+		  #http://www.linuxfromscratch.org/blfs/view/systemd/postlfs/initramfs.html
+		  #http://www.linuxfromscratch.org/lfs/view/7.3/chapter07/udev.html
+		fi
+		break
+	
+	else
+	  echo "Waiting for /dev/tty" /initrd/dev/consol
+	  sleep 0.5
+	fi
+	let "tty_wait_coun++" /initrd/dev/consol
+  fi
+done
+
 #120503 if kernel mounts a f.s. on /dev, removes my skeleton /dev
 mkdir -p /dev/pts
 mount -t devpts -o dev,suid,gid=2,mode=620 none /dev/pts ;STATUS=$((STATUS+$?))
 
 mkdir /sys 2>/dev/null
 mount -t sysfs none /sys ;STATUS=$((STATUS+$?))
+
+
 
 ##v2.20 some apps need shm (shared memory) (ex: xfdiff)... 100319 do this always...
 mkdir -p /dev/shm #120503 if kernel mounts a f.s. on /dev, removes my skeleton /dev

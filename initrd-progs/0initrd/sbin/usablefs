@@ -26,7 +26,7 @@ if [ ! -e /dev/tty ] ; then
 	if [ "`mount | cut -f 1 -d ' ' | grep devtmpfs`" = "" ] ; then
 		#tar -zxf /dev1.tar.gz  #no devtmpfs
 		rm /dev
-		mv /dev2 /dev
+		ln -s /dev2 /dev
 		echo "Failed to mount devtmpfs" > /dev/console
 	fi
 fi
