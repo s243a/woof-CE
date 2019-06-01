@@ -208,7 +208,7 @@ while [ ! -e /dev/tty ] ; do
 	  sleep 0.5
 	fi
 	let "tty_wait_coun++" /initrd/dev/consol
-  fi
+  
 done
 
 #120503 if kernel mounts a f.s. on /dev, removes my skeleton /dev
