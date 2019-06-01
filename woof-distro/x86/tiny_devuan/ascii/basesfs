@@ -255,7 +255,9 @@ pmount
 
 %addpkg --forced puppycore_sysinit
 %addpkg --forced puppycore_sysinit_net
+%addpkg --forced puppycore_net
 %addpkg --forced puppycore_Xstartup
+%addpkg --forced puppycore_locale
 
 %addpkg --forced debian-setup # specific debian setup, overriding puppy-base
 
