@@ -94,7 +94,7 @@ libcap-ng0 #Required for passwd
 # extra packages
 #screen       # useful for debugging
 file         # for checking file types
-%dummy locales      # locale files
+locales      # locale files
 %depend
 
 perl-base #Required for debconf
@@ -137,7 +137,6 @@ libimlib2       #Instead of imlib2-bin & imlib2  (from tinycore)
 #Can use xorg-driver-input instead of xserver-xorg-input-all, which is a virtual package
                 #that lists the indvidual XOrg input drives as dependencies
 %dummy init-system-helpers  #Dependency for dbus (systemd stuff)
-%dummy libapparmor1   #Dependency for dbus
 %dummy libaudit1      #Dependency for dbus
 %dummy libcap-ng0     #Dependency for dbus
 %dummy libselinux1    #Dependency for dbus
@@ -147,6 +146,8 @@ libsystemd0    #Dependency for dbus, libdbus-1-3,procps (via libprocps6)
 %dummy gcc-6-base     #Dependency for libgcc1: readme, licencing, todo, cangelog
                 #We mightneed to add this
 %dummy libgcc1        #Dependency for libexpat1
+
+libapparmor1    #Dependency of dbus
 dbus            #Recommended dependency for libdbus-1-3
 
 %dumy xserver-xorg-video-all #Let's pick the specific drivers that we want
@@ -177,6 +178,15 @@ x11-xserver-utils
 #TODO consider adding tinycore and create a layer here
 #xinit          #we can start Xorg without xinit
 ######################### Not sure about this stuff ######
+
+%dummy libgdk-pixbuf2.0-common #dependency of libgdk-pixbuf2.0-0
+libgdk-pixbuf2.0-0
+%symlink /usr/lib/i386-linux-gnu/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders /usr/bin
+
+#Not sure if we need to symlink the .so files into LD_LIBRARY_PATH
+#We'll uncomment this if we need it
+#%chroot cp -sr /usr/lib/i386-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders/ 
+
 fonts-dejavu-core  # standard font
 
 libxfont1       #Instead of libXfont (From tinycore) 
