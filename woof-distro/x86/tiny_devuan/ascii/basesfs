@@ -78,15 +78,22 @@ sed
 tar
 %dummy gzip
 %dummy cpio
+
+libmount1
 mount
+
+libkmod2           # debian needs this, dependency of pciutils
+pciutils           #https://wiki.archlinux.org/index.php/NVIDIA_Optimus#No_screens_found_on_a_laptop/NVIDIA_Optimus
+
 %dummy libpam0g
 %dummy libpam-modules-bin
 %dummy libpam-modules
+
 libaudit1 #required for passwd
 libcap-ng0 #Required for passwd
 # extra packages
-%dummy screen       # useful for debugging
-%dummy file         # for checking file types
+#screen       # useful for debugging
+file         # for checking file types
 %dummy locales      # locale files
 %depend
 
@@ -102,7 +109,7 @@ wget
 nano
 # xorg packages
 
-%dummy libkmod2           # debian needs this
+
 
 #rxvt-unicode using aterm instead
 aterm           #Same name in tinycore
