@@ -41,6 +41,7 @@ libtinfo5
 libpcre3    #Dependency of libselinux1
 libselinux1
 debianutils 
+gettext-base
 gettext
 %dummy base-files #Tinycore probably already has these
 %dummy zlib1g #Already linked to busybox
@@ -144,6 +145,13 @@ dbus            #Recommended dependency for libdbus-1-3
 %dumy xserver-xorg-video-all #Let's pick the specific drivers that we want
 xserver-xorg-video-vesa 
 xserver-xorg-video-vmware #This also works in virtualbox and qemu
+
+#Do this to help the xwin script find the video drivers:
+%chroot mkdir -p /usr/X11R7/lib 
+%chroot cp -sr /usr/lib/xorg/modules/drivers/ /usr/X11R7/lib
+
+xserver-xorg-input-mouse 
+xserver-xorg-input-kbd #THis is the keyboard module
 xserver-xorg
 #TODO Create a base sfs layere here. Add other packages as a higher up layer
 
