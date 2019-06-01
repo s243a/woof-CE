@@ -161,7 +161,7 @@ libxcb-shm0
 %dummy libxxf86dga1   #Dependency of x11-utils
 %dummy libxv1         #Dependency of x11-utils
 %dummy libxtst6       #Dependency of x11-utils
-%dummy libxmuu1       #Dependency of x11-utils
+libxmuu1       #Dependency of x11-utils
 %dummy libxcb-shape0  #Dependency of x11-utils
 x11-utils
 #%dummy libxxf86vm1    #Dependency of x11-xserver-utils
