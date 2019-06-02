@@ -261,12 +261,16 @@ pmount
 %addpkg --forced puppycore_locale
 
 %reinstall jwm
-%addpkg jwm_config
+%chroot wget ftp.us.debian.org/debian/pool/main/g/gnome-menus2/libgnome-menu2_3.0.1-4_i386.deb
+%chroot pkg -i libgnome-menu2_3.0.1-4_i386.deb #Needed for fixmenus to work
+%addpkg --forced puppycore_xdg #Needed for fixmenus to work
+%addpkg --forced jwm_config
+%chroot fixmenus
 %reinstall rox
-%addpkg puppycore_rox
-%addpkg rox-filer-data
-%addpkg rox_config
-%addpkg pthemes
+%addpkg --forced puppycore_rox
+%addpkg --forced rox-filer-data
+%addpkg --forced rox_config
+%addpkg --forced pthemes
 
 %addpkg --forced debian-setup # specific debian setup, overriding puppy-base
 
