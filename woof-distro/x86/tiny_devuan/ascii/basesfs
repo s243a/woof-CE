@@ -82,7 +82,9 @@ tar
 libmount1
 mount
 
+
 libkmod2           # debian needs this, dependency of pciutils
+kmod               # called in /etc/rc.d/rc.sysinit aroun d line 580
 pciutils           #https://wiki.archlinux.org/index.php/NVIDIA_Optimus#No_screens_found_on_a_laptop/NVIDIA_Optimus
 
 %dummy libpam0g
@@ -120,6 +122,8 @@ flwm            #Instead of flwm_topside (from tinycore)
 
 libimlib2       #Instead of imlib2-bin & imlib2  (from tinycore) 
 
+
+alsa-utils      #apulse is called from /root/.xinitrc
 
 ####### Maybe keep this since we dont' have matches for Xlibs, Xprogs, Xvesa but turn off dependency tracking 
 
@@ -196,13 +200,7 @@ wbar            #Same name on tinycore
 
 # window managers etc
 jwm 
-%dpkg_configure --force-all -a
-%addpkg jwm_config
-
-#rox
-#%addpkg pthemes
-#%addpkg rox-filer-data
-#%rox_config
+rox
 
 mc #Replaces rox-filer          # this will pull-in gtk2
 
@@ -213,14 +211,17 @@ ifplugd
 dhcpcd5
 wireless-tools
 wpasupplicant
+iptables
 
 # fixes for apt-get: re-install perl-base and xserver-xorg-core with dpkg
 %dpkgchroot
 %reinstall perl-base xserver-xorg-core 
-%bootstrap         # switch back to bootstrap installer - faster
-
+%depkgchroot         # switch back to bootstrap installer - faster
+%depend
 xdialog             #note: only i386 arch available
 gtkdialog           #note: only i386 arch available
+
+%dpkg_configure --force-all -a
 
 # final steps
 # remove extremely toxic packages, then setup the dummy
@@ -258,6 +259,14 @@ pmount
 %addpkg --forced puppycore_net
 %addpkg --forced puppycore_Xstartup
 %addpkg --forced puppycore_locale
+
+%reinstall jwm
+%addpkg jwm_config
+%reinstall rox
+%addpkg puppycore_rox
+%addpkg rox-filer-data
+%addpkg rox_config
+%addpkg pthemes
 
 %addpkg --forced debian-setup # specific debian setup, overriding puppy-base
 
