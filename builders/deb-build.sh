@@ -330,6 +330,15 @@ dpkgchroot_install() {
 bootstrap_install() {
 	set -x
 	local data decompressor
+	if [ -z "$1" ] || [ "$1" != "force" ]; then
+	  is_already_installed $pkgname && return 1
+	elif is_already_installed $pkgname; then
+	  set +x
+	  remove_pkg_status "${pkgname}"
+	  set -x
+	else
+	  IS_INSTALLED=0
+	fi
 	if [ -z "$WITHOUT_DPKG" ]; then
 		dpkg-deb -X "$REPO_DIR/$PKGFILE" $CHROOT_DIR
 	else
@@ -411,7 +420,7 @@ install_from_dir() {
 	else
 	  IS_INSTALLED=0
 	fi
-
+    rm -f $CHROOT_DIR/pinstall.sh 
 	echo "/." > "$CHROOT_DIR$ADMIN_DIR/info/${pkgname}.list"
 	cp -av --remove-destination "${1}"/* $CHROOT_DIR | sed "s|.*${CHROOT_DIR}||; s|'\$||" \
 	>> "$CHROOT_DIR$ADMIN_DIR/info/${pkgname}.list"
