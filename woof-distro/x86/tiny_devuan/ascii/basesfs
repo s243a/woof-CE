@@ -129,7 +129,7 @@ alsa-utils      #apulse is called from /root/.xinitrc
 
 ####### Maybe keep this since we dont' have matches for Xlibs, Xprogs, Xvesa but turn off dependency tracking 
 
-%dummy libwayland-client0 #Dependency for libegl1-mesa, libgbm1
+libwayland-client0 #Dependency for yad, libegl1-mesa, libgbm1
 %dummy libwayland-server0 #Dependency for libegl1-mesa, libgbm1
 %dummy libxcb-dri2-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
 libxcb-dri3-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
@@ -176,7 +176,7 @@ libxcb-shm0
 %dummy libxv1         #Dependency of x11-utils
 %dummy libxtst6       #Dependency of x11-utils
 libxmuu1       #Dependency of x11-utils
-%dummy libxcb-shape0  #Dependency of x11-utils
+libxcb-shape0  #Dependency of x11-utils #frisbee seems like it might work without this but you'll get the error: libxcb-shape.so.0 missing
 x11-utils
 #%dummy libxxf86vm1    #Dependency of x11-xserver-utils
 x11-xserver-utils
@@ -216,6 +216,7 @@ wpasupplicant
 iptables
 %addpkg frisbee
 rfkill
+yad #Needed for PortaBrowseInstall-i386-0.4; depends on libwayland-client0
 %addpkg PortaBrowseInstall-i386-0.4
 # fixes for apt-get: re-install perl-base and xserver-xorg-core with dpkg
 %dpkgchroot
