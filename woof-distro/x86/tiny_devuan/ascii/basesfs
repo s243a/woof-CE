@@ -272,6 +272,7 @@ pmount
 %addpkg --forced puppycore_rox
 %addpkg --forced rox-filer-data
 %addpkg --forced rox_config
+%addpkg --forced puppycore_icons
 %addpkg --forced pthemes
 
 %addpkg --forced debian-setup # specific debian setup, overriding puppy-base
