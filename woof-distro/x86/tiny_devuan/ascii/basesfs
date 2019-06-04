@@ -275,7 +275,8 @@ pmount
 %addpkg --forced rox-filer-data
 %addpkg --forced rox_config
 %addpkg --forced puppycore_icons
-%addpkg --forced pthemes
+librsvg2-bin #Required for puppy themes
+%addpkg --forced pthemes #requires jwm_config
 
 %addpkg --forced debian-setup # specific debian setup, overriding puppy-base
 
