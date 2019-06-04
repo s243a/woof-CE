@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Firefox-portable
+Icon=/usr/share/icons/ffportable48.png
+Exec=ffportable_launch
+Terminal=false
+Type=Application
+Categories=X-Internet-browser
+GenericName=Firefox-portable

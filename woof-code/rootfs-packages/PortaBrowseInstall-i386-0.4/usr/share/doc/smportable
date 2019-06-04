@@ -1,0 +1,17 @@
+You are about to install Seamonkey-portable.
+
+It can be installed on harddrive (ssd) or any removeable drive,
+it will survive changes of drive name (usb).
+
+To reinstall or change drive locations just type sminst in
+a terminal or go to /usr/local/bin and click on sminst
+
+The first click on Menu->Internet->Seamonkey-portable will ask
+you to install and then it will start Seamonkey.  From then on 
+clicking Menu->Internet->Seamonkey-portable
+will start Seamonkey.
+
+After your first run of Seamonkey you will be asked if you
+want to make it your default browser:
+smportable_launch "$@"
+will be entered in /usr/local/bin/defautbrowser

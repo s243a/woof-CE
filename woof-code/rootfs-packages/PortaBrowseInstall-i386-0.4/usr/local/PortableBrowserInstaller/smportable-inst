@@ -1,0 +1,99 @@
+#!/bin/bash
+
+#jrb - start
+#open in terminal
+tty -s; if [ $? -ne 0 ]; then xterm -hold -e "'$0'"; exit; fi
+
+gxmessage -bg yellow -file /usr/share/doc/smportable
+
+. /usr/local/bin/smUUID > /dev/null 2>&1
+
+if [ -e /usr/local/bin/smUUID ]; then
+  echo "SeamonkeyPortable has already been installed.  Do you wish to reinstall? y/n"
+  DRVNM=`blkid | grep -e $UUIDsm | cut -d "/" -f 3- | cut -d ":" -f -1`
+  mount /dev/${DRVNM} /mnt/${DRVNM} > /dev/null 2>&1
+  read YN
+  if [ $YN == "y" ]; then
+    rm -f /usr/local/bin/smUUID
+  else
+    exit
+  fi
+fi
+
+#choose drive
+echo "What drive would you like to install SeamonkeyPortable on? eg: sda3"
+read DRVNM
+
+#mount drive
+mkdir /mnt/$DRVNM > /dev/null 2>&1
+mount /dev/$DRVNM /mnt/$DRVNM > /dev/null 2>&1
+
+#switch to drive
+cd /mnt/$DRVNM
+
+#identify Seamonkey drive placement by uuid in case of flashdrive installs
+rm /usr/local/bin/smUUID > /dev/null 2>&1
+echo /bin/bash > /usr/local/bin/smUUID
+sed -i 's|/bin/bash|#!/bin/bash|g' /usr/local/bin/smUUID
+chmod +x /usr/local/bin/smUUID
+
+UUIDsm2=`blkid /dev/$DRVNM | cut -d " " -f 2`
+echo $UUIDsm2 >> /usr/local/bin/smUUID
+sed -i 's/"//g' /usr/local/bin/smUUID
+sed -i 's/UUID/UUIDSM/g' /usr/local/bin/smUUID
+
+# check arch
+if [ "$(uname -m)" = "i686" ]; then
+SMARCH=linux
+elif [ "$(uname -m)" = "x86_64" ]; then
+gxmessage -bg red "This program is only for 32bit systems"
+exit
+fi
+
+# check version
+  VER1=`curl -ks https://www.seamonkey-project.org/releases/ | grep "download.mozilla.org" | grep "linux" | grep "en-US" | grep "li id" | cut -d "=" -f 4- | cut -d '"' -f 2`
+  VER2=`echo $VER1 | cut -d "-" -f 2 | cut -d "&" -f 1` #2.49.4
+  mkdir Seamonkey_${VER2}_32
+  echo "Downloading Seamonkey..."
+  wget -c --no-check-certificate -O seamonkey-"${VER2}".tar.bz2 ${VER1}
+
+echo $VER1
+
+echo
+echo "Extracting Seamonkey..."
+tar -xjf seamonkey-"${VER2}".tar.bz2 -C Seamonkey_${VER2}_32 --strip-components=1
+echo "Done, the portable Seamonkey folder is Seamonkey_${VER2}_32"
+echo "You can now delete the archive:"
+echo "seamonkey_${VER2}_32.tar.bz2"
+echo
+
+#identify Seamonkey directory
+  echo "SMDIR=Seamonkey_${VER2}_32" >> /usr/local/bin/smUUID
+
+ln -s /usr/local/PortableBrowserInstaller/smportable_launch /usr/local/bin
+ln -s /usr/local/PortableBrowserInstaller/Seamonkey-portable.desktop /usr/share/applications
+fixmenus
+jwm -reload
+
+#start Seamonkey-portable
+. /usr/local/bin/smUUID
+
+DRVNM=`blkid | grep -e $UUIDSM | cut -d "/" -f 3- | cut -d ":" -f -1`
+echo $DRVNM
+
+cp /usr/local/PortableBrowserInstaller/sm /mnt/$DRVNM/$SMDIR
+cd /mnt/$DRVNM/$SMDIR
+/mnt/$DRVNM/$SMDIR/sm
+
+echo
+echo
+echo "Would you like to make Seamonkey the default browser? y/n"
+read YN
+if [[ $YN == "y" ]]; then
+  cp -f /usr/local/PortableBrowserInstaller/defaultbrowser /usr/local/bin
+  echo smportable_launch "$@" >> /usr/local/bin/defaultbrowser
+else
+  exit
+fi
+ 
+

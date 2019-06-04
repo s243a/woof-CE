@@ -1,0 +1,17 @@
+You are about to install Thunderbird-portable.
+
+It can be installed on harddrive (ssd) or any removeable drive,
+it will survive changes of drive name (usb).
+
+To reinstall or change drive locations just type tbinst in
+a terminal or go to /usr/local/bin and click on tbinst
+
+The first click on Menu->Internet->Thunderbird-portable will ask
+you to install and then it will start Thunderbird.  From then on 
+clicking Menu->Internet->Thunderbird-portable
+will start Thunderbird.
+
+After your first run of Thunderbird you will be asked if you
+want to make it your default email client:
+tbportable_launch "$@"
+will be entered in /usr/local/bin/defautemail

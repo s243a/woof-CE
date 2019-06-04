@@ -1,0 +1,98 @@
+#!/bin/bash
+
+#open in terminal
+tty -s; if [ $? -ne 0 ]; then xterm -hold -e "'$0'"; exit; fi
+
+gxmessage -bg yellow -file /usr/share/doc/pmportable
+
+. /usr/local/bin/pmUUID > /dev/null 2>&1
+
+if [ -e /usr/local/bin/pmUUID ]; then
+  echo "PalemoonPortable has already been installed.  Do you wish to reinstall? y/n"
+  DRVNM=`blkid | grep -e $UUIDPM | cut -d "/" -f 3- | cut -d ":" -f -1`
+  mount /dev/${DRVNM} /mnt/${DRVNM} > /dev/null 2>&1
+  read YN
+  if [ $YN == "y" ]; then
+    rm -f /usr/local/bin/pmUUID
+  else
+    exit
+  fi
+fi
+
+#choose drive
+echo "What drive would you like to install PalemoonPortable on? eg: sda3"
+read DRVNM
+
+#mount drive
+mkdir /mnt/$DRVNM > /dev/null 2>&1
+mount /dev/$DRVNM /mnt/$DRVNM > /dev/null 2>&1
+
+#switch to drive
+cd /mnt/$DRVNM
+
+#identify Palemoon drive placement by uuid in case of flashdrive installs
+rm /usr/local/bin/pmUUID > /dev/null 2>&1
+echo /bin/bash > /usr/local/bin/pmUUID
+sed -i 's|/bin/bash|#!/bin/bash|g' /usr/local/bin/pmUUID
+chmod +x /usr/local/bin/pmUUID
+
+UUIDPM2=`blkid /dev/$DRVNM | cut -d " " -f 2`
+echo $UUIDPM2 >> /usr/local/bin/pmUUID
+sed -i 's/"//g' /usr/local/bin/pmUUID
+sed -i 's/UUID/UUIDPM/g' /usr/local/bin/pmUUID
+
+# check arch
+if [ "$(uname -m)" = "i686" ]; then
+PMARCH=linux
+elif [ "$(uname -m)" = "x86_64" ]; then
+gxmessage -bg red "This program is only for 32bit systems"
+exit
+fi
+
+# check version
+  VER1=`curl -ks https://linux.palemoon.org/download/mainline/ | grep "datastore" | grep -v "64" | grep "strong" | cut -d '"' -f 2`  #/datastore/release/palemoon-28.5.0.linux-i686.tar.bz2
+  VER2=`echo $VER1 | cut -d "/" -f 4`  
+  VER3=`echo $VER1 | cut -d "/" -f 4 | cut -d "-" -f 2 | cut -d "." -f -3` 
+  mkdir Palemoon_${VER3}_32
+
+# download Palemoon
+echo "Downloading Palemoon..."
+wget -c --no-check-certificate "https://linux.palemoon.org${VER1}"
+echo
+echo "Extracting Palemoon..."
+tar -xjf $VER2 -C Palemoon_${VER3}_32 --strip-components=1
+echo "Done, the portable Palemoon folder is Palemoon_${VER3}_32"
+echo "You can now delete the archive:"
+echo "PM_${VER3}_32.tar.bz2"
+
+
+#identify Palemoon directory
+  echo "PMDIR=Palemoon_${VER3}_32" >> /usr/local/bin/pmUUID
+
+ln -s /usr/local/PortableBrowserInstaller/pmportable_launch /usr/local/bin
+ln -s /usr/local/PortableBrowserInstaller/Palemoon-portable.desktop /usr/share/applications
+fixmenus
+jwm -reload
+
+#start Palemoon-portable
+. /usr/local/bin/pmUUID
+
+DRVNM=`blkid | grep -e $UUIDPM | cut -d "/" -f 3- | cut -d ":" -f -1`
+echo $DRVNM
+
+cp /usr/local/PortableBrowserInstaller/pm /mnt/$DRVNM/$PMDIR
+/mnt/$DRVNM/$PMDIR
+/mnt/$DRVNM/$PMDIR/pm "$@"
+
+echo
+echo
+echo "Would you like to make Palemoon the default browser? y/n"
+read YN
+if [[ $YN == "y" ]]; then
+  cp -f /usr/local/PortableBrowserInstaller/defaultbrowser /usr/local/bin
+  echo pmportable_launch "$@" >> /usr/local/bin/defaultbrowser
+else
+  exit
+fi
+ 
+

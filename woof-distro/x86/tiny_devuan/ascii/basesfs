@@ -215,6 +215,8 @@ wireless-tools
 wpasupplicant
 iptables
 %addpkg frisbee
+rfkill
+%addpkg PortaBrowseInstall-i386-0.4
 # fixes for apt-get: re-install perl-base and xserver-xorg-core with dpkg
 %dpkgchroot
 %reinstall perl-base xserver-xorg-core 

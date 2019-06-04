@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Portable Browser Installer
+GenericName=Portable Browser Installer web browser
+Comment=Portable Browser Installer
+Icon=/usr/local/lib/X11/pixmaps/www48.png
+Exec=PortableBrowserInstall
+Terminal=false
+Type=Application
+Categories=Network;WebBrowser;

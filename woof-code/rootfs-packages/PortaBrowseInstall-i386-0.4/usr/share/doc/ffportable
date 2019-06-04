@@ -1,0 +1,17 @@
+You are about to install Firefox-portable.
+
+It can be installed on harddrive (ssd) or any removeable drive,
+it will survive changes of drive name (usb).
+
+To reinstall or change drive locations just type ffinst in
+a terminal or go to /usr/local/bin and click on ffinst
+
+The first click on Menu->Internet->Firefox-portable will ask
+you to install and then it will start Firefox.  From then on 
+clicking Menu->Internet->Firefox-portable
+will start Firefox.
+
+After your first run of Firefox you will be asked if you
+want to make it your default browser:
+ffportable_launch "$@"
+will be entered in /usr/local/bin/defautbrowser

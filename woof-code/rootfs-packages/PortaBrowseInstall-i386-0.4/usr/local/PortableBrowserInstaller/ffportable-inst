@@ -1,0 +1,106 @@
+#!/bin/bash
+
+#jrb - start
+#open in terminal
+tty -s; if [ $? -ne 0 ]; then xterm -hold -e "'$0'"; exit; fi
+
+gxmessage -bg yellow -file /usr/share/doc/ffportable
+
+. /usr/local/bin/ffUUID > /dev/null 2>&1
+
+if [ -e /usr/local/bin/ffUUID ]; then
+  echo "FirefoxPortable has already been installed.  Do you wish to reinstall? y/n"
+  DRVNM=`blkid | grep -e $UUIDFF | cut -d "/" -f 3- | cut -d ":" -f -1`
+  mount /dev/${DRVNM} /mnt/${DRVNM} > /dev/null 2>&1
+  read YN
+  if [ $YN == "y" ]; then
+    rm -f /usr/local/bin/ffUUID
+  else
+    exit
+  fi
+fi
+
+#choose drive
+echo "What drive would you like to install FirefoxPortable on? eg: sda3"
+read DRVNM
+
+#mount drive
+mkdir /mnt/$DRVNM > /dev/null 2>&1
+mount /dev/$DRVNM /mnt/$DRVNM > /dev/null 2>&1
+
+#switch to drive
+cd /mnt/$DRVNM
+
+#identify firefox drive placement by uuid in case of flashdrive installs
+rm /usr/local/bin/ffUUID > /dev/null 2>&1
+echo /bin/bash > /usr/local/bin/ffUUID
+sed -i 's|/bin/bash|#!/bin/bash|g' /usr/local/bin/ffUUID
+chmod +x /usr/local/bin/ffUUID
+
+UUIDFF2=`blkid /dev/$DRVNM | cut -d " " -f 2`
+echo $UUIDFF2 >> /usr/local/bin/ffUUID
+sed -i 's/"//g' /usr/local/bin/ffUUID
+sed -i 's/UUID/UUIDFF/g' /usr/local/bin/ffUUID
+
+#jrb - stop
+
+#fredx181 - start
+# set language, see here which are available: https://ftp.mozilla.org/pub/firefox/releases/latest/README.txt
+FFLANG=en-US
+
+if [ "$(uname -m)" = "i686" ]; then
+FFARCH=linux
+elif [ "$(uname -m)" = "x86_64" ]; then
+gxmessage -bg red "This program is only for 32bit systems"
+exit
+fi
+
+# check version
+VERSION=$(wget -c --no-check-certificate --spider -S --max-redirect 0 "https://download.mozilla.org/?product=firefox-latest&os=${FFARCH}&lang=${FFLANG}" 2>&1 | sed -n '/Location: /{s|.*/firefox-\(.*\)\.tar.*|\1|p;q;}')
+
+# download firefox
+echo "Downloading Firefox..."
+echo
+wget -c --no-check-certificate "https://download.mozilla.org/?product=firefox-latest&os=${FFARCH}&lang=${FFLANG}" -O "FF_${VERSION}_32.tar.bz2"
+echo
+
+echo "Extracting Firefox..."
+mkdir firefox_${VERSION}_32
+tar -xjf "FF_${VERSION}_32.tar.bz2" -C firefox_${VERSION}_32 --strip-components=1
+wget -c --no-check-certificate "https://dl.dropboxusercontent.com/s/3rn1a4e4scmfdyv/ff32-additions.tar.gz?dl=1" -O ff32-additions.tar.gz
+tar -zxf ff32-additions.tar.gz -C firefox_${VERSION}_32
+echo "Done, the portable firefox folder is firefox_${VERSION}_32"
+echo "You can now delete the archives:"
+echo "FF_${VERSION}_32.tar.bz2 and ff32-additions.tar.gz"
+
+#identify Firefox directory
+  echo "FFDIR=firefox_${VERSION}_32" >> /usr/local/bin/ffUUID
+
+ln -s /usr/local/PortableBrowserInstaller/ffportable_launch /usr/local/bin
+ln -s /usr/local/PortableBrowserInstaller/Firefox-portable.desktop /usr/share/applications
+fixmenus
+jwm -reload
+
+#start firefox-portable
+. /usr/local/bin/ffUUID
+
+DRVNM=`blkid | grep -e $UUIDFF | cut -d "/" -f 3- | cut -d ":" -f -1`
+echo $DRVNM
+
+#/mnt/$DRVNM/$FFDIR/firefox
+cp /usr/local/PortableBrowserInstaller/ff /mnt/$DRVNM/$FFDIR
+cd /mnt/$DRVNM/$FFDIR
+/mnt/$DRVNM/$FFDIR/ff "$@"
+
+echo
+echo
+echo "Would you like to make Firefox the default browser? y/n"
+read YN
+if [[ $YN == "y" ]]; then
+  cp -f /usr/local/PortableBrowserInstaller/defaultbrowser /usr/local/bin
+  echo ffportable_launch "$@" >> /usr/local/bin/defaultbrowser
+else
+  exit
+fi
+ 
+

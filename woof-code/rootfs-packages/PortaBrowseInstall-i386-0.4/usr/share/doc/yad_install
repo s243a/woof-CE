@@ -1,0 +1,12 @@
+You are about to install PortaBrowseInstall32
+
+You can install this to any harddrive or flashdrive and run it from there, saving ram.
+It will remember this drive even if the drive name changes.
+
+After installation you will find "Portable Browser Installer" on the Internet menu.
+
+In older Puppy's you may need to install a newer Yad:
+
+http://distro.ibiblio.org/puppylinux/pet_packages-common32/yad-0.40.3-i686_common32.pet
+
+close this message and you will be given the choice to install this yad.

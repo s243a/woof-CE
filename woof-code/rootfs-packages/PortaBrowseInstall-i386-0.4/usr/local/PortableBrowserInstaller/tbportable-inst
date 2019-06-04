@@ -1,0 +1,99 @@
+#!/bin/bash
+
+#jrb - start
+#open in terminal
+tty -s; if [ $? -ne 0 ]; then xterm -hold -e "'$0'"; exit; fi
+
+gxmessage -bg yellow -file /usr/share/doc/tbportable
+
+. /usr/local/bin/tbUUID > /dev/null 2>&1
+
+if [ -e /usr/local/bin/tbUUID ]; then
+  echo "ThunderbirdPortable has already been installed.  Do you wish to reinstall? y/n"
+  DRVNM=`blkid | grep -e $UUIDtb | cut -d "/" -f 3- | cut -d ":" -f -1`
+  mount /dev/${DRVNM} /mnt/${DRVNM} > /dev/null 2>&1
+  read YN
+  if [ $YN == "y" ]; then
+    rm -f /usr/local/bin/tbUUID
+  else
+    exit
+  fi
+fi
+
+#choose drive
+echo "What drive would you like to install ThunderbirdPortable on? eg: sda3"
+read DRVNM
+
+#mount drive
+mkdir /mnt/$DRVNM > /dev/null 2>&1
+mount /dev/$DRVNM /mnt/$DRVNM > /dev/null 2>&1
+
+#switch to drive
+cd /mnt/$DRVNM
+
+#identify Thunderbird drive placement by uuid in case of flashdrive installs
+rm /usr/local/bin/tbUUID > /dev/null 2>&1
+echo /bin/bash > /usr/local/bin/tbUUID
+sed -i 's|/bin/bash|#!/bin/bash|g' /usr/local/bin/tbUUID
+chmod +x /usr/local/bin/tbUUID
+
+UUIDtb2=`blkid /dev/$DRVNM | cut -d " " -f 2`
+echo $UUIDtb2 >> /usr/local/bin/tbUUID
+sed -i 's/"//g' /usr/local/bin/tbUUID
+sed -i 's/UUID/UUIDTB/g' /usr/local/bin/tbUUID
+
+# check arch
+if [ "$(uname -m)" = "i686" ]; then
+TBARCH=linux
+elif [ "$(uname -m)" = "x86_64" ]; then
+gxmessage -bg red "This program is only for 32bit systems"
+exit
+fi
+
+# check version
+  TBRD=`curl -ks https://www.thunderbird.net/en-US/download/ | grep "product=thunderbird" | cut -d '"' -f 2-4 | grep "linux&" | cut -d '"' -f 1`
+  TBRDVER=`echo $TBRD | cut -d "-" -f 2`  #60.6.1
+  mkdir Thunderbird_${TBRDVER}_32
+  echo "Downloading Thunderbird..."
+  wget -c --no-check-certificate -O thunderbird-"${TBRDVER}".tar.bz2 ${TBRD}
+
+echo $TBRD
+
+echo
+echo "Extracting Thunderbird..."
+tar -xjf thunderbird-"${TBRDVER}".tar.bz2 -C Thunderbird_${TBRDVER}_32 --strip-components=1
+echo "Done, the portable Thunderbird folder is Thunderbird_${TBRDVER}_32"
+echo "You can now delete the archive:"
+echo "thunderbird_${TBRDVER}_32.tar.bz2"
+echo
+
+#identify Thunderbird directory
+  echo "TBDIR=Thunderbird_${TBRDVER}_32" >> /usr/local/bin/tbUUID
+
+ln -s /usr/local/PortableBrowserInstaller/tbportable_launch /usr/local/bin
+ln -s /usr/local/PortableBrowserInstaller/Thunderbird-portable.desktop /usr/share/applications
+fixmenus
+jwm -reload
+
+#start Thunderbird-portable
+. /usr/local/bin/tbUUID
+
+DRVNM=`blkid | grep -e $UUIDTB | cut -d "/" -f 3- | cut -d ":" -f -1`
+echo $DRVNM
+
+cp /usr/local/PortableBrowserInstaller/tb /mnt/$DRVNM/$TBDIR
+/mnt/$DRVNM/$TBDIR
+/mnt/$DRVNM/$TBDIR/tb "$@"
+
+echo
+echo
+echo "Would you like to make Thunderbird the default email client? y/n"
+read YN
+if [[ $YN == "y" ]]; then
+  cp -f /usr/local/PortableBrowserInstaller/defaultemail /usr/local/bin
+  echo tbportable_launch "$@" >> /usr/local/bin/defaultemail
+else
+  exit
+fi
+ 
+

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Thunderbird-portable
+Icon=/usr/share/icons/tbportable48.png
+Exec=tbportable_launch
+Terminal=false
+Type=Application
+Categories=Email;
+GenericName=Thunderbird-portable

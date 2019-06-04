@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Seamonkey-portable
+Icon=/usr/share/icons/smportable48.png
+Exec=smportable_launch
+Terminal=false
+Type=Application
+Categories=X-Internet-browser
+GenericName=Seamonkey-portable

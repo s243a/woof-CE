@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+#Selector for portable web browsers, copied from © Mike Walsh Apr 2018
+#
+
+#/usr/local/PortableBrowserInstaller/yad_dnld.sh
+
+yad --center --window-icon=/usr/local/lib/X11/pixmaps/www48.png --title="Portable Web Browser Installer" --form --width=450 --text="PORTABLE WEB BROWSER INSTALLER
+--------------------------------------------------
+Please choose your desired browser:" \
+--image="/usr/local/lib/X11/pixmaps/www48.png" \
+--field="Firefox Quantum":fbtn "ffinst" \
+--field="Palemoon":fbtn "pminst" \
+--field="Seamonkey":fbtn "sminst" \
+--field="Thunderbird email client":fbtn "tbinst" \
+--no-buttons --close-on-unfocus
