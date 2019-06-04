@@ -422,7 +422,7 @@ install_from_dir() {
 	fi
     rm -f $CHROOT_DIR/pinstall.sh 
 	echo "/." > "$CHROOT_DIR$ADMIN_DIR/info/${pkgname}.list"
-	cp -av --remove-destination "${1}"/* $CHROOT_DIR | sed "s|.*${CHROOT_DIR}||; s|'\$||" \
+	cp -arfv --remove-destination "${1}"/* $CHROOT_DIR | sed "s|.*${CHROOT_DIR}||; s|'\$||" \
 	>> "$CHROOT_DIR$ADMIN_DIR/info/${pkgname}.list"
 	if [ -f "${1}"/files ]; then #If package supplies a file list then use it because
 	   #the post install script might remove files or add symbolic links. 

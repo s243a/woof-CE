@@ -99,9 +99,9 @@ install_initrd() {
     #cp "$WOOFCE/woof-arch/woof-code_rootfs-skeleton_DEVDIR.tar.gz" "$initrdtmp/dev1.tar.gz"
     #cp "$WOOFCE/woof-arch/woof-code_boot_initrd-tree0_DEVDIR.tar.gz" \
     #  "$initrdtmp/dev1.tar.gz"
-    #cp "$WOOFCE/woof-arch/woof-code_rootfs-skeleton_DEVDIR.tar.gz" \
-    #  "$initrdtmp/dev2.tar.gz"
-    tar -xzf "$WOOFCE/woof-arch/woof-code_rootfs-skeleton_DEVDIR.tar.gz" \
+    cp "$WOOFCE/woof-arch/woof-code_rootfs-skeleton_DEVDIR.tar.gz" \
+      "$initrdtmp/dev2.tar.gz"
+    tar -xzf "$WOOFCE/woof-arch/woof-code_boot_initrd-tree0_DEVDIR.tar.gz" \
         -C "$initrdtmp/"    
     mv "$initrdtmp"/dev "$initrdtmp/dev3"    
 	mkdir -p "$initrdtmp/dev"        

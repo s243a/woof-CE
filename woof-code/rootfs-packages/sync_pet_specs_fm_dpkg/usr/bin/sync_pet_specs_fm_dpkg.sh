@@ -70,6 +70,8 @@ while read -r -u15 -d $'\n' line; do
   '')
     pkg_file_list="$DPKG_ADMIN/$pet_specs_PKG_NAME".list
     if [ $(wc -c <"$pkg_file_list") -gt 4 ] || [ SYNC_DUMMY -eq 1 ]; then
+      [ -e "$PUPPY_ADMIN_LIST/$pet_specs_PKG_NAME" ] && \
+        rm "$PUPPY_ADMIN_LIST/$pet_specs_PKG_NAME"
       if [ "$(basename "$PUPPY_ADMIN_LIST")" = builtin_files ]; then
         ln $DPKG_ADMIN/"$pet_specs_PKG_NAME".list "$PUPPY_ADMIN_LIST/$pet_specs_PKG_NAME"
       else

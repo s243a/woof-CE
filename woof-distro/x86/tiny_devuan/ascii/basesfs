@@ -85,7 +85,9 @@ mount
 
 libkmod2           # debian needs this, dependency of pciutils
 kmod               # called in /etc/rc.d/rc.sysinit aroun d line 580
+libpci3
 pciutils           #https://wiki.archlinux.org/index.php/NVIDIA_Optimus#No_screens_found_on_a_laptop/NVIDIA_Optimus
+dmidecode
 
 %dummy libpam0g
 %dummy libpam-modules-bin
@@ -130,7 +132,7 @@ alsa-utils      #apulse is called from /root/.xinitrc
 %dummy libwayland-client0 #Dependency for libegl1-mesa, libgbm1
 %dummy libwayland-server0 #Dependency for libegl1-mesa, libgbm1
 %dummy libxcb-dri2-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
-%dummy libxcb-dri3-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
+libxcb-dri3-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
 %dummy libxcb-present0 #Dependency for libegl1-mesa, libgl1-mesa-glx
 %dummy libxcb-sync1    #Dependency for libegl1-mesa
 %dummy libxcb-xfixes0  #Dependency for libegl1-mesa
@@ -212,7 +214,7 @@ dhcpcd5
 wireless-tools
 wpasupplicant
 iptables
-
+%addpkg frisbee
 # fixes for apt-get: re-install perl-base and xserver-xorg-core with dpkg
 %dpkgchroot
 %reinstall perl-base xserver-xorg-core 
@@ -289,6 +291,9 @@ pmount
 %dpkg_configure --force-all -a
 
 %addpkg --forced puppycore_utils #Required for puppy startup
+
+%rm /bin/sh
+%symlink /bin/bash /bin/sh
 
 ## install extra built-in packages
 
