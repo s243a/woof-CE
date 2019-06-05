@@ -4,10 +4,10 @@
 #open in terminal
 tty -s; if [ $? -ne 0 ]; then defaultterminal -hold -e "$0"; exit; fi
 
-if [ ! -z gxmessage ]; then
+if [ ! -z "`which gxmessage`" ]; then
   gxmessage -bg yellow -file /usr/share/doc/smportable
-elif [ ! -z xmessage ]; then
-  xmessage -bg yellow -file /usr/share/doc/smportable
+elif [ ! -z "`which xmessage`" ]; then
+  xmessage -file /usr/share/doc/smportable
 else
   cat /usr/share/doc/smportable
   read -p "Press enter to continue"

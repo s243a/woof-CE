@@ -19,16 +19,24 @@ Please choose your desired browser:" \
 
 else
   tty -s; if [ $? -ne 0 ]; then defaultterminal -hold -e "$0"; exit; fi
+  tempfile=/tmp/bla
   dialog --backtitle "CPU Selection" \
+  --ok-label "List" \
   --radiolist "Please choose your desired browser:" 10 40 4 \
-        1 Firefox Quantum \
-        2 Palemoon \
-        3 Seamonkey \
-        4 Thunderbird email client
-  browser_choice="$?"
-  case "$browser_choice" in
-  1) ffinst ;;
-  2) pminst ;;
-  3) sminst ;;
-  4) tbinst ;;
+        1 "Firefox Quantum" off \
+        2 "Palemoon" on \
+        3 "Seamonkey" off \
+        4 "Thunderbird email client" off \
+        2> $tempfile
+  is_ok="$?"
+  browser_choice=`cat $tempfile`
+  echo browser_choice
+  if [ $is_ok -eq 0 ]; then
+    case "$browser_choice" in
+    1) ffinst ;;
+    2) pminst ;;
+    3) sminst ;;
+    4) tbinst ;;
+    esac
+  fi
 fi 

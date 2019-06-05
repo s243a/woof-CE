@@ -3,10 +3,10 @@
 #open in terminal
 tty -s; if [ $? -ne 0 ]; then defaultterminal -hold -e "$0"; exit; fi
 
-if [ ! -z gxmessage ]; then
+if [ ! -z "`which gxmessage`" ]; then
   gxmessage -bg yellow -file /usr/share/doc/pmportable
-elif [ ! -z xmessage ]; then
-  xmessage -bg yellow -file /usr/share/doc/pmportable
+elif [ ! -z "`which xmessage`" ]; then
+  xmessage -file /usr/share/doc/pmportable
 else
   cat /usr/share/doc/pmportable
   read -p "Press enter to continue"

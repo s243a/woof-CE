@@ -1,2 +1,14 @@
 #!/bin/ash
-exec urxvt "$@"
+if [ ! -z "`which urxvt`" ]; then
+  exec urxvt "$@"
+elif [ ! -z "`which xterm`" ]; then
+  exec xterm "$@"
+elif [ ! -z "`which lxterm`" ]; then
+  exec lxterm "$@"
+elif [ ! -z "`which sakura`" ]; then
+  exec sakura "$@"
+elif [ ! -z "`which roxterm`" ]; then
+  exec roxterm "$@"
+elif [ ! -z "`which roxterm`" ]; then
+  exec roxterm "$@"
+fi 
