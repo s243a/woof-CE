@@ -2,9 +2,16 @@
 
 #jrb - start
 #open in terminal
-tty -s; if [ $? -ne 0 ]; then xterm -hold -e "'$0'"; exit; fi
+tty -s; if [ $? -ne 0 ]; then defaultterminal -hold -e "$0"; exit; fi
 
-gxmessage -bg yellow -file /usr/share/doc/ffportable
+if [ ! -z gxmessage ]; then
+  gxmessage -bg yellow -file /usr/share/doc/ffportable
+elif [ ! -z xmessage ]; then
+  xmessage -bg yellow -file /usr/share/doc/ffportable
+else
+  cat /usr/share/doc/ffportable
+  read -p "Press enter to continue"
+fi
 
 . /usr/local/bin/ffUUID > /dev/null 2>&1
 

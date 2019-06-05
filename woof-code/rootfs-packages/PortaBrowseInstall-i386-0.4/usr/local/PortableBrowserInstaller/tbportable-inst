@@ -2,9 +2,17 @@
 
 #jrb - start
 #open in terminal
-tty -s; if [ $? -ne 0 ]; then xterm -hold -e "'$0'"; exit; fi
 
-gxmessage -bg yellow -file /usr/share/doc/tbportable
+tty -s; if [ $? -ne 0 ]; then defaultterminal -hold -e "$0"; exit; fi
+
+if [ ! -z gxmessage ]; then
+  gxmessage -bg yellow -file /usr/share/doc/tbportable
+elif [ ! -z xmessage ]; then
+  xmessage -bg yellow -file /usr/share/doc/tbportable
+else
+  cat /usr/share/doc/tbportable
+  read -p "Press enter to continue"
+fi
 
 . /usr/local/bin/tbUUID > /dev/null 2>&1
 

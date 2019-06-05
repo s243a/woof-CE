@@ -1,9 +1,16 @@
 #!/bin/bash
 
 #open in terminal
-tty -s; if [ $? -ne 0 ]; then xterm -hold -e "'$0'"; exit; fi
+tty -s; if [ $? -ne 0 ]; then defaultterminal -hold -e "$0"; exit; fi
 
-gxmessage -bg yellow -file /usr/share/doc/pmportable
+if [ ! -z gxmessage ]; then
+  gxmessage -bg yellow -file /usr/share/doc/pmportable
+elif [ ! -z xmessage ]; then
+  xmessage -bg yellow -file /usr/share/doc/pmportable
+else
+  cat /usr/share/doc/pmportable
+  read -p "Press enter to continue"
+fi
 
 . /usr/local/bin/pmUUID > /dev/null 2>&1
 
