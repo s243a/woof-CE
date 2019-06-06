@@ -138,7 +138,7 @@ jwm -reload
 
 DRVNM=`blkid | grep -e $UUIDFF | cut -d "/" -f 3- | cut -d ":" -f -1`
 echo $DRVNM
-DRVNM="${DRVNM:-DRVNM_ALT}"
+DRVNM="${DRVNM:-$DRVNM_ALT}"
 
 if [ -d "/mnt/$DRVNM/$FFDIR" ]; then
   #/mnt/$DRVNM/$FFDIR/firefox

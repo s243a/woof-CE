@@ -122,7 +122,7 @@ jwm -reload
 
 DRVNM=`blkid | grep -e $UUIDTB | cut -d "/" -f 3- | cut -d ":" -f -1`
 echo $DRVNM
-DRVNM="${DRVNM:-DRVNM_ALT}"
+DRVNM="${DRVNM:-$DRVNM_ALT}"
 
 if [ -d "/mnt/$DRVNM/$TBDIR" ]; then
   cp /usr/local/PortableBrowserInstaller/tb "/mnt/$DRVNM/$TBDIR"
