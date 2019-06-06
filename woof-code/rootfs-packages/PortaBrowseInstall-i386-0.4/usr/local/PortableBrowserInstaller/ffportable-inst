@@ -81,6 +81,7 @@ UUIDFF2=`blkid /dev/$DRVNM | cut -d " " -f 2`
 echo $UUIDFF2 >> /usr/local/bin/ffUUID
 sed -i 's/"//g' /usr/local/bin/ffUUID
 sed -i 's/UUID/UUIDFF/g' /usr/local/bin/ffUUID
+echo "DRVNM_ALT='$DRVNM'" >> /usr/local/bin/ffUUID
 
 #jrb - stop
 
@@ -137,11 +138,19 @@ jwm -reload
 
 DRVNM=`blkid | grep -e $UUIDFF | cut -d "/" -f 3- | cut -d ":" -f -1`
 echo $DRVNM
+DRVNM="${DRVNM:-DRVNM_ALT}"
 
-#/mnt/$DRVNM/$FFDIR/firefox
-cp /usr/local/PortableBrowserInstaller/ff /mnt/$DRVNM/$FFDIR
-cd /mnt/$DRVNM/$FFDIR
-/mnt/$DRVNM/$FFDIR/ff "$@"
+if [ -d "/mnt/$DRVNM/$FFDIR" ]; then
+  #/mnt/$DRVNM/$FFDIR/firefox
+  cp /usr/local/PortableBrowserInstaller/ff "/mnt/$DRVNM/$FFDIR"
+  cd "/mnt/$DRVNM/$FFDIR"
+  "/mnt/$DRVNM/$FFDIR/ff" "$@"
+else
+  #/mnt/$DRVNM/$FFDIR/firefox
+  cp /usr/local/PortableBrowserInstaller/ff "$DRVNM/$FFDIR"
+  cd "$DRVNM/$FFDIR"
+  "$DRVNM/$FFDIR/ff" "$@"
+fi
 
 echo
 echo

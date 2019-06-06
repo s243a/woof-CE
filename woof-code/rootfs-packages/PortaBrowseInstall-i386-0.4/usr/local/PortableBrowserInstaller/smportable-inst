@@ -81,6 +81,7 @@ UUIDsm2=`blkid /dev/$DRVNM | cut -d " " -f 2`
 echo $UUIDsm2 >> /usr/local/bin/smUUID
 sed -i 's/"//g' /usr/local/bin/smUUID
 sed -i 's/UUID/UUIDSM/g' /usr/local/bin/smUUID
+echo "DRVNM_ALT='$DRVNM'" >> /usr/local/bin/smUUID
 
 # check arch
 if [ "$(uname -m)" = "i686" ]; then
@@ -120,10 +121,17 @@ jwm -reload
 
 DRVNM=`blkid | grep -e $UUIDSM | cut -d "/" -f 3- | cut -d ":" -f -1`
 echo $DRVNM
+DRVNM="${DRVNM:-DRVNM_ALT}"
 
-cp /usr/local/PortableBrowserInstaller/sm /mnt/$DRVNM/$SMDIR
-cd /mnt/$DRVNM/$SMDIR
-/mnt/$DRVNM/$SMDIR/sm
+if [ -d "/mnt/$DRVNM/$SMDIR" ]; then
+  cp /usr/local/PortableBrowserInstaller/sm "/mnt/$DRVNM/$SMDIR"
+  cd "/mnt/$DRVNM/$SMDIR"
+  "/mnt/$DRVNM/$SMDIR/sm"
+else
+  cp /usr/local/PortableBrowserInstaller/sm "$DRVNM/$SMDIR"
+  cd "$DRVNM/$SMDIR"
+  "$DRVNM/$SMDIR/sm"
+fi
 
 echo
 echo
