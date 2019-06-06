@@ -33,7 +33,7 @@ message_fn(){
     read -p "Press enter to continue"
   fi
 }
-[ -e /usr/share/doc/ffportable ] && \
+[ -e /usr/share/doc/pmportable ] && \
   message_fn -bg yellow -file /usr/share/doc/pmportable
 
 . /usr/local/bin/pmUUID > /dev/null 2>&1
@@ -56,8 +56,16 @@ echo "What drive would you like to install PalemoonPortable on? eg: sda3"
 read DRVNM
 
 #mount drive
-mkdir -p /mnt/$DRVNM > /dev/null 2>&1
-[ -e /dev/$DRVNM ] && mount /dev/$DRVNM /mnt/$DRVNM > /dev/null 2>&1
+if [ ! "${DRVNM:0:1}" = "/" ]; then
+  mkdir -p /mnt/$DRVNM > /dev/null 2>&1
+  [ -e /dev/$DRVNM ] && mount /dev/$DRVNM /mnt/$DRVNM > /dev/null 2>&1
+
+  #switch to drive
+  cd "/mnt/$DRVNM"
+else
+  mkdir -p "$DRVNM" > /dev/null 2>&1
+  cd "$DRVNM"
+fi
 
 #switch to drive
 cd /mnt/$DRVNM
