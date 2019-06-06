@@ -3,21 +3,46 @@
 #open in terminal
 tty -s; if [ $? -ne 0 ]; then defaultterminal -hold -e "$0"; exit; fi
 
-if [ ! -z "`which gxmessage`" ]; then
-  gxmessage -bg yellow -file /usr/share/doc/pmportable
-elif [ ! -z "`which xmessage`" ]; then
-  xmessage -file /usr/share/doc/pmportable
-else
-  cat /usr/share/doc/pmportable
-  read -p "Press enter to continue"
-fi
+message_fn(){
+  args=()
+  gx_options=()
+  while [ $# -gt 0 ]; do
+    if [ $1 = "-file" ]; then
+      args=( "$1" )
+      shift
+      args+=( "$1" )
+      message_file
+      shift
+    elif [ $1 = "-bg" ]; then
+      gx_options=( "$1" )
+      shift
+      gx_options=( "$1" )
+      shift      
+    else
+      args+="$1"
+      shift
+    fi
+  done
+  if [ ! -z "`which gxmessage`" ]; then
+    gxmessage "${gx_options}" "${args[@]}"
+  elif [ ! -z "`which xmessage`" ]; then
+    xmessage "${options[@]}" "$@"
+  else
+    [ -z "$message" ] && 
+    cat /usr/share/doc/ffportable
+    read -p "Press enter to continue"
+  fi
+}
+[ -e /usr/share/doc/ffportable ] && \
+  message_fn -bg yellow -file /usr/share/doc/pmportable
 
 . /usr/local/bin/pmUUID > /dev/null 2>&1
 
 if [ -e /usr/local/bin/pmUUID ]; then
-  echo "PalemoonPortable has already been installed.  Do you wish to reinstall? y/n"
-  DRVNM=`blkid | grep -e $UUIDPM | cut -d "/" -f 3- | cut -d ":" -f -1`
-  mount /dev/${DRVNM} /mnt/${DRVNM} > /dev/null 2>&1
+  [ ! -z "$UUIDFF" ] && \
+    DRVNM=`blkid | grep -e $UUIDPM | cut -d "/" -f 3- | cut -d ":" -f -1`
+  [ ! -z "$DRVNM" ] && mount /dev/${DRVNM} /mnt/${DRVNM} > /dev/null 2>&1
+  echo "PalemoonPortable has already been installed.  Do you wish to reinstall? y/n"  
   read YN
   if [ $YN == "y" ]; then
     rm -f /usr/local/bin/pmUUID
@@ -31,8 +56,8 @@ echo "What drive would you like to install PalemoonPortable on? eg: sda3"
 read DRVNM
 
 #mount drive
-mkdir /mnt/$DRVNM > /dev/null 2>&1
-mount /dev/$DRVNM /mnt/$DRVNM > /dev/null 2>&1
+mkdir -p /mnt/$DRVNM > /dev/null 2>&1
+[ -e /dev/$DRVNM ] && mount /dev/$DRVNM /mnt/$DRVNM > /dev/null 2>&1
 
 #switch to drive
 cd /mnt/$DRVNM
@@ -52,7 +77,7 @@ sed -i 's/UUID/UUIDPM/g' /usr/local/bin/pmUUID
 if [ "$(uname -m)" = "i686" ]; then
 PMARCH=linux
 elif [ "$(uname -m)" = "x86_64" ]; then
-gxmessage -bg red "This program is only for 32bit systems"
+message_fn -bg red "This program is only for 32bit systems"
 exit
 fi
 
