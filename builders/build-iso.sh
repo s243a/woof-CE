@@ -112,7 +112,7 @@ install_initrd() {
 	cp -f "$WOOFCE/initrd-progs/pkg/busybox_static/bb-create-symlinks" \
 	       "$initrdtmp/bin/bb-create-symlinks" 
 	( cd $initrdtmp/bin; sh bb-create-symlinks; )
-if [ -f "$CHROOT_DIR/etc/DISTRO_SPECS" ]; then
+if [ ! -f "$CHROOT_DIR/etc/DISTRO_SPECS" ]; then
 	# create minimal distro specs, read woof's docs to get the meaning
 	> $initrdtmp/DISTRO_SPECS cat << EOF
 DISTRO_NAME='$SOURCE Puppy'
