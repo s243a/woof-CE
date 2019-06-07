@@ -318,7 +318,7 @@ dpkgchroot_install() {
 	bind_ALL #s243a: TODO, remove this once we add a direcive for this command
 	! [ -d $CHROOT_DIR/tmp ] && mkdir -p $CHROOT_DIR/tmp
 	cp "$REPO_DIR/$PKGFILE" $CHROOT_DIR/tmp
-	chroot $CHROOT_DIR /usr/bin/dpkg --force-all --unpack /tmp/"$PKGFILE"
+	chroot $CHROOT_DIR /usr/bin/dpkg --force-overwrite --unpack /tmp/"$PKGFILE"
 	rm -f $CHROOT_DIR/tmp/"$PKGFILE"
 	if [ "$DPKG_CHROOT_FALLBACK" = '%bootstrap' ] &&
 	[ ! -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" ]; then

@@ -1,0 +1,31 @@
+#One or more words that identify this distribution:
+DISTRO_NAME='Tiny Devaun'
+#version number of this distribution:
+DISTRO_VERSION=0
+#The distro whose binary packages were used to build this distribution:
+DISTRO_BINARY_COMPAT='devuan'
+#Prefix for some filenames: exs: stretchsave.2fs, stretch-7.5.sfs
+DISTRO_FILE_PREFIX='ascii'
+#The version of the distro whose binary packages were used to build this distro:
+DISTRO_COMPAT_VERSION='ascii'
+#the kernel pet package used:
+DISTRO_KERNEL_PET='Huge_Kernel'
+#read by /usr/bin to bypass Xorg Wizard at first boot:
+DISTRO_XORG_AUTO='yes'
+#subname for online PETs dir. Ex: "slacko14", dir "pet_packages-slacko14", db file "Packages-puppy-slacko14-official":
+#note: prior to existence of this variable, online subname was set to $DISTRO_COMPAT_VERSION or via some hack code.
+DISTRO_DB_SUBNAME='ascii'
+
+DISTRO_TARGETARCH='x86'
+BUILD_FROM_WOOF='testing;deb00746;2019-01-06 13:27:08 -0600'
+#Puppy default filenames...
+#Note, the 'SFS' files below are what the 'init' script in initrd.gz searches for,
+#for the partition, path and actual files loaded, see PUPSFS and ZDRV in /etc/rc.d/PUPSTATE
+DISTRO_PUPPYSFS=puppy_tascii.sfs #'puppy_stretch_7.5.sfs'
+DISTRO_ZDRVSFS='zdrv_tascii_0.sfs'
+DISTRO_FDRVSFS='fdrv_tascii_0.sfs'
+DISTRO_ADRVSFS='adrv_tascii_0.sfs'
+DISTRO_YDRVSFS='ydrv_tascii_0.sfs'
+DISTRO_PUPPYDATE='Jun 2019'
+#multiarch distros, such as Ubuntu, will have this. ex: /usr/lib/i386-linux-gnu, so DISTRO_ARCHDIR=i386-linux-gnu
+DISTRO_ARCHDIR='i386-linux-gnu'

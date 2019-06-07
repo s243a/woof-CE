@@ -51,6 +51,9 @@ libbz2-1.0
 libattr1
 libacl1
 %addpkg tinycore9_base_gz
+%chroot mkdir -p /var/packages
+#Keep pkg from installing libc6 (this avoids segmentation fault)
+%chroot cp /var/lib/dpkg/info/libc6.list /var/packages/builtin_files/libc6
 #%addpkg tinycore9_base_gz_users
 %addpkg puppycore_noarch
 %addpkg puppycore_users
@@ -130,7 +133,9 @@ alsa-utils      #apulse is called from /root/.xinitrc
 
 ####### Maybe keep this since we dont' have matches for Xlibs, Xprogs, Xvesa but turn off dependency tracking 
 
-%dummy libwayland-client0 #Dependency for yad, libegl1-mesa, libgbm1
+libglib2.0-0       #Dependency of libdbus-glib-1-2
+libdbus-glib-1-2   #Required for firefox 
+libwayland-client0 #Dependency for yad, libegl1-mesa, libgbm1, firefox
 %dummy libwayland-server0 #Dependency for libegl1-mesa, libgbm1
 %dummy libxcb-dri2-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
 libxcb-dri3-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
@@ -218,6 +223,7 @@ iptables
 %addpkg frisbee
 rfkill
 #yad #Needed for PortaBrowseInstall-i386-0.4; depends on libwayland-client0
+curl #Needed for PortaBrowseInstall-i386-0.4
 #gxmessage #Required for PortaBrowseInstall-i386-0.4
 %addpkg PortaBrowseInstall-i386-0.4
 # fixes for apt-get: re-install perl-base and xserver-xorg-core with dpkg
@@ -325,4 +331,4 @@ librsvg2-bin #Required for puppy themes
 
 #%rm /dev #s243a: Do we want to remove /dev?
 # make the sfs (optional)
-%makesfs iso/iso-root/puppy.sfs -comp gzip # -Xcompression-level 1
+%makesfs iso/iso-root/puppy_tascii.sfs -comp gzip # -Xcompression-level 1
