@@ -371,9 +371,9 @@ remove_pkg_status() {
       ;;
       esac
      if [ $echo_line -eq 1 ]; then
-       echo $line >> "$status_new"    
+       echo "$line" >> "$status_new"    
      fi
-	done < $CHROOT_DIR$ADMIN_DIR/status
+	done < "$CHROOT_DIR$ADMIN_DIR/status"
 	rm "$CHROOT_DIR$ADMIN_DIR/status"
 	mv "$status_new" "$CHROOT_DIR$ADMIN_DIR/status"
 }
