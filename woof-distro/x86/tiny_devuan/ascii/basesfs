@@ -100,6 +100,7 @@ libaudit1 #required for passwd
 libcap-ng0 #Required for passwd
 # extra packages
 #screen       # useful for debugging
+libmagic1    #dependency of file
 file         # for checking file types
 locales      # locale files
 %depend
@@ -133,7 +134,7 @@ alsa-utils      #apulse is called from /root/.xinitrc
 
 ####### Maybe keep this since we dont' have matches for Xlibs, Xprogs, Xvesa but turn off dependency tracking 
 
-libglib2.0-0       #Dependency of libdbus-glib-1-2
+libglib2.0-0       #Dependency of libdbus-glib-1-2, and need for rsvg-convert (used in ptheme)
 libdbus-glib-1-2   #Required for firefox 
 libwayland-client0 #Dependency for yad, libegl1-mesa, libgbm1, firefox
 %dummy libwayland-server0 #Dependency for libegl1-mesa, libgbm1

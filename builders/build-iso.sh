@@ -30,6 +30,11 @@ INITRD_CODE=${INITRD_CODE:-$WOOFCE/woof-code/boot/initrd-tree0}
 ###
 BUILD_CONFIG=${BUILD_CONFIG:-./build.conf}
 [ -e $BUILD_CONFIG ] && . $BUILD_CONFIG
+WORK_DIR=${WORK_DIR:-"`realpath .`"} #We'll export this if needed #Added by s243a
+CURDIR="${CURDIR:-"$(dirname "$(realpath "$0")")"}"  #We'll export this if needed #Added by s243a
+if [ ! "${CHROOT_DIR:0:1}" = "/" ]; then
+  CHROOT_DIR_FULL="$WORK_DIR/$CHROOT_DIR"
+fi
 
 
 ### helpers
@@ -112,7 +117,7 @@ install_initrd() {
 	cp -f "$WOOFCE/initrd-progs/pkg/busybox_static/bb-create-symlinks" \
 	       "$initrdtmp/bin/bb-create-symlinks" 
 	( cd $initrdtmp/bin; sh bb-create-symlinks; )
-if [ ! -f "$CHROOT_DIR/etc/DISTRO_SPECS" ]; then
+if [ ! -f "$CHROOT_DIR_FULL/etc/DISTRO_SPECS" ]; then
 	# create minimal distro specs, read woof's docs to get the meaning
 	> $initrdtmp/DISTRO_SPECS cat << EOF
 DISTRO_NAME='$SOURCE Puppy'
