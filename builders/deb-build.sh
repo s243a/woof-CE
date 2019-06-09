@@ -336,7 +336,8 @@ dpkgchroot_install() {
 	#  mkdir -p $CHROOT_DIR$ADMIN_DIR/tmp.ci
 	#fi
 	#chroot $CHROOT_DIR /usr/bin/dpkg-deb -e /tmp/"$PKGFILE" $ADMIN_DIR/tmp.ci
-	chroot $CHROOT_DIR /usr/bin/dpkg --force-overwrite --unpack /tmp/"$PKGFILE"
+	chroot $CHROOT_DIR /usr/bin/dpkg --force-overwrite --force-depends --force-conflicts \
+	       --unpack /tmp/"$PKGFILE"
 	rm -f $CHROOT_DIR/tmp/"$PKGFILE"
 	if [ "$DPKG_CHROOT_FALLBACK" = '%bootstrap' ] &&
 	! is_already_installed "${PKG}" ; then #[ ! -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" ]; then
