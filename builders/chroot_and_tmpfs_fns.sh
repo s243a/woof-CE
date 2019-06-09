@@ -6,6 +6,7 @@ SYS_BACKUP_PATH=/sys2
 SYS_BACKUP_STATUS='none'
 PROC_BACKUP_PATH=/proc2
 PROC_BACKUP_STATUS='none'
+
 backup_DEV(){ 
   if [ "$DEV_BACKUP_STATUS" = 'none' ] && [ -d "$CHROOT_DIR/dev" ]; then
     mv $CHROOT_DIR/dev $CHROOT_DIR$DEV_BACKUP_PATH
@@ -175,4 +176,31 @@ bind_dev(){
 #  #trap unmount_vfs SIGKILL
 #  #trap unmount_vfs SIGTERM
 #fi 
-
+wait_until_unmounted(){
+	local count=0
+	
+	if [ ! -z mount | grep "`realpath $CHROOT_DIR`" ]; then
+	  unbind_ALL_lazy()
+	  sleep 1 #Just for good measure
+	fi
+	unbind_action=L
+	while [ ! -z mount | grep "`realpath $CHROOT_DIR`" ]; then
+	  case "$unbind_action" in
+	  L) unbind_ALL_lazy() ;;
+	  F) unbind_ALL()
+	  echo "Please unmount binds in chroot folder"
+	  echo "L=Lazy Unbind, F=Force Unbind, Y=try last action, N=stop trying to unmount"
+	  read YN
+	  sleep 1 
+	  if "${YN^^}"=L; then unbind_action=L 
+	  elif "${YN^^}"=F; then unbind_action=F
+	  elif "${YN^^}"=Y; then echo "unbind_action=$unbind_action" 
+	  elif "${YN^^}"=N; then return 1	  
+	  else 
+	    if [ $count -gt 5 ]; then
+	      return 1
+	    fi
+	  fi
+	  let "count++" 
+    done
+}

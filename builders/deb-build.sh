@@ -78,7 +78,9 @@ cleanup() {
 
 ### prepare critical dirs
 prepare_dirs() {
-	rm -rf $CHROOT_DIR
+
+	wait_until_unmounted && rm -rf $CHROOT_DIR \
+	  || echo "unbind failed, installing over $CHROOT_DIR"
 	mkdir -p $REPO_DIR $CHROOT_DIR $CHROOT_DIR$APT_SOURCES_DIR $CHROOT_DIR$APT_PKGDB_DIR
 	for p in info parts alternatives methods updates usr/share/locale usr/lib/locale; do
 		mkdir -p $CHROOT_DIR$ADMIN_DIR/$p
@@ -281,7 +283,7 @@ cutdown() {
 				find $DEVX_DIR -type d | sort -r | xargs rmdir 2>/dev/null ;;
 		esac
 	done
-	unbind_ALL_lazy
+	#unbind_ALL_lazy
 
 
 	#mkdir -p /tmp/deb-build/
@@ -325,7 +327,7 @@ dpkgchroot_install() {
 	chroot $CHROOT_DIR /usr/bin/dpkg --force-overwrite --unpack /tmp/"$PKGFILE"
 	rm -f $CHROOT_DIR/tmp/"$PKGFILE"
 	if [ "$DPKG_CHROOT_FALLBACK" = '%bootstrap' ] &&
-	! is_already_installed; then#[ ! -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" ]; then
+	! is_already_installed; then #[ ! -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" ]; then
 	  bootstrap_install "$@"
 	fi
 	set +x
@@ -677,7 +679,8 @@ process_pkglist() {
 				install_bb_links "$@" ;;
 			%makesfs)
 			    set -x
-			    unbind_ALL
+			    #unbind_ALL
+			    wait_until_unmounted || exit
 				shift # $1-output $@-squashfs params
 				echo Creating $1 ...
 				make_sfs "$@" ;;
