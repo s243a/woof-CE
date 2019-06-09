@@ -277,9 +277,10 @@ pmount
 %addpkg --forced puppycore_locale
 
 %reinstall jwm
+%addpkg --forced puppycore_xdg #Needed for fixmenus to work
+#The following wget will probably fail but the pkg is included for now above in puppycore_xdg
 %chroot wget ftp.us.debian.org/debian/pool/main/g/gnome-menus2/libgnome-menu2_3.0.1-4_i386.deb
 %chroot pkg -i libgnome-menu2_3.0.1-4_i386.deb #Needed for fixmenus to work
-%addpkg --forced puppycore_xdg #Needed for fixmenus to work
 %addpkg --forced jwm_config
 %chroot fixmenus
 %reinstall rox
