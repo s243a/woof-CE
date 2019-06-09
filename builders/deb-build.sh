@@ -331,7 +331,7 @@ dpkgchroot_install() {
 	chroot $CHROOT_DIR /usr/bin/dpkg --force-overwrite --unpack /tmp/"$PKGFILE"
 	rm -f $CHROOT_DIR/tmp/"$PKGFILE"
 	if [ "$DPKG_CHROOT_FALLBACK" = '%bootstrap' ] &&
-	! is_already_installed; then #[ ! -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" ]; then
+	! is_already_installed "${PKG}" ; then #[ ! -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" ]; then
 	  bootstrap_install "$@"
 	fi
 	set +x
