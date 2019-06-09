@@ -7,6 +7,21 @@
 
 ### config
 set -x
+BUILD_CONFIG=${BUILD_CONFIG:-./build.conf}
+[ -e $BUILD_CONFIG ] && . $BUILD_CONFIG
+WORK_DIR=${WORK_DIR:-"`realpath .`"} #We'll export this if needed #Added by s243a
+CURDIR="${CURDIR:-"$(dirname "$(realpath "$0")")"}"  #We'll export this if needed #Added by s243a
+if [ ! "${CHROOT_DIR:0:1}" = "/" ]; then
+  CHROOT_DIR_FULL="$WORK_DIR/$CHROOT_DIR"
+fi
+
+
+
+if [ -e "$CHROOT_DIR_FULL/etc/DISTRO_SPECS" ]; then
+  eval $( . "$CHROOT_DIR_FULL/etc/DISTRO_SPECS"
+          echo "ZDRV_SFS=$DISTRO_ZDRVSFS" )
+fi 
+
 ZDRV_SFS=${ZDRV_SFS:-kernel-modules.sfs}
 OUTPUT_DIR=${OUTPUT_DIR:-iso}
 OUTPUT_ISO=${OUTPUT_ISO:-puppy.iso}
@@ -28,13 +43,8 @@ INITRD_ARCH=${INITRD_ARCH:-$WOOFCE/woof-arch/x86/target/boot/initrd-tree0}
 INITRD_CODE=${INITRD_CODE:-$WOOFCE/woof-code/boot/initrd-tree0}
 
 ###
-BUILD_CONFIG=${BUILD_CONFIG:-./build.conf}
-[ -e $BUILD_CONFIG ] && . $BUILD_CONFIG
-WORK_DIR=${WORK_DIR:-"`realpath .`"} #We'll export this if needed #Added by s243a
-CURDIR="${CURDIR:-"$(dirname "$(realpath "$0")")"}"  #We'll export this if needed #Added by s243a
-if [ ! "${CHROOT_DIR:0:1}" = "/" ]; then
-  CHROOT_DIR_FULL="$WORK_DIR/$CHROOT_DIR"
-fi
+
+
 
 
 ### helpers
