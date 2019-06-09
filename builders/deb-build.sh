@@ -319,9 +319,13 @@ dpkgchroot_install() {
 	set -x
 	bind_ALL #s243a: TODO, remove this once we add a direcive for this command
 	! [ -d $CHROOT_DIR/tmp ] && mkdir -p $CHROOT_DIR/tmp
-	if is_already_installed "${PKG}" && [ "$1" != "force" ] ; then
+	if [ -z "$1" ] || [ "$1" != "force" ] ; then
+	  is_already_installed "${PKG}" && return 1
+	elif is_already_installed "${PKG}"; then
 	  rm "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list"
-	  remove_pkg_status "${pkgname}"
+	  set +x
+	  remove_pkg_status "${PKG}"
+	  set -x
 	fi
 	cp "$REPO_DIR/$PKGFILE" $CHROOT_DIR/tmp
 	chroot $CHROOT_DIR /usr/bin/dpkg --force-overwrite --unpack /tmp/"$PKGFILE"
@@ -337,10 +341,10 @@ bootstrap_install() {
 	set -x
 	local data decompressor
 	if [ -z "$1" ] || [ "$1" != "force" ]; then
-	  is_already_installed $pkgname && return 1
-	elif is_already_installed $pkgname; then
+	  is_already_installed "${PKG}" && return 1
+	elif is_already_installed "${PKG}"; then
 	  set +x
-	  remove_pkg_status "${pkgname}"
+	  remove_pkg_status "${PKG}"
 	  set -x
 	else
 	  IS_INSTALLED=0
