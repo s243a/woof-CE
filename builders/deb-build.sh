@@ -82,7 +82,7 @@ prepare_dirs() {
 	wait_until_unmounted && rm -rf $CHROOT_DIR \
 	  || echo "unbind failed, installing over $CHROOT_DIR"
 	mkdir -p $REPO_DIR $CHROOT_DIR $CHROOT_DIR$APT_SOURCES_DIR $CHROOT_DIR$APT_PKGDB_DIR
-	for p in info parts alternatives methods updates usr/share/locale usr/lib/locale; do
+	for p in info parts alternatives methods updates tmp.ci; do #usr/share/locale usr/lib/locale
 		mkdir -p $CHROOT_DIR$ADMIN_DIR/$p
 	done
 	! [ -e $CHROOT_DIR$ADMIN_DIR/status ]    && echo > $CHROOT_DIR$ADMIN_DIR/status
@@ -328,6 +328,14 @@ dpkgchroot_install() {
 	  set -x
 	fi
 	cp "$REPO_DIR/$PKGFILE" $CHROOT_DIR/tmp
+	# s43s I think dpkg --unpack will extract the control informaiton for us.
+	# Therefore comment this stuff out for now.  
+	#if [ -e $CHROOT_DIR$ADMIN_DIR/tmp.ci ]; then
+	#  rm -rf $CHROOT_DIR$ADMIN_DIR/tmp.ci/*
+	#else
+	#  mkdir -p $CHROOT_DIR$ADMIN_DIR/tmp.ci
+	#fi
+	#chroot $CHROOT_DIR /usr/bin/dpkg-deb -e /tmp/"$PKGFILE" $ADMIN_DIR/tmp.ci
 	chroot $CHROOT_DIR /usr/bin/dpkg --force-overwrite --unpack /tmp/"$PKGFILE"
 	rm -f $CHROOT_DIR/tmp/"$PKGFILE"
 	if [ "$DPKG_CHROOT_FALLBACK" = '%bootstrap' ] &&

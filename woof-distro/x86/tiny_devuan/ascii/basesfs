@@ -40,6 +40,7 @@ libtinfo5          #Required for libreadline7
 #multiarch-support #Dependency of libpcre3
 libpcre3           #Dependency of libselinux1
 libselinux1
+sensible-utils     #This is a dependency of debianutils but it isn't essential. 
 debianutils 
 gettext-base
 gettext
@@ -60,8 +61,8 @@ libacl1
 %chroot cp /var/lib/dpkg/info/libc6.list /var/packages/builtin_files/libc6
 dpkg
 %dpkgchroot 
-dash
 bash
+dash
 coreutils
 dialog
 strace #add this for debugging purposes
