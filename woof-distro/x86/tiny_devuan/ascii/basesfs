@@ -35,10 +35,10 @@
 
 %bootstrap
 %nodepend 
-%dummy libc6 #Tinycore has it's own c libraries. Maybe add symbolic links. 
-libtinfo5
+%dummy libc6       #Tinycore has it's own c libraries. Maybe add symbolic links. 
+libtinfo5          #Required for libreadline7
 #multiarch-support #Dependency of libpcre3
-libpcre3    #Dependency of libselinux1
+libpcre3           #Dependency of libselinux1
 libselinux1
 debianutils 
 gettext-base
@@ -74,7 +74,10 @@ strace #add this for debugging purposes
 #At this point we coudl run pkg insead of dpkg but we havn't added support for this yet. 
          # turn on dependency
 grep
-libsigsegv2 #required for gawk 
+libgmp10 #required for gawk & libmpfr4
+libmpfr4 #required for gawk 
+libreadline7 #required for gawk 
+libsigsegv2 #required for gawk, sed 
 gawk
 %dummy mawk
 sed

@@ -317,12 +317,16 @@ dpkgchroot_install() {
 	set -x
 	bind_ALL #s243a: TODO, remove this once we add a direcive for this command
 	! [ -d $CHROOT_DIR/tmp ] && mkdir -p $CHROOT_DIR/tmp
+	if is_already_installed "${PKG}" && [ "$1" != "force" ] ; then
+	  rm "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list"
+	  remove_pkg_status "${pkgname}"
+	fi
 	cp "$REPO_DIR/$PKGFILE" $CHROOT_DIR/tmp
 	chroot $CHROOT_DIR /usr/bin/dpkg --force-overwrite --unpack /tmp/"$PKGFILE"
 	rm -f $CHROOT_DIR/tmp/"$PKGFILE"
 	if [ "$DPKG_CHROOT_FALLBACK" = '%bootstrap' ] &&
-	[ ! -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" ]; then
-	  bootstrap_install
+	! is_already_installed; then#[ ! -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" ]; then
+	  bootstrap_install "$@"
 	fi
 	set +x
 	return 0
@@ -341,7 +345,11 @@ bootstrap_install() {
 	fi
 	if [ -z "$WITHOUT_DPKG" ]; then
 		dpkg-deb -X "$REPO_DIR/$PKGFILE" $CHROOT_DIR
-	else
+	fi |
+	sed '1 s|^.*$|/.|; s|^\.||' > "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" 
+	
+	if [ ! -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" ] ||
+	   [ `wc -c < "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list"` -lt 4 ]; then
 		data=$(ar t "$REPO_DIR/$PKGFILE" | grep data)
 		case $data in
 			*xz) decompressor="unxz -c" ;;
@@ -349,9 +357,10 @@ bootstrap_install() {
 			*bz2) decompressor="bunzip2 -c" ;;
 			*lzma) decompressor="unlzma -c" ;;
 		esac
-		ar p "$REPO_DIR/$PKGFILE" $data | $decompressor | tar -xv -C $CHROOT_DIR
+		ar p "$REPO_DIR/$PKGFILE" $data | $decompressor | tar -xv --overwrite -C $CHROOT_DIR
 	fi |
-	sed '1 s|^.*$|/.|; s|^\.||' > "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" &&
+	sed '1 s|^.*$|/.|; s|^\.||' > "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list"
+	
 	update_pkg_status "$PKG" "$PKGPRIO" "$PKGSECTION" "$PKGVER" "$PKGDEP"
 	set +x
 }
@@ -359,10 +368,10 @@ remove_pkg_status() {
 	pkg_name=$1
 	status_new="$CHROOT_DIR$ADMIN_DIR/status.new.$$"
 	echo "removing package status"
-	while read line; do
+	while IFS= read -r line; do
 	  case "$line" in
       'Package: '*)
-          set -- "$line" 
+          set -- $line
           if [ "$pkg_name" = "$2" ]; then
             echo_line=0
           else
