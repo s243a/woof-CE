@@ -180,7 +180,7 @@ wait_until_unmounted(){
 	local count=0
 	
 	if [ ! -z mount | grep "`realpath $CHROOT_DIR`" ]; then
-	  unbind_ALL_lazy()
+	  unbind_ALL_lazy
 	  sleep 1 #Just for good measure
 	fi
 	unbind_action=L
