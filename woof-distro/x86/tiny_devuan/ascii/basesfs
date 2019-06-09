@@ -51,12 +51,13 @@ libbz2-1.0
 libattr1
 libacl1
 %addpkg tinycore9_base_gz
-%chroot mkdir -p /var/packages
-#Keep pkg from installing libc6 (this avoids segmentation fault)
-%chroot cp /var/lib/dpkg/info/libc6.list /var/packages/builtin_files/libc6
+%importpkg tinycore9_bb_links_coreutils
 #%addpkg tinycore9_base_gz_users
 %addpkg puppycore_noarch
 %addpkg puppycore_users
+%chroot mkdir -p /var/packages/builtin_files/ #just in case
+#Keep pkg from installing libc6 (this avoids segmentation fault)
+%chroot cp /var/lib/dpkg/info/libc6.list /var/packages/builtin_files/libc6
 dpkg
 %dpkgchroot 
 dash

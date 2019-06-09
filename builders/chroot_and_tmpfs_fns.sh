@@ -179,12 +179,12 @@ bind_dev(){
 wait_until_unmounted(){
 	local count=0
 	
-	if [ ! -z mount | grep "`realpath $CHROOT_DIR`" ]; then
+	if [ ! -z "$(mount | grep "`realpath $CHROOT_DIR`")" ]; then
 	  unbind_ALL_lazy
 	  sleep 1 #Just for good measure
 	fi
 	unbind_action=L
-	while [ ! -z mount | grep "`realpath $CHROOT_DIR`" ]; then
+	while [ ! -z "$(mount | grep "`realpath $CHROOT_DIR`")" ]; then
 	  case "$unbind_action" in
 	  L) unbind_ALL_lazy() ;;
 	  F) unbind_ALL()
