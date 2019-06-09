@@ -84,10 +84,9 @@ sed
 tar
 %dummy gzip
 %dummy cpio
-
+libc-bin
 libmount1
 mount
-
 
 libkmod2           # debian needs this, dependency of pciutils
 kmod               # called in /etc/rc.d/rc.sysinit aroun d line 580

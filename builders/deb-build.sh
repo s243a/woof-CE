@@ -415,8 +415,10 @@ echo "Description: $1 installed by deb-build.sh
 	} >> "$CHROOT_DIR$ADMIN_DIR/status"
 
 }
-
-# $1-dir to install $2-name $3-category
+import_from_dir(){
+	cp -arf --no-clobber "${1}"/* $CHROOT_DIR
+}
+# $1-dir to install $2-name $3-category $4=force
 install_from_dir() {
 	set -x
 	bind_ALL #s243a: TODO, remove this once we add a direcive for this command
@@ -603,6 +605,8 @@ flatten_pkglist() {
 				echo "$pp" ;;
 			%symlink|%rm|%mkdir|%touch|%chroot)
 				echo "$pp" ;;
+			%importpkg)
+				echo "$pp" ;;
 			%depend)
 				track_dependency() { list_dependency; } ;;
 			%nodepend)
@@ -718,6 +722,12 @@ process_pkglist() {
 				done
 				set +x
 				 ;;
+			%importpkg)
+			  shift
+			  set -x
+			  import_from_dir $EXTRAPKG_PATH/$1
+			  set +x
+			    ;;
 			%dummy)
 			    set -x
 				shift # $1-pkgname, pkgname ...

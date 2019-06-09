@@ -198,9 +198,10 @@ wait_until_unmounted(){
 	  elif "${YN^^}"=N; then return 1	  
 	  else 
 	    if [ $count -gt 5 ]; then
-	      return 1
+	      return 1 #Failed to unmount
 	    fi
 	  fi
 	  let "count++" 
     done
+    return 0 #Sucess
 }
