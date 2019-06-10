@@ -64,6 +64,7 @@ dpkg
 bash
 dash
 coreutils
+libncursesw5 #A dependency of dialog
 dialog
 strace #add this for debugging purposes
 #Let's reconfigure stuff before running post install scripts
