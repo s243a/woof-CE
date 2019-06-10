@@ -202,7 +202,8 @@ get_pkgs_by_priority() {
 ###
 # $1-pkg
 is_already_installed() {
-	test -e $CHROOT_DIR$ADMIN_DIR/info/"${1}".list
+	test -e $CHROOT_DIR$ADMIN_DIR/info/"${1}".list || \
+	test -e $CHROOT_DIR$ADMIN_DIR/info/"${1}"':i386'.list
 }
 
 ###
@@ -339,8 +340,13 @@ dpkgchroot_install() {
 	chroot $CHROOT_DIR /usr/bin/dpkg --force-overwrite --force-depends --force-conflicts \
 	       --unpack /tmp/"$PKGFILE"
 	rm -f $CHROOT_DIR/tmp/"$PKGFILE"
+	echo "listing simmilar packages"
+	ls $CHROOT_DIR$ADMIN_DIR/info/${PKG}*
 	if [ "$DPKG_CHROOT_FALLBACK" = '%bootstrap' ] &&
 	! is_already_installed "${PKG}" ; then #[ ! -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" ]; then
+	if [ "${PKG}" = "libgmp10" ]; then
+	  read -p "Press enter to continue"
+	fi
 	  bootstrap_install "$@"
 	fi
 	set +x
