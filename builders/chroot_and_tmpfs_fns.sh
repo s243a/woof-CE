@@ -186,8 +186,9 @@ wait_until_unmounted(){
 	unbind_action=L
 	while [ ! -z "$(mount | grep "`realpath $CHROOT_DIR`")" ]; do
 	  case "$unbind_action" in
-	  L) unbind_ALL_lazy() ;;
-	  F) unbind_ALL()
+	  L) unbind_ALL_lazy ;;
+	  F) unbind_ALL ;;
+	  esac
 	  echo "Please unmount binds in chroot folder"
 	  echo "L=Lazy Unbind, F=Force Unbind, Y=try last action, N=stop trying to unmount"
 	  read YN
