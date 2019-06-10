@@ -81,6 +81,8 @@ libgmp10 #required for gawk & libmpfr4
 libmpfr4 #required for gawk 
 libreadline7 #required for gawk 
 libsigsegv2 #required for gawk, sed 
+#gawk seems to want libgmp10:i386 to be configured
+%dpkg_configure --force-all -a
 gawk
 %dummy mawk
 sed
@@ -89,6 +91,11 @@ tar
 %dummy cpio
 libc-bin
 libmount1
+libuuid1       #Dependency of libblkid1
+libblkid1      #Dependency of mount
+libeudev1      #Dependency of mount
+libsmartcols1  #Dependency of mount
+%dpkg_configure --force-all -a #Mount seems to want libmount1 confgiured
 mount
 
 libkmod2           # debian needs this, dependency of pciutils
