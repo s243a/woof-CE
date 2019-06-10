@@ -318,12 +318,15 @@ dpkg_install() {
 ### choice of bootstrap or dpkg 
 dpkgchroot_install() {
 	set -x
+	#Force is implied by "install_pkg" if this function is called but let's process
+	#input arguments incase in the future we want to call this function directly. 
+	[ -z "$1" ] && set -- force
 	bind_ALL #s243a: TODO, remove this once we add a direcive for this command
 	! [ -d $CHROOT_DIR/tmp ] && mkdir -p $CHROOT_DIR/tmp
 	if [ -z "$1" ] || [ "$1" != "force" ] ; then
 	  is_already_installed "${PKG}" && return 0
 	elif is_already_installed "${PKG}"; then
-	  rm "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list"
+	  remove_file_list
 	  set +x
 	  remove_pkg_status "${PKG}"
 	  set -x
@@ -354,11 +357,15 @@ dpkgchroot_install() {
 }
 bootstrap_install() {
 	set -x
+	#Force is implied by "install_pkg" if this function is called but let's process
+	#input arguments incase in the future we want to call this function directly. 
+	[ -z "$1" ] && set -- force
 	local data decompressor
 	if [ -z "$1" ] || [ "$1" != "force" ]; then
 	  is_already_installed "${PKG}" && return 0
 	elif is_already_installed "${PKG}"; then
 	  set +x
+	  remove_file_list "${PKG}"
 	  remove_pkg_status "${PKG}"
 	  set -x
 	else
@@ -385,8 +392,14 @@ bootstrap_install() {
 	update_pkg_status "$PKG" "$PKGPRIO" "$PKGSECTION" "$PKGVER" "$PKGDEP"
 	set +x
 }
+remove_file_list(){
+	[ -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" ] &&
+	  rm "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list"
+	[ -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}"':i386'".list" ] &&
+	  rm "$CHROOT_DIR$ADMIN_DIR/info/${PKG}"':i386'".list"
+}
 remove_pkg_status() {
-	pkg_name=$1
+	local pkg_name=${1:-"PKG"}
 	status_new="$CHROOT_DIR$ADMIN_DIR/status.new.$$"
 	echo "removing package status"
 	while IFS= read -r line; do
@@ -447,6 +460,7 @@ install_from_dir() {
 	  is_already_installed $pkgname && return 0
 	elif is_already_installed $pkgname; then
 	  set +x
+	  remove_file_list "${pkgname}"
 	  remove_pkg_status "${pkgname}"
 	  set -x
 	else
@@ -520,7 +534,9 @@ remove_pkg() {
 			fi
 
 			# then remove all database files
-			rm -f "$CHROOT_DIR$ADMIN_DIR/info/${1}".* 2>/dev/null
+			#rm -f "$CHROOT_DIR$ADMIN_DIR/info/${1}".* 2>/dev/null
+			remove_file_list
+			#remove_pkg_status It looks like this is done above via sed. 
 		fi
 		shift
 	done
