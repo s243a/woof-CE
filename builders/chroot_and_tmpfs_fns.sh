@@ -184,7 +184,7 @@ wait_until_unmounted(){
 	  sleep 1 #Just for good measure
 	fi
 	unbind_action=L
-	while [ ! -z "$(mount | grep "`realpath $CHROOT_DIR`")" ]; do
+	while [ -d "$CHROOT_DIR" ] && [ ! -z "$(mount | grep "`realpath $CHROOT_DIR`")" ]; do
 	  case "$unbind_action" in
 	  L) unbind_ALL_lazy ;;
 	  F) unbind_ALL ;;
@@ -193,10 +193,10 @@ wait_until_unmounted(){
 	  echo "L=Lazy Unbind, F=Force Unbind, Y=try last action, N=stop trying to unmount"
 	  read YN
 	  sleep 1 
-	  if "${YN^^}"=L; then unbind_action=L 
-	  elif "${YN^^}"=F; then unbind_action=F
-	  elif "${YN^^}"=Y; then echo "unbind_action=$unbind_action" 
-	  elif "${YN^^}"=N; then return 1	  
+	  if [ "${YN^^}" = L ]; then unbind_action=L 
+	  elif [ "${YN^^}" = F ]; then unbind_action=F
+	  elif [ "${YN^^}" = Y ]; then echo "unbind_action=$unbind_action" 
+	  elif [ "${YN^^}" = N ]; then return 1  
 	  else 
 	    if [ $count -gt 5 ]; then
 	      return 1 #Failed to unmount
