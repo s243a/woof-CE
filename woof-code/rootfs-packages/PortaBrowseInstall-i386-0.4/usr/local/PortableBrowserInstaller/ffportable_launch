@@ -6,7 +6,7 @@ if [ -e /usr/local/bin/ffUUID ]; then
   . /usr/local/bin/ffUUID
   DRVNM=`blkid | grep -e $UUIDFF | cut -d "/" -f 3- | cut -d ":" -f -1`
   echo $DRVNM
-  DRVNM="${DRVNM:-DRVNM_ALT}"
+  DRVNM="${DRVNM:-$DRVNM_ALT}"
   mount /dev/${DRVNM} /mnt/${DRVNM} > /dev/null 2>&1
   if [ -e "/mnt/$DRVNM/$FFDIR/firefox" ]; then
      cd "/mnt/$DRVNM/$FFDIR"

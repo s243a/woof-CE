@@ -5,6 +5,11 @@
 
 #/usr/local/PortableBrowserInstaller/yad_dnld.sh
 
+#https://unix.stackexchange.com/questions/145651/using-exec-and-tee-to-redirect-logs-to-stdout-and-a-log-file-in-the-same-time
+logfile=/var/log/PortableBrowserInstall.log
+[-e "$logfile" ] && rm"$logfile" 
+exec &> >(tee -a "$logfile" )
+
 if [ ! -z "`which yad`" ]; then
 
 yad --center --window-icon=/usr/local/lib/X11/pixmaps/www48.png --title="Portable Web Browser Installer" --form --width=450 --text="PORTABLE WEB BROWSER INSTALLER
@@ -21,8 +26,8 @@ else
   tty -s; if [ $? -ne 0 ]; then defaultterminal -hold -e "$0"; exit; fi
   tempfile=/tmp/bla
   dialog --backtitle "CPU Selection" \
-  --ok-label "List" \
-  --radiolist "Please choose your desired browser:" 10 40 4 \
+  --ok-label "OK" \
+  --radiolist "Please spacebar to select your desired browser:" 10 40 4 \
         1 "Firefox Quantum" off \
         2 "Palemoon" on \
         3 "Seamonkey" off \

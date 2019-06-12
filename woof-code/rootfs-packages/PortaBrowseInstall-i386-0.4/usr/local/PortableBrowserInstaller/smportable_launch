@@ -6,7 +6,7 @@ if [ -e /usr/local/bin/smUUID ]; then
   . /usr/local/bin/smUUID
   DRVNM=`blkid | grep -e $UUIDSM | cut -d "/" -f 3- | cut -d ":" -f -1`
   echo $DRVNM
-  DRVNM="${DRVNM:-DRVNM_ALT}"
+  DRVNM="${DRVNM:-$DRVNM_ALT}"
   mount /dev/${DRVNM} /mnt/${DRVNM} > /dev/null 2>&1
   if [ -e /mnt/$DRVNM/$SMDIR/seamonkey ]; then
     cd /mnt/$DRVNM/$SMDIR

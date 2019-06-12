@@ -1,0 +1,27 @@
+#!/bin/bash
+if [ "$1" = "--ROOT="* ]; then
+  ROOT=="${1:-/}"
+  shift
+fi
+
+#cd "$ROOT/usr/bin"
+#if [ ! -f gdk-pixbuf-query-loaders ] || \
+#   [ ! -f "`readlink gdk-pixbuf-query-loaders`" ]; then 
+#  [ -e gdk-pixbuf-query-loaders ] && rm gdk-pixbuf-query-loaders
+#  loader_link="../lib/i386-linux-gnu/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders"
+#  if [ -e "$loader_link" ]; then
+#    #This has to be a hardlink because the file seems to get moved
+#    ln "$loader_link" gdk-pixbuf-query-loaders 
+#  else
+#    loader_link="../lib/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders"
+#    ln -s "$loader_link" gdk-pixbuf-query-loaders
+#  fi 
+#fi
+cd "$ROOT/usr/lib/i386-linux-gnu"
+make_symlink(){
+  if [ -e ../$1 ] && \
+     [ ! -e $1 ]; then
+     ln -s ../$1 $1
+  fi
+}
+make_symlink gdk-pixbuf-2.0

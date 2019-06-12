@@ -6,7 +6,7 @@ if [ -e /usr/local/bin/pmUUID ]; then
   . /usr/local/bin/pmUUID
   DRVNM=`blkid | grep -e $UUIDPM | cut -d "/" -f 3- | cut -d ":" -f -1`
   echo $DRVNM
-  DRVNM="${DRVNM:-DRVNM_ALT}"
+  DRVNM="${DRVNM:-$DRVNM_ALT}"
   [ -e /dev/${DRVNM} ] && mount /dev/${DRVNM} /mnt/${DRVNM} > /dev/null 2>&1
   if [ -e /mnt/$DRVNM/$PMDIR/palemoon ]; then
     "/mnt/$DRVNM/$PMDIR"

@@ -108,8 +108,8 @@ dmidecode
 %dummy libpam-modules-bin
 %dummy libpam-modules
 
-libaudit1 #required for passwd
-libcap-ng0 #Required for passwd
+libaudit1 #required for passwd & dbus
+libcap-ng0 #Required for passwd & dbus
 # extra packages
 #screen       # useful for debugging
 libmagic1    #dependency of file
@@ -162,8 +162,6 @@ libxcb-dri3-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
 #Can use xorg-driver-input instead of xserver-xorg-input-all, which is a virtual package
                 #that lists the indvidual XOrg input drives as dependencies
 %dummy init-system-helpers  #Dependency for dbus (systemd stuff)
-%dummy libaudit1      #Dependency for dbus
-%dummy libcap-ng0     #Dependency for dbus
 %dummy libselinux1    #Dependency for dbus
 
 libsystemd0    #Dependency for dbus, libdbus-1-3,procps (via libprocps6)
@@ -174,6 +172,9 @@ libsystemd0    #Dependency for dbus, libdbus-1-3,procps (via libprocps6)
 
 libapparmor1    #Dependency of dbus
 dbus            #Recommended dependency for libdbus-1-3
+
+libasound2-data #Dependency of libasound2
+libasound2
 
 %dumy xserver-xorg-video-all #Let's pick the specific drivers that we want
 xserver-xorg-video-vesa 
@@ -206,7 +207,10 @@ x11-xserver-utils
 
 %dummy libgdk-pixbuf2.0-common #dependency of libgdk-pixbuf2.0-0
 libgdk-pixbuf2.0-0
-%symlink /usr/lib/i386-linux-gnu/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders /usr/bin
+%symlink ../lib/i386-linux-gnu/gdk-pixbuf-2.0/gdk-pixbuf-query-loaders /usr/bin/gdk-pixbuf-query-loaders
+#%addpkg --no-metadata fix_symlinks
+%addpkg fix_symlinks
+
 
 #Not sure if we need to symlink the .so files into LD_LIBRARY_PATH
 #We'll uncomment this if we need it
@@ -345,4 +349,5 @@ librsvg2-bin #Required for puppy themes
 
 #%rm /dev #s243a: Do we want to remove /dev?
 # make the sfs (optional)
+%chroot fix_symlinks
 %makesfs iso/iso-root/puppy_tascii.sfs -comp gzip # -Xcompression-level 1

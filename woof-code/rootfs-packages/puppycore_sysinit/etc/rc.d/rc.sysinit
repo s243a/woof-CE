@@ -674,7 +674,8 @@ network_default_connect --sysinit #181209
 #----------------------
 
 echo -n ", printing, etc.)..." >/dev/console
-
+[ ! -e "/run" ] && ln -s /tmp /run #s243a make sure this exists
+[ ! -e "/var/tmp" ] && ln -s /tmp /var/tmp #s243a make sure this exists
 # dbus
 if which dbus-uuidgen &>/dev/null ; then
 	mkdir -p /var/lib/dbus /var/run/dbus
