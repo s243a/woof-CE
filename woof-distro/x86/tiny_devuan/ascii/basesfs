@@ -348,19 +348,22 @@ librsvg2-bin #Required for puppy themes
 %symlink /bin/bash /bin/sh
 
 ## install extra built-in packages
-
-# apps
-# mtpaint
-%chroot wget http://www.smokey01.com/radky/PupMenu-6.2.pet
-%chroot pkg -i PupMenu-6.2.pet
-%rm PupMenu-6.2.pet
-
 %addpkg sync_pet_specs_fm_dpkg
 %chroot sync_pet_specs_fm_dpkg.sh
 %addpkg puppy_ppm_configs_devaun_ascii
 %addpkg PKG
 %chroot pkg --repo-update  #Update the packge repos
 
+# apps
+# mtpaint
+
+%chroot wget http://www.smokey01.com/radky/PupMenu-6.2.pet
+%chroot pkg -i PupMenu-6.2.pet
+%rm PupMenu-6.2.pet
+
+%chroot wget -O uextract-3.36.pet wget http://www.murga-linux.com/puppy/viewtopic.php?mode=attach&id=75600
+%chroot pkg -i uextract-3.36.pet
+rm uextract-3.36.pet
 
 %lock puppy-base puppy-base-arch libc6 # example: never update puppy base and libc6
 #%addpkg james-staging # temporary area to changes before they get merged to rootfs
