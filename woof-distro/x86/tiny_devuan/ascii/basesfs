@@ -162,7 +162,7 @@ libwayland-client0 #Dependency for yad, libegl1-mesa, libgbm1, firefox
 %dummy libwayland-server0 #Dependency for libegl1-mesa, libgbm1
 %dummy libxcb-dri2-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
 libxcb-dri3-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
-%dummy libxcb-present0 #Dependency for libegl1-mesa, libgl1-mesa-glx
+libxcb-present0 #Dependency for libegl1-mesa, libgl1-mesa-glx
 %dummy libxcb-sync1    #Dependency for libegl1-mesa
 %dummy libxcb-xfixes0  #Dependency for libegl1-mesa
 %dummy adduser        #Dependency for dbus, xserver-xorg-core
