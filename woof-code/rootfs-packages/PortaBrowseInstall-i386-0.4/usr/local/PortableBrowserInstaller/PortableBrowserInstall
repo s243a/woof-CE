@@ -6,9 +6,9 @@
 #/usr/local/PortableBrowserInstaller/yad_dnld.sh
 
 #https://unix.stackexchange.com/questions/145651/using-exec-and-tee-to-redirect-logs-to-stdout-and-a-log-file-in-the-same-time
-logfile=/var/log/PortableBrowserInstall.log
-[-e "$logfile" ] && rm"$logfile" 
-exec &> >(tee -a "$logfile" )
+#logfile=/var/log/PortableBrowserInstall.log
+#[-e "$logfile" ] && rm"$logfile" 
+#exec &> >(tee -a "$logfile" )
 
 if [ ! -z "`which yad`" ]; then
 

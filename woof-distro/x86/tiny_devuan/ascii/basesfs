@@ -45,7 +45,7 @@ debianutils
 gettext-base
 gettext
 %dummy base-files #Tinycore probably already has these
-%dummy zlib1g #Already linked to busybox
+zlib1g #dependency of libmagic
 tar
 liblzma5
 libbz2-1.0
@@ -59,6 +59,15 @@ libacl1
 %chroot mkdir -p /var/packages/builtin_files/ #just in case
 #Keep pkg from installing libc6 (this avoids segmentation fault)
 %chroot cp /var/lib/dpkg/info/libc6.list /var/packages/builtin_files/libc6
+
+libgcc1     #dependency of libgcc1
+#gcc-6-base #dependency of libgcc1 
+libstdc++6  #dependency of elfutils
+libelf1     #dependency of libasm1
+#libdw1     #dependency of libasm1
+libasm1     #dependency of elfutils
+elfutils    #might help dpkg (or sc0ttman's pkg) with some packages
+
 dpkg
 %dpkgchroot 
 bash
@@ -112,6 +121,7 @@ libaudit1 #required for passwd & dbus
 libcap-ng0 #Required for passwd & dbus
 # extra packages
 #screen       # useful for debugging
+libmagic-mgc #Dependency of libmagic
 libmagic1    #dependency of file
 file         # for checking file types
 locales      # locale files
@@ -248,6 +258,10 @@ curl #Needed for PortaBrowseInstall-i386-0.4
 %reinstall perl-base xserver-xorg-core 
 %depkgchroot         # switch back to bootstrap installer - faster
 %depend
+
+%Try to solve warning on rox about not being able to find the pixmap module with the following
+gtk2-engines-pixbuf #Pulls in libgtk2.0-0 as a dependency
+
 xdialog             #note: only i386 arch available
 gtkdialog           #note: only i386 arch available
 
@@ -255,8 +269,14 @@ gtkdialog           #note: only i386 arch available
 
 # final steps
 # remove extremely toxic packages, then setup the dummy
+%chroot cp /sbin/ifdown /sbin/ifdown.back
+%chroot cp /sbin/ifquery /sbin/ifquery.back
+%chroot cp /sbin/ifup /sbin/ifup.back
 %remove initscripts ifupdown sysv-rc upstart mountall 
 %dummy  initscripts ifupdown sysv-rc upstart mountall
+%chroot mv /sbin/ifdown.back /sbin/ifdown
+%chroot mv /sbin/ifquery.back /sbin/ifquery
+%chroot mv /sbin/ifup.back /sbin/ifup.back
 
 # these useless packages got pulled by apt-get -f install, so prevent it from getting installed
 %remove plymouth libplymouth2 plymouth-theme-ubuntu-text
@@ -317,7 +337,8 @@ librsvg2-bin #Required for puppy themes
 %reinstall libsystemd0    #Dependency for dbus, libdbus-1-3,procps (via libprocps6)
 %reinstall libprocps6  #Required for procps
 %reinstall procps
-#%reinstall mount
+%reinstall mount
+%reinstall xz-utils
 
 %dpkg_configure --force-all -a
 
@@ -330,6 +351,9 @@ librsvg2-bin #Required for puppy themes
 
 # apps
 # mtpaint
+%chroot wget http://www.smokey01.com/radky/PupMenu-6.2.pet
+%chroot pkg -i PupMenu-6.2.pet
+%rm PupMenu-6.2.pet
 
 %addpkg sync_pet_specs_fm_dpkg
 %chroot sync_pet_specs_fm_dpkg.sh

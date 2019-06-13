@@ -68,15 +68,28 @@ while read -r -u15 -d $'\n' line; do
     pet_specs_SHORT_DESC="$val"
   ;;
   '')
-    pkg_file_list="$DPKG_ADMIN/$pet_specs_PKG_NAME".list
+  
+    pkg_file_list="$DPKG_ADMIN/${pet_specs_PKG_NAME}.list"
+    [ ! -e "$pkg_file_list" ] &&  \
+      pkg_file_list="$DPKG_ADMIN/${pet_specs_PKG_NAME}"':i386'".list" ]; 
+    
     if [ $(wc -c <"$pkg_file_list") -gt 4 ] || [ SYNC_DUMMY -eq 1 ]; then
       [ -e "$PUPPY_ADMIN_LIST/$pet_specs_PKG_NAME" ] && \
         rm "$PUPPY_ADMIN_LIST/$pet_specs_PKG_NAME"
       if [ "$(basename "$PUPPY_ADMIN_LIST")" = builtin_files ]; then
-        ln $DPKG_ADMIN/"$pet_specs_PKG_NAME".list "$PUPPY_ADMIN_LIST/$pet_specs_PKG_NAME"
+        if [ -e "$pkg_file_list"then
+          ln "$pkg_file_list" \
+             "$PUPPY_ADMIN_LIST/$pet_specs_PKG_NAME"    
+        else
+          echo "missing file list for ${pet_specs_PKG_NAME}"  
+        fi
       else
-        ln $DPKG_ADMIN/"$pet_specs_PKG_NAME".list \
-           "$PUPPY_ADMIN_LIST/$pet_specs_PKG_NAME"_"$pet_specs_VERSION".files
+        if [ -e "$pkg_file_list" ]; then
+          ln "$DPKG_ADMIN/${pet_specs_PKG_NAME}.list"  \
+            "$PUPPY_ADMIN_LIST/${pet_specs_PKG_NAME}_${pet_specs_VERSION}.files"      
+        else
+          echo "missing file list for ${pet_specs_PKG_NAME}"  
+        fi        
       fi
       #Write pet specs
       pet_specs_FULL_NAME="$pet_specs_PKG_NAME-$pet_specs_VERSION"	
