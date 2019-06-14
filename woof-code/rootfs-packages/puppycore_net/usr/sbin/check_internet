@@ -1,0 +1,23 @@
+$!/bin/sh
+#This just reproduces what the old code did until I find out where to find 
+#the new check_internet function
+#https://github.com/puppylinux-woof-CE/woof-CE/commit/3354eef0be92e9c01a21388c9fb6e3a633f713db#diff-92b1bf25f52181f8f7acdbd91957b5a0
+if [ -z $1 ]; then
+  CONNECTED=$(LANG=C [ "$(route -n | awk 'FNR == 3 {print $2}')" != "0.0.0.0" ] && \
+	grep -wq nameserver /etc/resolv.conf && \
+	echo -n yes || echo -n no
+  )
+  if [ "$CONNECTED" = "yes" ] ; then
+    return 0
+  else
+    return 1
+  fi
+elif [ $1 = working_network ]; then
+  if [ "$(ifconfig -a | cut -f 1 -d " " | sed -e "/^$/d" -e '/^lo$/d')" != "" ]; then
+    return 0
+  else
+   return 1
+  fi
+else #Fail
+  return 1
+fi

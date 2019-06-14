@@ -45,7 +45,7 @@ debianutils
 gettext-base
 gettext
 %dummy base-files #Tinycore probably already has these
-zlib1g #dependency of libmagic
+zlib1g #dependency of libmagic & perl
 tar
 liblzma5
 libbz2-1.0
@@ -125,9 +125,14 @@ libmagic-mgc #Dependency of libmagic
 libmagic1    #dependency of file
 file         # for checking file types
 locales      # locale files
-%depend
 
-perl-base #Required for debconf
+libdb5.3    #Dependency of perl
+libgdbm3    #Dependency of perl
+perl-base   #Required for debconf & Perl
+libperl5.24 #Dependency of perl
+perl
+
+%depend
 debconf #Required for openssl
 openssl #Required for ca-certificates
 ca-certificates #Recommended for wget
@@ -163,7 +168,7 @@ libwayland-client0 #Dependency for yad, libegl1-mesa, libgbm1, firefox
 %dummy libxcb-dri2-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
 libxcb-dri3-0   #Dependency for libegl1-mesa, libgl1-mesa-glx
 libxcb-present0 #Dependency for libegl1-mesa, libgl1-mesa-glx
-%dummy libxcb-sync1    #Dependency for libegl1-mesa
+libxcb-sync1    #Dependency for libegl1-mesa
 %dummy libxcb-xfixes0  #Dependency for libegl1-mesa
 %dummy adduser        #Dependency for dbus, xserver-xorg-core
 %dummy libxcb-glx0     #Required for libgl1-mesa-glx
@@ -185,6 +190,7 @@ dbus            #Recommended dependency for libdbus-1-3
 
 libasound2-data #Dependency of libasound2
 libasound2
+alsa-utils
 
 %dumy xserver-xorg-video-all #Let's pick the specific drivers that we want
 xserver-xorg-video-vesa 
@@ -204,12 +210,15 @@ libxcb-shm0
 %dummy libxft2        #Dependency of x11-utils
 %dummy libxxf86dga1   #Dependency of x11-utils
 %dummy libxv1         #Dependency of x11-utils
-%dummy libxtst6       #Dependency of x11-utils
+libxtst6       #Dependency of x11-utils, seems to be loaded during startup
 libxmuu1       #Dependency of x11-utils
 libxcb-shape0  #Dependency of x11-utils #frisbee seems like it might work without this but you'll get the error: libxcb-shape.so.0 missing
 x11-utils
 #%dummy libxxf86vm1    #Dependency of x11-xserver-utils
 x11-xserver-utils
+x11-apps #xload is typically used in puppy. The other apps aren't needed. 
+wbar #Some script is looking for wbar.png but we probably don't need this
+numlockx       #Seems to be called on startup
 ############################# Consider installing xinit ##############
 #TODO consider adding tinycore and create a layer here
 #xinit          #we can start Xorg without xinit
@@ -324,7 +333,7 @@ pmount
 %addpkg --forced puppycore_icons
 librsvg2-bin #Required for puppy themes
 %addpkg --forced pthemes #requires jwm_config
-
+%addpkg glibc_zoneinfo #Timezone stuff
 %addpkg --forced debian-setup # specific debian setup, overriding puppy-base
 
 #Dependencies for pkg (maybe create wrappers for these instead of installing them)
@@ -347,23 +356,34 @@ librsvg2-bin #Required for puppy themes
 %rm /bin/sh
 %symlink /bin/bash /bin/sh
 
-## install extra built-in packages
 %addpkg sync_pet_specs_fm_dpkg
 %chroot sync_pet_specs_fm_dpkg.sh
 %addpkg puppy_ppm_configs_devaun_ascii
 %addpkg PKG
 %chroot pkg --repo-update  #Update the packge repos
 
+## install extra built-in packages
+
 # apps
 # mtpaint
 
-%chroot wget http://www.smokey01.com/radky/PupMenu-6.2.pet
-%chroot pkg -i PupMenu-6.2.pet
-%rm PupMenu-6.2.pet
+%addpkg ad_hock_repo #contains: PupMenu-6.2.pet, uextract-3.36.pet
 
-%chroot wget -O uextract-3.36.pet wget http://www.murga-linux.com/puppy/viewtopic.php?mode=attach&id=75600
+#%chroot wget http://www.smokey01.com/radky/PupMenu-6.2.pet
+%chroot pkg -i PupMenu-6.2.pet
+#%rm PupMenu-6.2.pet
+
+#%chroot wget -O uextract-3.36.pet wget http://www.murga-linux.com/puppy/viewtopic.php?mode=attach&id=75600
+                                              www.murga-linux.com/puppy/viewtopic.php?mode=attach&id=75600
 %chroot pkg -i uextract-3.36.pet
-rm uextract-3.36.pet
+#%rm uextract-3.36.pet
+%chroot pkg -i ppm-mod-3.0.pet
+
+
+%remove ad_hock_repo
+
+geany
+geany-plugin-addons
 
 %lock puppy-base puppy-base-arch libc6 # example: never update puppy base and libc6
 #%addpkg james-staging # temporary area to changes before they get merged to rootfs

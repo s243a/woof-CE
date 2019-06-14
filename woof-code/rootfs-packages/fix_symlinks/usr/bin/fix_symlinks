@@ -17,11 +17,60 @@ fi
 #    ln -s "$loader_link" gdk-pixbuf-query-loaders
 #  fi 
 #fi
-cd "$ROOT/usr/lib/i386-linux-gnu"
+
 make_symlink(){
   if [ -e ../$1 ] && \
      [ ! -e $1 ]; then
      ln -s ../$1 $1
   fi
 }
-make_symlink gdk-pixbuf-2.0
+cd "$ROOT/usr/lib/i386-linux-gnu"
+while read a_dir in ; do
+  make_symlink "$a_dir"
+done <<EOM
+avahi
+awk
+coreutils
+dbus-1.0
+dconf
+engines-1.1
+file
+gawk
+gcc
+gconv
+gdk-pixbuf-2.0
+gettext
+gio
+glib-2.0
+glib-networking
+gtk-2.0
+gtk-3.0
+gtkdialog
+i386-linux-gnu
+imlib2
+jwm
+krb5
+libgtk2.0-0
+libgtk-3-0
+libvte9
+locale
+mc
+mime
+openssl-1.0.2
+perl
+perl5
+perl-base
+pkgconfig
+pm-utils
+python2.7
+python3
+sasl2
+ssl
+systemd
+tar
+tmpfiles.d
+urxvt
+X11
+xorg
+xtables
+EOM
