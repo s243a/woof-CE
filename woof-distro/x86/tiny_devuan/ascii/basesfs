@@ -218,6 +218,7 @@ x11-utils
 x11-xserver-utils
 x11-apps #xload is typically used in puppy. The other apps aren't needed. 
 wbar #Some script is looking for wbar.png but we probably don't need this
+wbar-config
 numlockx       #Seems to be called on startup
 ############################# Consider installing xinit ##############
 #TODO consider adding tinycore and create a layer here
@@ -325,6 +326,7 @@ pmount
 %chroot wget ftp.us.debian.org/debian/pool/main/g/gnome-menus2/libgnome-menu2_3.0.1-4_i386.deb
 %chroot pkg -i libgnome-menu2_3.0.1-4_i386.deb #Needed for fixmenus to work
 %addpkg --forced jwm_config
+%chroot echo jwm > /etc/windowmanager
 %chroot fixmenus
 %reinstall rox
 %addpkg --forced puppycore_rox
@@ -378,7 +380,7 @@ librsvg2-bin #Required for puppy themes
 %chroot pkg -i uextract-3.36.pet
 #%rm uextract-3.36.pet
 %chroot pkg -i ppm-mod-3.0.pet
-
+%addpkg ppm-mod-3.0_patch #Currently only contains printcols (i386 version)
 
 %remove ad_hock_repo
 
