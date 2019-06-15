@@ -23,7 +23,18 @@ Please choose your desired browser:" \
 --no-buttons --close-on-unfocus
 
 else
-  tty -s; if [ $? -ne 0 ]; then defaultterminal -hold -e "$0"; exit; fi
+  #tty -s; if [ $? -ne 0 ]; then defaultterminal -hold -e "$0"; exit; fi
+  bla=$(basename `tty`) && exit_status=0 || exit_status=1
+  #exit_status=$?
+  [ $bla -eq $bla ] 2>/dev/null && not_a_num=0 || not_a_num=1
+  echo "not_a_num=$not_a_num">2
+  echo "exit_status=$exit_status">2
+  echo "bla=$bla" >2
+  if [ $exit_status -ne 0 ] ||
+     [ $not_a_num -eq 1 ] ||
+     [ $bla -eq 0 ]; then
+    defaultterminal -hold -e "$0"
+  fi
   tempfile=/tmp/bla
   dialog --backtitle "CPU Selection" \
   --ok-label "OK" \
@@ -44,4 +55,4 @@ else
     4) tbinst ;;
     esac
   fi
-fi 
+fi

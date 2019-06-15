@@ -208,7 +208,7 @@ xserver-xorg
 libxcb-shm0
 %dummy libx11-data       #Dependency of libx11-6 (inernationalization)
 %dummy libxft2        #Dependency of x11-utils
-%dummy libxxf86dga1   #Dependency of x11-utils
+libxxf86dga1   #Dependency of x11-utils
 %dummy libxv1         #Dependency of x11-utils
 libxtst6       #Dependency of x11-utils, seems to be loaded during startup
 libxmuu1       #Dependency of x11-utils
@@ -396,7 +396,10 @@ geany-plugin-addons
 # cutdown the size
 %cutdown doc gtkdoc nls # lets see if nls cutdown works now
 
+#Temporary fix to issue: http://murga-linux.com/puppy/viewtopic.php?t=116354
+%importpkg desktop_hacks
+%chroot fix_symlinks
+
 #%rm /dev #s243a: Do we want to remove /dev?
 # make the sfs (optional)
-%chroot fix_symlinks
 %makesfs iso/iso-root/puppy_tascii.sfs -comp gzip # -Xcompression-level 1
