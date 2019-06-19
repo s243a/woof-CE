@@ -275,6 +275,12 @@ gtk2-engines-pixbuf #Pulls in libgtk2.0-0 as a dependency
 xdialog             #note: only i386 arch available
 gtkdialog           #note: only i386 arch available
 
+# This is different than puppies pmount (don't install it). Puppyies pmount is in
+# skeleton-rootfs (or pucore-noarch)
+#pmount #Only needed for multi-user systems but can coesist with puppies pmount by modifying the .desktop file
+#pmount requires gtkdialog to be at the path /usr/sbin/gtkdialog
+ln -s ../bin/gtkdialog /usr/sbin/gtkdialog
+
 %dpkg_configure --force-all -a
 
 # final steps
@@ -301,7 +307,7 @@ gtkdialog           #note: only i386 arch available
 
 # install puppy-base - MUST BE LAST - unless overriding puppy-base
 #%mkdir /dev
-pmount
+
 
 %addpkg --forced tinycore9_base_gz
 %addpkg --forced puppycore_noarch
@@ -381,8 +387,12 @@ librsvg2-bin #Required for puppy themes
 #%rm uextract-3.36.pet
 %chroot pkg -i ppm-mod-3.0.pet
 %addpkg ppm-mod-3.0_patch #Currently only contains printcols (i386 version)
-
+%chroot cp -sr /var/packages/repo /var/packages
 %remove ad_hock_repo
+
+#Incompelete example of how we could add an icon theme. (Use ptheme to select it)
+#%chroot pkg --get desk_icon_theme_darkfire-1
+#%chroot gtk-update-icon-cache /usr/share/icons/hicolor
 
 geany
 geany-plugin-addons
