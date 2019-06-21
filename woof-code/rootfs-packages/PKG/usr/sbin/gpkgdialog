@@ -234,10 +234,10 @@ build_tree1_input () { #build the list of available packages
 	# get repo file
 	RFILE="`cat $TEMPDIR/gpkg-repofile | head -1`"
 	[ "$RFILE" = '' ] && RFILE="${REPOFILE}"
-	RFILE=`find ~/.packages/ -iname ${RFILE}`
+	RFILE=$(find "$(realpath ~/.packages/)" -iname ${RFILE})
 	
 	# get all repo files if pkgscope is ALL
-	[ "$PKGSCOPE" = one ] || RFILE=`find ~/.packages/ -iname "Packages-*-*" -o -iname "livepackages*.txt"| grep -v -E '.bak|_BACKUP|_subdirs$'`
+	[ "$PKGSCOPE" = one ] || RFILE=$(find "$(realpath ~/.packages/)" -iname 'Packages-*-*' -o -iname 'livepackages*.txt'| grep -v -E '.bak|_BACKUP|_subdirs$')
 
 	# get pkg names (generic names, no versions) of all installed pkgs (builtins, devx and user installed)
 	cut -f1 -d'|' ${HOME}/.packages/user-installed-packages \
@@ -281,7 +281,7 @@ build_tree2_input () { #build the list of installed packages
 	# get current repo file name, and the the file
 	RFILE="`cat $TEMPDIR/gpkg-repofile 2>/dev/null | head -1`"
 	[ "$RFILE" = '' ] && RFILE="${REPOFILE}"
-	RFILE=`find ~/.packages/ -iname $RFILE`
+	RFILE=$(find "$(realpath ~/.packages/)" -iname $RFILE)
 	
 	# remove the old list
 	rm $INST_LIST 2>/dev/null

@@ -258,6 +258,8 @@ wireless-tools
 wpasupplicant
 iptables
 %addpkg frisbee
+%addpkg simple_network_setup
+%addpkg network_wizard
 rfkill
 #yad #Needed for PortaBrowseInstall-i386-0.4; depends on libwayland-client0
 curl #Needed for PortaBrowseInstall-i386-0.4
@@ -382,9 +384,9 @@ librsvg2-bin #Required for puppy themes
 #%rm PupMenu-6.2.pet
 
 #%chroot wget -O uextract-3.36.pet wget http://www.murga-linux.com/puppy/viewtopic.php?mode=attach&id=75600
-                                              www.murga-linux.com/puppy/viewtopic.php?mode=attach&id=75600
+#                                              www.murga-linux.com/puppy/viewtopic.php?mode=attach&id=75600
 %chroot pkg -i uextract-3.36.pet
-#%rm uextract-3.36.pet
+%chroot pkg -i CLInet-0.8.pet
 %chroot pkg -i ppm-mod-3.0.pet
 %addpkg ppm-mod-3.0_patch #Currently only contains printcols (i386 version)
 %chroot cp -sr /var/packages/repo /var/packages

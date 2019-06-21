@@ -622,10 +622,10 @@ is_installed_pkg(){               # return true if PKGNAME ($1) is installed, el
   [ "$PKGNAME" = '' -o "$PKGNAME_ONLY" = '' ] && print_usage pkg-installed && exit 1
 
   # check the $HOME/.packages/*.files
-  check="`find ${HOME}/.packages/ -name "$PKGNAME.files"`"
-  [ "$check" = '' ] && check="`find ${HOME}/.packages/ -name "${PKGNAME}_*.files"`"
-  [ "$check" = '' ] && check="`find ${HOME}/.packages/ -name "${PKGNAME}-*.files"`"
-  [ "$check" = '' ] && check="`find ${HOME}/.packages/ -name "${PKGNAME}*.files"`"
+  check="$(find "$(realpath "${HOME}/.packages/")" -name "$PKGNAME.files")"
+  [ "$check" = '' ] && check="$(find "$(realpath "${HOME}/.packages/")" -name "${PKGNAME}"'_*.files')"
+  [ "$check" = '' ] && check="$(find "$(realpath "${HOME}/.packages/")" -name "${PKGNAME}"'-*.files')"
+  [ "$check" = '' ] && check="$(find "$(realpath "${HOME}/.packages/")" -name "${PKGNAME}"'*.files')"
 
   # slow but reliable & simple: separately check fields 1,2,8 of the various files listing installed pkgs
   [ "$check" = '' ] && check="`cut -f1 -d'|' ${HOME}/.packages/*-installed-packages 2>/dev/null| grep -m1 "^$PKGNAME\$"`"
@@ -1631,9 +1631,9 @@ update_sources(){                 # create the list of available repos FUNCLIST
 
 
   # only add the current repo to the list of available sources if it exists
-  if [ "`find $HOME/.packages/ -iname "$REPOFILE" `" != '' ];then
+  if [ "$(find "$(realpath "$HOME/.packages/")" -iname "$REPOFILE" )" != '' ];then
     echo "$REPONAME|$EX|$REPOFILE|$REPOURL1|$REPOURL2|$REPOURL3|$REPOURL4|$REPOFALLBACKS" > ${HOME}/.pkg/sources
-  elif [ "`find /var/packages/ -iname "$REPOFILE" `" != '' ];then
+  elif [ "$(find "$(realpath "/var/packages/")" -iname "$REPOFILE" )" != '' ];then
     echo "$REPONAME|$EX|$REPOFILE|$REPOURL1|$REPOURL2|$REPOURL3|$REPOURL4|$REPOFALLBACKS" > ${HOME}/.pkg/sources
   fi
 
@@ -2466,7 +2466,7 @@ which_pkg(){                      # find out which pkg FILE ($1) comes from FUNC
   local FILENAME=''
   local FILENAME_ONLY=''
   local DIRNAME=''
-  local builtins_without_busybox="`find ${HOME}/.packages/builtin_files/* -maxdepth 1 -type f | grep -v "/busybox"`"
+  local builtins_without_busybox="$(find ${HOME}/.packages/builtin_files/* -maxdepth 1 -type f | grep -v "/busybox")"
 
   # get user input
   FILENAME="`basename "$1"`"
@@ -2703,7 +2703,7 @@ pkg_contents(){                   # list package ($1) contents FUNCLIST
     PKG_FLIST="`cat ${TMPDIR}pkg_file_list 2>/dev/null`"
 
     # last resort, if we lost our file list or still dont have, try the basics again
-    [ "$PKG_FLIST" = '' ] && PKG_FLIST="`find $HOME/.packages/ -maxdepth 1 -type f -name "${PKGNAME}*.files" 2>/dev/null`"
+    [ "$PKG_FLIST" = '' ] && PKG_FLIST="$(find "$(realpath "$HOME/.packages/")" -maxdepth 1 -type f -name "${PKGNAME}"'*.files' 2>/dev/null)"
 
     # clean up the list a bit
     [ "$PKG_FLIST" != '' ] && PKG_FLIST="`echo "$PKG_FLIST" | grep -v ' ' | grep -v "^\$" | sort | uniq`"
@@ -2713,13 +2713,13 @@ pkg_contents(){                   # list package ($1) contents FUNCLIST
   fi
 
   # try PKGNAME_ONLY.files (exact match)
-  PKG_FLIST="`find $HOME/.packages/ -maxdepth 1 -type f -name "${PKGNAME_ONLY}.files" 2>/dev/null`"
+  PKG_FLIST="$(find "$(realpath "$HOME/.packages/")" -maxdepth 1 -type f -name "${PKGNAME_ONLY}.files" 2>/dev/null)"
 
   # try finding PKGNAME.files (exact match)
-  [ ! -f "$PKG_FLIST" ] && PKG_FLIST="`find $HOME/.packages/ -maxdepth 1 -type f -name "${PKGNAME}.files" 2>/dev/null`"
+  [ ! -f "$PKG_FLIST" ] && PKG_FLIST="$(find "$(realpath "$HOME/.packages/")" -maxdepth 1 -type f -name "${PKGNAME}.files" 2>/dev/null)"
 
   # try the builtins files (exact match)
-  [ ! -f "$PKG_FLIST" ] && PKG_FLIST="`find $HOME/.packages/builtin_files/ -maxdepth 1 -type f -name "$PKGNAME_ONLY"`"
+  [ ! -f "$PKG_FLIST" ] && PKG_FLIST="$(find "$(realpath "$HOME/.packages/builtin_files/")" -maxdepth 1 -type f -name "$PKGNAME_ONLY")"
 
   # try PKGNAME (exact match) in user installed pkgs
   [ ! -f "$PKG_FLIST" ] && PKG_FLIST="$HOME/.packages/`cut -f1 -d'|' $HOME/.packages/user-installed-packages | grep -m1 ^"$PKGNAME\$" 2>/dev/null`.files"
@@ -2734,10 +2734,10 @@ pkg_contents(){                   # list package ($1) contents FUNCLIST
   # no exact matches found, try fuzzy searches..
 
   # try PKGNAME*.files
-  [ ! -f "$PKG_FLIST" ] && PKG_FLIST="`find $HOME/.packages/ -maxdepth 1 -type f -name "/${PKGNAME}*.files"  2>/dev/null`"
+  [ ! -f "$PKG_FLIST" ] && PKG_FLIST="$(find "$(realpath "$HOME/.packages/")" -maxdepth 1 -type f -name "/${PKGNAME}"'*.files'  2>/dev/null)"
 
   # try finding *PKGNAME.files
-  [ ! -f "$PKG_FLIST" ] && PKG_FLIST="`find $HOME/.packages/ -maxdepth 1 -type f -name "*${PKGNAME}.files" 2>/dev/null`"
+  [ ! -f "$PKG_FLIST" ] && PKG_FLIST="$(find "$(realpath "$HOME/.packages/")" -maxdepth 1 -type f -name '*'"${PKGNAME}.files" 2>/dev/null)"
 
   # try ^PKGNAME_ONLY[_-] in user installed pkgs
   [ ! -f "$PKG_FLIST" ] && PKG_FLIST="$HOME/.packages/`cut -f1 -d'|' $HOME/.packages/user-installed-packages | grep -Em1 "^$PKGNAME_ONLY[_-]" 2>/dev/null`.files"
@@ -2752,7 +2752,7 @@ pkg_contents(){                   # list package ($1) contents FUNCLIST
   [ ! -f "$PKG_FLIST" ] && PKG_FLIST="$HOME/.packages/`cut -f1 -d'|' $HOME/.packages/*-installed-packages | grep -m1 ^"$PKGNAME_ONLY" 2>/dev/null`.files"
 
   # try PKGNAME_ONLY*.files
-  [ ! -f "$PKG_FLIST" ] && PKG_FLIST="`find $HOME/.packages/ -maxdepth 1 -type f -name "/${PKGNAME_ONLY}*.files"  2>/dev/null`"
+  [ ! -f "$PKG_FLIST" ] && PKG_FLIST="$(find "$(realpath "$HOME/.packages/")" -maxdepth 1 -type f -name "/${PKGNAME_ONLY}"'*.files'  2>/dev/null)"
 
 
 
@@ -5667,12 +5667,12 @@ pkg_uninstall(){                  # remove an installed package ($1) FUNCLIST
   if [ "$is_installed" = true -o "$FORCE" = true ];then #250713
 
     # get the list of files to be deleted, exact match
-    PKGFILE="`find ${HOME}/.packages/ -maxdepth 1 -type f -name "$PKGNAME.files"`"
+    PKGFILE="$(find "$(realpath "${HOME}/.packages/")" -maxdepth 1 -type f -name "$PKGNAME.files")"
 
     # if no exact match, search for pkgname*
-    [ ! -f "$PKGFILE" ] && PKGFILE="`find ${HOME}/.packages/ -maxdepth 1 -type f -name "${PKGNAME}*.files"`"
-    [ ! -f "$PKGFILE" ] && PKGFILE="`find ${HOME}/.packages/ -maxdepth 1 -type f -name "${PKGNAME_ONLY}_*.files"`"
-    [ ! -f "$PKGFILE" ] && PKGFILE="`find ${HOME}/.packages/ -maxdepth 1 -type f -name "${PKGNAME_ONLY}-*.files"`"
+    [ ! -f "$PKGFILE" ] && PKGFILE="$(find "$(realpath "${HOME}/.packages/")" -maxdepth 1 -type f -name "${PKGNAME}"'*.files')"
+    [ ! -f "$PKGFILE" ] && PKGFILE="$(find "$(realpath "${HOME}/.packages/")" -maxdepth 1 -type f -name "${PKGNAME_ONLY}_"'*.files')"
+    [ ! -f "$PKGFILE" ] && PKGFILE="$(find "$(realpath "${HOME}/.packages/")" -maxdepth 1 -type f -name "${PKGNAME_ONLY}-"'*.files')"
     [ ! -f "$PKGFILE" ] && PKGFILE="${PKGNAME}.files"
     [ ! -f "$PKGFILE" ] && PKGFILE="${PKGNAME}.sfs.files"
     [ ! -f "$PKGFILE" ] && PKGFILE="${PKGNAME}-${CP_SUFFIX}.sfs.files"
@@ -6463,10 +6463,10 @@ pkg_ldd_msg(){                    # check given package ($1) for missing deps FU
   do
     local pkg_name_only=`get_pkg_name_only "$pkg_name"`
     # get the *.files for this pkg
-    FNDFILES="`find $HOME/.packages/ -iname "${pkg_name}.files" 2>/dev/null`"
-    [ ! -f "$FNDFILES" ] && FNDFILES="`find $HOME/.packages/ -iname "${pkg_name}_*.files" 2>/dev/null`"
-    [ ! -f "$FNDFILES" ] && FNDFILES="`find $HOME/.packages/ -iname "${pkg_name}-*.files" 2>/dev/null`"
-    [ ! -f "$FNDFILES" ] && FNDFILES="`find $HOME/.packages/ -iname "${pkg_name}*.files"  2>/dev/null`"
+    FNDFILES="$(find $HOME/.packages/ -iname "${pkg_name}.files" 2>/dev/null)"
+    [ ! -f "$FNDFILES" ] && FNDFILES="$(find "$(realpath "$HOME/.packages/")" -iname "${pkg_name}_*.files" 2>/dev/null)"
+    [ ! -f "$FNDFILES" ] && FNDFILES="$(find "$(realpath "$HOME/.packages/")" -iname "${pkg_name}-*.files" 2>/dev/null)"
+    [ ! -f "$FNDFILES" ] && FNDFILES="$(find "$(realpath "$HOME/.packages/")" -iname "${pkg_name}*.files"  2>/dev/null)"
     [ ! -f "$FNDFILES" ] && continue
 
     # get list of ldd-able file
@@ -7191,7 +7191,7 @@ menu_entry_msg(){                 # show menu entry details of installed pkg FUN
   local pkg_command=''
 
   # get the menu file, if it exists
-  pkg_file_list=`find ${HOME}/.packages/ -maxdepth 1 -type f -name "${1}*.files"`
+  pkg_file_list=$(find "$(realpath "${HOME}/.packages/")" -maxdepth 1 -type f -name "${1}*.files")
 
   [ -f "$pkg_file_list" ] && MENUFILE="`LANG=C grep -m1 '/usr/share/applications/' "$pkg_file_list" | grep -i -m1 ".desktop\$"`" || return 1
 
