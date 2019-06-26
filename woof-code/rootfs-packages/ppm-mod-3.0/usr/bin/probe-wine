@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [ "$(which wine)" != "" ] && [ "$(pidof wineserver)" == "" ]; then
+ if [ "$(pidof xdg-wine)" == "" ]; then
+  exec xdg-wine
+ fi
+fi

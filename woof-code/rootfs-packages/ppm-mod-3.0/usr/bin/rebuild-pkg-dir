@@ -1,0 +1,138 @@
+#!/bin/sh
+
+. /root/.packages/DISTRO_PET_REPOS
+. /root/.packages/DISTRO_COMPAT_REPOS
+
+result=""
+
+write_list()
+{
+	if [ ! -f /root/.packages/database/PET_REPO_LIST ]; then
+		for line in $PET_REPOS
+		do
+		echo "$line" >> /root/.packages/database/PET_REPO_LIST
+		done
+	fi
+
+	if [ ! -f /root/.packages/database/PET_DB_REPO ]; then
+		for line in $PKG_DOCS_PET_REPOS
+		do
+		echo "$line" >> /root/.packages/database/PET_DB_REPO
+		done
+	fi
+
+	if [ ! -f /root/.packages/database/PET_ORDER_LIST ]; then
+		for line in $PACKAGELISTS_PET_ORDER
+		do
+		echo "$line" >> /root/.packages/database/PET_ORDER_LIST
+		done
+	fi
+
+	if [ ! -f /root/.packages/database/COMPAT_REPO_LIST ]; then
+		for line in $REPOS_DISTRO_COMPAT
+		do
+		echo "$line" >> /root/.packages/database/COMPAT_REPO_LIST
+		done
+	fi
+
+	if [ ! -f /root/.packages/database/COMPAT_DB_REPO ]; then
+		for line in $PKG_DOCS_DISTRO_COMPAT
+		do
+		echo "$line" >> /root/.packages/database/COMPAT_DB_REPO
+		done
+	fi
+	
+}
+
+
+if [ ! -d /root/.packages/package-files ]; then
+
+	echo "rebuilding package-files..."
+
+	mkdir /root/.packages/package-files
+	
+	if [ "$(find /root/.packages -maxdepth 1 -name '*.files')" != "" ]; then
+	mv -f /root/.packages/*.files /root/.packages/package-files/
+	fi
+	
+	result="$result package-files"
+else
+	if [ "$(find /root/.packages -maxdepth 1 -name '*.files')" != "" ]; then
+	mv -f /root/.packages/*.files /root/.packages/package-files/
+	result="$result package-files"
+	fi
+fi
+
+if [ ! -d /root/.packages/repo ]; then
+
+	echo "rebuilding repo..."
+
+	mkdir /root/.packages/repo
+	
+	if [ "$(find /root/.packages -maxdepth 1 -name 'Packages-*')" != "" ]; then
+	mv -f /root/.packages/Packages-* /root/.packages/repo/ 
+	fi
+
+	result="$result repo"
+else
+	if [ "$(find /root/.packages -maxdepth 1 -name 'Packages-*')" != "" ]; then
+	mv -f /root/.packages/Packages-* /root/.packages/repo/ 
+	result="$result repo"
+	fi	
+fi
+
+if [ ! -d /root/.packages/downloaded-pkg ]; then
+	echo "rebuilding downloaded-pkg..."
+	mkdir /root/.packages/downloaded-pkg
+	result="$result downloaded-pkg"
+fi
+
+if [ ! -d /root/.packages/system-app-files ]; then
+	echo "rebuilding system-app-files..."
+	mkdir /root/.packages/system-app-files
+	result="$result system-app-files"
+fi
+
+if [ ! -d /root/.packages/remove-script ]; then
+
+	echo "rebuilding remove-script..."
+
+	mkdir /root/.packages/remove-script
+	
+	if [ "$(find /root/.packages -maxdepth 1 -name '*.remove')" != "" ]; then
+	mv -f /root/.packages/*.remove /root/.packages/remove-script/ 
+	fi
+	
+	result="$result remove-script"
+else
+	if [ "$(find /root/.packages -maxdepth 1 -name '*.remove')" != "" ]; then
+	mv -f /root/.packages/*.remove /root/.packages/remove-script/ 
+	result="$result remove-script"
+	fi
+fi
+
+if [ ! -d /root/.packages/database ]; then
+
+	echo "rebuilding database..."
+
+	mkdir /root/.packages/database
+	
+	write_list
+	
+	result="$result database"
+else
+	write_list
+fi
+
+if [ ! -d /root/.packages/package-info ]; then
+	echo "rebuilding package-info..."
+	mkdir /root/.packages/package-info
+	result="$result package-info"
+fi
+
+if [ "$result" != "" ]; then
+echo "The following folder has rebuilt: $result" > /tmp/pkg-rebuilt-folder
+echo "$(cat /tmp/pkg-rebuilt-folder)"
+else
+echo "Package folder rebuild is not necessary. PPM package folder is fully organized"
+fi

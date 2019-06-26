@@ -1,0 +1,1307 @@
+#!/bin/sh
+
+fetch_error(){
+rm -rf /var/tmp/$FOLDR
+exit 40	
+}
+
+xbpstag() {
+busybox sed "/<key>$1<\/key>/!d{n;s/.*>\\(.*\\)<.*/\\1/}" \
+< "$2" | sed \$!d
+}
+
+transfer_install(){
+if [ $retval -eq 0 ]; then
+ mv -f ./files.tmp /root/.packages/package-files/$FOLDR.files
+ cp -rf /var/tmp/$FOLDR/* $TARGET_PATH
+ rm -rf /var/tmp/$FOLDR
+ exit 0
+else
+ rm -rf /var/tmp/$FOLDR
+ exit 30
+fi	
+}
+
+install_pisi(){
+
+PAR="$(basename $1)"
+PISI=$1
+FNAME=$(echo $PAR | sed 's/\.pisi$//')
+FOLDR=$FNAME
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+
+cp "$PISI" "/var/tmp/$FOLDR"
+
+cd "$FOLDR"
+
+unzip "$PAR"
+
+retval=$?
+if [ $retval -ne 0 ]; then
+ fetch_error
+fi
+
+if [ -f ./files.xml ]; then
+ cat ./files.xml | grep -E "<Path>*" | sed -e "s/<Path>/\//" -e "s/<\/Path>$//g" -e "s/^ *\//\//" > ./files.tmp
+fi
+
+if [ -f ./metadata.xml ] && [ "$(which xmllint)" != "" ]; then
+
+#pkgname|nameonly|version|pkgrelease|category|size|path|fullfilename|dependencies|description|
+
+pkgname="$FOLDR"
+nameonly=`xmllint --xpath "/PISI/Package/Name" ./metadata.xml | sed -e "s#<Name>##g" -e "s#<\/Name>##g"`
+version=`xmllint --xpath "/PISI/Package/History/Update/Version" ./metadata.xml | sed -e "s#<\/Version><Version>#|#g" -e "s#<Version>##g" -e "s#<\/Version>##g" | cut -f 1 -d '|'`
+pkgrelease=`xmllint --xpath "/PISI/Package/History/Update/@release" ./metadata.xml | cut -f 2 -d '=' | cut -f 1 -d " "| sed -e "s#\"##g"`
+category=`xmllint --xpath "/PISI/Package/PartOf" ./metadata.xml | sed -e "s#<PartOf>##g" -e "s#<\/PartOf>##g"`
+size="${PKGSIZEK}K"
+path=""
+fullfilename="$PAR"
+dependencies=""
+
+depstr=`xmllint --xpath "/PISI/Package/RuntimeDependencies/Dependency" ./metadata.xml | sed -e "s#<Dependency releaseFrom=\"[0-9][0-9]\">#<Dependency>#g" -e "s#<Dependency releaseFrom=\"[0-9]\">#<Dependency>#g" -e "s#<\/Dependency><Dependency># #g" -e "s#<Dependency>##g" -e "s#<\/Dependency>##g" `
+
+for dep1 in $depstr
+do
+ if [ "$dependencies" == "" ]; then
+ dependencies="+$dep1"
+ else
+ dependencies="$dependencies,+$dep1"
+ fi
+done 
+
+description=`xmllint --xpath "/PISI/Package/Summary" ./metadata.xml | sed -e "s#<Summary xml:lang=\"[Aa-Zz][Aa-Zz]\">##g" -e "s#<\/Summary>##g"`
+
+echo "$pkgname|$nameonly|$version|$pkgrelease|$category|$size|$path|$fullfilename|$dependencies|$description|" > ./pet.specs
+
+rm -f ./files.xml
+rm -f ./metadata.xml
+
+else
+	echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+fi
+
+if [ -f install.tar.lzma ]; then
+tar --lzma -xvf install.tar.lzma
+retval=$?
+rm install.tar.lzma
+elif [ -f install.tar.xz ]; then
+unxz install.tar.xz
+tar -xvf install.tar
+retval=$?
+rm install.tar
+rm install.tar.xz
+elif [ -f install.tar.gz ]; then
+tar -zxvf install.tar.gz
+retval=$?
+rm install.tar.gz
+elif [ -f install.tar.bz ]; then
+tar -xjf install.tar.bz
+retval=$?
+rm install.tar.bz
+elif [ -f install.tar.bz2 ]; then
+tar -xjf install.tar.bz2
+retval=$?
+rm install.tar.bz2
+fi
+
+rm "$PAR"
+
+transfer_install
+
+}
+
+install_taz(){
+
+PKG="$1"
+BNAME="$(basename $PKG)"
+FOLDR=$(echo $BNAME |sed 's/\.tazpkg$//')
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+cp "$PKG" "/var/tmp/$FOLDR"
+cd "$FOLDR"
+
+TAZ=`ls | grep ".tazpkg"`
+
+#mv "$PKG" "$PKG.gz"
+cpio -idm < "$TAZ"
+if [ $? -ne 0 ]; then
+ fetch_error
+fi
+
+if [ -f description.txt ]; then
+rm description.txt
+fi
+
+if [ -f md5sum ]; then
+rm md5sum
+fi
+
+if [ -f files.list ]; then
+cp -f files.list ./files.tmp
+rm files.list
+fi
+
+#if [ -f receipt ]; then
+#rm receipt
+#fi
+
+if [ -f fs.cpio.lzma ]; then
+	echo "lzma found"
+	lzma -d fs.cpio.lzma
+	
+	if [ $? -ne 0 ]; then
+     fetch_error
+	fi
+	
+	cpio -idm < fs.cpio
+	retval=$?
+	rm fs.cpio.lzma > /dev/null
+	rm fs.cpio > /dev/null
+elif [ -f fs.cpio ]; then
+	echo "cpio found"
+	cpio -idm < fs.cpio
+	retval=$?
+	rm fs.cpio
+elif [ -f fs.cpio.gz ]; then
+	echo "gz found"
+	zcat fs.cpio.gz
+	
+	if [ $? -ne 0 ]; then
+     fetch_error
+	fi
+	
+	cpio -idm < fs.cpio
+	retval=$?
+	rm fs.cpio.gz > /dev/null
+	rm fs.cpio > /dev/null
+elif [ -f fs.cpio.xz ]; then
+	echo "xz found"
+	unxz fs.cpio.xz
+	
+	if [ $? -ne 0 ]; then
+     fetch_error
+	fi
+	
+	cpio -idm < fs.cpio
+	retval=$?
+	rm fs.cpio.xz > /dev/null
+	rm fs.cpio > /dev/null
+elif [ -f fs.cpio.tar.gz ]; then
+	echo "gz found"
+	tar -zxvf fs.cpio.tar.gz
+	
+	if [ $? -ne 0 ]; then
+     fetch_error
+	fi
+	
+	cpio -idm < fs.cpio
+	retval=$?
+	rm fs.cpio.tar.gz > /dev/null
+	rm fs.cpio > /dev/null
+elif [ -f fs.cpio.tar.xz ]; then
+	echo "xz found"
+	unxz fs.cpio.tar.xz
+	
+	if [ $? -ne 0 ]; then
+     fetch_error
+	fi
+	
+	cpio -idm < fs.cpio
+	retval=$?
+	rm fs.cpio.tar.xz > /dev/null
+	rm fs.cpio > /dev/null
+elif [ -f fs.cpio.tar.bz ]; then
+	echo "bz found"
+	tar -xjf  fs.cpio.tar.bz
+	
+	if [ $? -ne 0 ]; then
+     fetch_error
+	fi
+	
+	cpio -idm < fs.cpio
+	retval=$?
+	rm fs.cpio.tar.bz > /dev/null
+	rm fs.cpio > /dev/null
+elif [ -f fs.cpio.tar.bz2 ]; then
+	echo "bz2 found"
+	tar -xjf  fs.cpio.tar.bz2
+	
+	if [ $? -ne 0 ]; then
+     fetch_error
+	fi
+	
+	cpio -idm < fs.cpio
+	retval=$?
+	rm fs.cpio.tar.bz2 > /dev/null
+	rm fs.cpio > /dev/null
+elif [ -f fs.cpio.tbz ]; then
+	echo "tbz found"
+	tar -xjf  fs.cpio.tbz
+	
+	if [ $? -ne 0 ]; then
+     fetch_error
+	fi
+	
+	cpio -idm < fs.cpio
+	retval=$?
+	rm fs.cpio.tbz > /dev/null
+	rm fs.cpio > /dev/null 
+elif [ -f fs.cpio.bz ]; then
+	echo "bz found"
+	tar -xjf  fs.cpio.bz
+	
+	if [ $? -ne 0 ]; then
+     fetch_error
+	fi
+	
+	cpio -idm < fs.cpio
+	retval=$?
+	rm fs.cpio.bz > /dev/null
+	rm fs.cpio > /dev/null 
+elif [ -f fs.cpio.bz2 ]; then
+	echo "bz2 found"
+	tar -xjf  fs.cpio.bz2
+	
+	if [ $? -ne 0 ]; then
+     fetch_error
+	fi
+	
+	cpio -idm < fs.cpio
+	retval=$?
+	rm fs.cpio.bz2 > /dev/null
+	rm fs.cpio > /dev/null
+elif [ -f fs.cpio.tgz ]; then
+	echo "tgz found"
+	tar -zxvf fs.cpio.tgz
+	
+	if [ $? -ne 0 ]; then
+     fetch_error
+	fi
+	
+	cpio -idm < fs.cpio
+	retval=$?
+	rm fs.cpio.tgz > /dev/null
+	rm fs.cpio > /dev/null
+elif [ -f fs.cpio.txz ]; then
+	echo "txz found"
+	unxz fs.cpio.txz
+	
+	if [ $? -ne 0 ]; then
+     fetch_error
+	fi
+	
+	cpio -idm < fs.cpio
+	retval=$?
+	rm fs.cpio.txz > /dev/null
+	rm fs.cpio > /dev/null
+fi
+
+if [ -d fs ]; then
+retval=0
+cd fs
+mv * ..
+cd ..
+rmdir fs
+else
+retval=1
+fi
+	
+rm "$BNAME"
+FOLDR=`basename "$FOLDR"`
+
+if [ -f ./receipt ]; then
+
+#pkgname|nameonly|version|pkgrelease|category|size|path|fullfilename|dependencies|description|
+
+. ./receipt
+
+pkgname="$FOLDR"
+nameonly="$PACKAGE"
+version="$VERSION"
+pkgrelease=""
+category="$CATEGORY"
+size="${PKGSIZEK}K"
+path=""
+fullfilename="$TAZ"
+dependencies=""
+
+for dep1 in $DEPENDS
+do
+ if [ "$dependencies" == "" ]; then
+ dependencies="+$dep1"
+ else
+ dependencies="$dependencies,+$dep1"
+ fi
+done 
+
+description="$SHORT_DESC"
+
+echo "$pkgname|$nameonly|$version|$pkgrelease|$category|$size|$path|$fullfilename|$dependencies|$description|" > ./pet.specs
+
+post_cmd=$(sed -n '/^post_install\(\)/,/^}/p' ./receipt)
+
+if [ "$post_cmd" != "" ]; then
+echo "#!/bin/sh
+$post_cmd
+
+post_install
+" > ./pinstall.sh
+fi
+
+post_cmd=$(sed -n '/^post_uninstall\(\)/,/^}/p' ./receipt)
+
+if [ "$post_cmd" != "" ]; then
+echo "#!/bin/sh
+$post_cmd
+
+post_uninstall
+" > ./puninstall.sh
+fi
+
+else
+echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+fi
+
+transfer_install
+
+}
+
+install_sb(){
+
+SB=$1
+
+BNAME="$(basename $SB)"
+
+FOLDR=$(echo $BNAME |sed 's/\.sb$//')
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+
+cd "$FOLDR"
+
+if [ ! -d /mnt/sb ]; then
+mkdir /mnt/sb
+fi
+	
+mount -o loop "$SB" /mnt/sb
+
+retval=$?
+if [ $retval -ne 0 ]; then
+ fetch_error
+fi
+
+cp -r /mnt/sb/* ./
+umount /mnt/sb
+
+if [ -d /mnt/sb ]; then
+ rmdir /mnt/sb
+fi
+
+cpath="$(pwd | sed -e "s#\/#\\\/#g")"
+
+find ./ -type f -name '*' | grep -Ev "^.\/$" | sed -e "s/.//" | grep -v "pet.specs" | grep -v "files.tmp" > ./files.tmp
+
+echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+
+transfer_install
+
+}
+
+install_pfs(){
+
+PFS=$1
+BNAME="$(basename $PFS)"
+FOLDR=$(echo $BNAME |sed 's/\.pfs$//')
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+cd "$FOLDR"
+
+if [ ! -d /mnt/pfs ]; then
+mkdir /mnt/pfs
+fi
+
+mount -o loop "$PFS" /mnt/pfs
+retval=$?
+if [ $retval -ne 0 ]; then
+ fetch_error
+fi
+
+cp -r /mnt/pfs/* ./
+umount /mnt/pfs
+
+if [ -d /mnt/pfs ]; then
+rmdir /mnt/pfs
+fi
+
+if [ -f ./start.sh ]; then
+ mv ./start.sh ./pinstall.sh
+fi
+
+rm -rf ./etc/packages
+
+cpath="$(pwd | sed -e "s#\/#\\\/#g")"
+
+find ./ -type f -name '*' | grep -Ev "^.\/$" | sed -e "s/.//" | grep -v "pet.specs" | grep -v "pinstall.sh" | grep -v "puninstall.sh" | grep -v "files.tmp" > ./files.tmp
+
+echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+
+transfer_install
+	
+}
+
+install_apk(){
+
+APK=$1
+BNAME="$(basename $APK)"
+
+FOLDR=$(echo $BNAME |sed 's/\.apk$//')
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+
+cp "$APK" "/var/tmp/$FOLDR"
+
+cd "$FOLDR"
+
+cp $BNAME "$FOLDR.tar.gz"
+tar -zxvf "$FOLDR.tar.gz"
+retval=$?
+
+rm -f "$FOLDR.tar.gz"
+rm -f "$BNAME"
+
+if [ -f .SIGN.*.pub ]; then
+rm .SIGN.*.pub
+fi
+
+if [ -f ./.PKGINFO ]; then
+
+#pkgname|nameonly|version|pkgrelease|category|size|path|fullfilename|dependencies|description|
+
+pkgname="$FOLDR"
+nameonly=`cat ./.PKGINFO | grep "pkgname" | cut -f 2 -d "=" | cut -f 2 -d " "`
+version=`cat ./.PKGINFO | grep "pkgver" | cut -f 2 -d "=" | cut -f 2 -d " "`
+size="${PKGSIZEK}K"
+path=""
+fullfilename="$BNAME"
+dependencies=""
+
+for dep1 in `cat ./.PKGINFO | grep "depend" | cut -f 2 -d "=" | cut -f 2 -d " "`
+do
+ if [ "$dependencies" == "" ]; then
+ dependencies="+$dep1"
+ else
+ dependencies="$dependencies,+$dep1"
+ fi
+done 
+
+description=`cat ./.PKGINFO | grep "pkgdesc" | cut -f 2 -d "="`
+
+echo "$pkgname|$nameonly|$version|$pkgrelease|$category|$size|$path|$fullfilename|$dependencies|$description|" | sed -e "s#| #|#g" > ./pet.specs
+
+rm -f ./.PKGINFO
+ 
+else
+echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+fi
+
+cpath="$(pwd | sed -e "s#\/#\\\/#g")"
+
+find ./ -type f -name '*' | grep -Ev "^.\/$" | sed -e "s/.//" | grep -v "pet.specs" | grep -v "pinstall.sh" | grep -v "puninstall.sh" | grep -v "files.tmp" > ./files.tmp
+
+transfer_install
+	
+}
+
+install_spack(){
+
+SPACK=$1
+BNAME="$(basename $SPACK)"
+
+FOLDR=$(echo $BNAME |sed 's/\.spack$//')
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+cp "$SPACK" "/var/tmp/$FOLDR"
+cd "$FOLDR"
+SPACK=`ls | grep ".spack"`
+
+cpio -idm < "$SPACK"
+retval=$?
+if [ $retval -ne 0 ]; then
+ fetch_error
+fi
+
+if [ -f about.txt ]; then
+rm ./about.txt
+fi
+
+if [ -f pre-install.sh ]; then
+rm ./pre-install.sh
+fi
+
+if [ -f post-install.sh ]; then
+mv ./post-install.sh ./pinstall.sh
+fi
+
+unxz ./files.xz
+
+if [ $? -ne 0 ]; then
+ fetch_error
+fi
+
+#rm ./files.xz
+cpio -idm < ./files
+retval=$?
+
+rm ./files
+rm -f $BNAME
+
+echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+
+cpath="$(pwd | sed -e "s#\/#\\\/#g")"
+
+find ./ -type f -name '*' | grep -Ev "^.\/$" | sed -e "s/.//" | grep -v "pet.specs" | grep -v "pinstall.sh" | grep -v "puninstall.sh" | grep -v "files.tmp" > ./files.tmp
+
+transfer_install
+
+	
+}
+
+install_ipk(){
+	
+IPK=$1
+BNAME="$(basename $IPK)"
+
+FOLDR=$(echo $BNAME |sed 's/\.ipk$//')
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+cp "$IPK" "/var/tmp/$FOLDR"
+cd "$FOLDR"
+IPK=`ls | grep ".ipk"`
+
+tar -zxf $IPK
+retval=$?
+if [ $retval -ne 0 ]; then
+ fetch_error
+fi
+
+rm ./debian-binary
+tar -zxf ./data.tar.gz
+retval=$?
+tar -zxf ./control.tar.gz
+rm ./data.tar.gz
+rm ./control.tar.gz
+
+rm -f ./conffiles
+rm -f ./postinst
+rm -f ./prerm
+
+if [ ! -f ./control ]; then
+	echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+else
+	pkgname="$FOLDR"
+	nameonly=`cat ./control | grep "Package:" | cut -f 2 -d ':' | sed -e "s#^ ##g"`
+	version=`cat ./control | grep "Version:" | cut -f 2 -d ':' | sed -e "s#^ ##g" | cut -f 1 -d '-'`
+	pkgrelease=`cat ./control | grep "Version:" | cut -f 2 -d ':' | sed -e "s#^ ##g" | cut -f 2 -d '-'`
+	category=""
+	size="${PKGSIZEK}K"
+	path=""	
+	fullfilename=${BNAME}
+	description=`cat ./control | grep "Description:" | cut -f 2 -d ':' | sed -e "s#^ ##g" | head -1`
+	dependencies=""
+	depends=`cat ./control | grep "Depends:" | cut -f 2 -d ':' | sed -e "s#^ ##g" -e "s#, # #g" -e "s#(#|#g" -e "s# |#|#g" -e "s# [0-9]##g"` 
+
+	for dep1 in $depends
+	do
+	depname=`echo $dep1 | cut -f 1 -d '|'`
+	 if [ "$dependencies" == "" ]; then
+	 dependencies="+$depname"
+	 else
+	 dependencies="$dependencies,+$depname"
+	 fi
+	done 
+
+	echo "$pkgname|$nameonly|$version|$pkgrelease|$category|$size|$path|$fullfilename|$dependencies|$description|" > ./pet.specs	
+
+	rm -f ./control
+
+fi
+
+rm -f "$IPK"
+
+cpath="$(pwd | sed -e "s#\/#\\\/#g")"
+
+find ./ -type f -name '*' | grep -Ev "^.\/$" | sed -e "s/.//" | grep -v "pet.specs" | grep -v "pinstall.sh" | grep -v "puninstall.sh" | grep -v "files.tmp" > ./files.tmp
+
+
+transfer_install
+	
+}	
+
+install_xbps(){
+	
+XBPS=$1
+BNAME="$(basename $XBPS)"
+FOLDR=$(echo $BNAME |sed 's/\.xbps$//')
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+
+cp "$XBPS" "/var/tmp/$FOLDR"
+
+cd "$FOLDR"
+
+XBPS=`ls | grep ".xbps"`
+
+tar -xf $XBPS
+retval=$?
+
+mv ./INSTALL ./pinstall.sh
+mv ./REMOVE ./puninstall.sh
+
+cat ./files.plist | grep -E "<string>*" | sed -e "s#<\/string>##g" | grep "/" | sed -e "s/<string>//" -e "s/^\t*\//\//"> ./files.tmp
+
+echo "pkgname|$(xbpstag pkgname ./props.plist)
+version|$(xbpstag version ./props.plist)
+short_desc|$(xbpstag short_desc ./props.plist)
+" > ./props.tmp
+
+xDEP2=$(/usr/local/petget/plist2ini ./props.plist | grep "run_depends")
+
+if [ "$xDEP2" != "" ]; then
+ echo "$xDEP2" >> ./props.tmp
+fi
+
+
+if [ ! -f ./props.tmp ]; then
+	echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+else
+	pkgname="$FOLDR"
+	nameonly=`cat ./props.tmp | grep "pkgname|" | cut -f 2 -d '|' | sed -e "s#^ ##g"`
+	version=`cat ./props.tmp | grep "version|" | cut -f 2 -d '|' | sed -e "s#^ ##g" | cut -f 1 -d '_'`
+	pkgrelease=`cat ./props.tmp | grep "version|" | cut -f 2 -d '|' | sed -e "s#^ ##g" | cut -f 2 -d '_'`
+	category=""
+	size="${PKGSIZEK}K"
+	path=""	
+	fullfilename=${BNAME}
+	description=`cat ./props.tmp | grep "short_desc|" | cut -f 2 -d '|' | sed -e "s#^ ##g" | head -1`
+	dependencies=""
+	depends=`cat ./props.tmp | grep "run_depends|" | cut -f 2 -d '|' | sed -e "s#,# #g"`
+
+	for dep1 in $depends
+	do
+	depname=`echo $dep1 | cut -f 1 -d '&'`
+	 if [ "$dependencies" == "" ]; then
+	 dependencies="+$depname"
+	 else
+	 dependencies="$dependencies,+$depname"
+	 fi
+	done 
+
+	echo "$pkgname|$nameonly|$version|$pkgrelease|$category|$size|$path|$fullfilename|$dependencies|$description|" > ./pet.specs	
+
+	rm -f ./props.tmp
+	
+fi
+
+rm -f ./props.plist
+rm -f ./files.plist 
+
+rm -f ./$FOLDR.xbps
+	
+transfer_install
+
+}
+
+install_eopkg(){
+
+PAR="$(basename $1)"
+PISI=$1
+FNAME=$(echo $PAR | sed 's/\.eopkg$//')
+FOLDR=$FNAME
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+
+cp "$PISI" "/var/tmp/$FOLDR"
+
+cd "$FOLDR"
+
+unzip "$PAR"
+
+if [ $? -ne 0 ]; then
+ fetch_error
+fi
+
+if [ -f files.xml ]; then
+ cat ./files.xml | grep -E "<Path>*" | sed -e "s/<Path>/\//" -e "s/<\/Path>$//g" -e "s/^ *\//\//" > ./files.tmp
+fi
+
+if [ -f ./metadata.xml ] && [ "$(which xmllint)" != "" ]; then
+
+#pkgname|nameonly|version|pkgrelease|category|size|path|fullfilename|dependencies|description|
+
+pkgname="$FOLDR"
+nameonly=`xmllint --xpath "/PISI/Package/Name" ./metadata.xml | sed -e "s#<Name>##g" -e "s#<\/Name>##g"`
+version=`xmllint --xpath "/PISI/Package/History/Update/Version" ./metadata.xml | sed -e "s#<\/Version><Version>#|#g" -e "s#<Version>##g" -e "s#<\/Version>##g" | cut -f 1 -d '|'`
+pkgrelease=`xmllint --xpath "/PISI/Package/History/Update/@release" ./metadata.xml | cut -f 2 -d '=' | cut -f 1 -d " "| sed -e "s#\"##g"`
+category=`xmllint --xpath "/PISI/Package/PartOf" ./metadata.xml | sed -e "s#<PartOf>##g" -e "s#<\/PartOf>##g"`
+size="${PKGSIZEK}K"
+path=""
+fullfilename="$PAR"
+dependencies=""
+
+depstr=`xmllint --xpath "/PISI/Package/RuntimeDependencies/Dependency" ./metadata.xml | sed -e "s#<Dependency releaseFrom=\"[0-9][0-9]\">#<Dependency>#g" -e "s#<Dependency releaseFrom=\"[0-9]\">#<Dependency>#g" -e "s#<\/Dependency><Dependency># #g" -e "s#<Dependency>##g" -e "s#<\/Dependency>##g" `
+
+for dep1 in $depstr
+do
+ if [ "$dependencies" == "" ]; then
+ dependencies="+$dep1"
+ else
+ dependencies="$dependencies,+$dep1"
+ fi
+done 
+
+description=`xmllint --xpath "/PISI/Package/Summary" ./metadata.xml | sed -e "s#<Summary xml:lang=\"[Aa-Zz][Aa-Zz]\">##g" -e "s#<\/Summary>##g"`
+
+echo "$pkgname|$nameonly|$version|$pkgrelease|$category|$size|$path|$fullfilename|$dependencies|$description|" > ./pet.specs
+
+rm -f ./files.xml
+rm -f ./metadata.xml
+
+else
+echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+fi
+
+if [ -f install.tar.lzma ]; then
+tar --lzma -xvf install.tar.lzma
+retval=$?
+rm install.tar.lzma
+elif [ -f install.tar.xz ]; then
+unxz install.tar.xz
+tar -xvf install.tar
+retval=$?
+rm install.tar
+rm install.tar.xz
+elif [ -f install.tar.gz ]; then
+tar -zxvf install.tar.gz
+retval=$?
+rm install.tar.gz
+elif [ -f install.tar.bz ]; then
+tar -xjf install.tar.bz
+retval=$?
+rm install.tar.bz
+elif [ -f install.tar.bz2 ]; then
+tar -xjf install.tar.bz2
+retval=$?
+rm install.tar.bz2
+fi
+
+rm "$PAR"
+
+transfer_install
+
+}
+
+install_cards(){
+	
+CARDS=$1
+BNAME="$(basename $CARDS)"
+
+if [ "$(basename $CARDS | grep '.cards.tar.xz')" != "" ]; then
+EXT="cards.tar.xz"
+elif [ "$(basename $CARDS | grep '.cards.tar.gz')" != "" ]; then
+EXT="cards.tar.gz"
+elif [ "$(basename $CARDS | grep '.cards.tar.bz2')" != "" ]; then
+EXT="cards.tar.bz2"
+else
+echo "Not a nutyx package"
+exit
+fi	
+
+if [ "$EXT" == "cards.tar.xz" ]; then
+FOLDR=$(echo $BNAME |sed 's/\.cards.tar.xz$//')
+elif [ "$EXT" == "cards.tar.gz" ]; then
+FOLDR=$(echo $BNAME |sed 's/\.cards.tar.gz$//')
+elif [ "$EXT" == "cards.tar.bz2" ]; then
+FOLDR=$(echo $BNAME |sed 's/\.cards.tar.bz2$//')
+fi
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+cp "$CARDS" "$FOLDR"
+cd "$FOLDR"
+CARDS=`ls | grep ".$EXT"`
+
+tar -xf "$CARDS"
+retval=$?
+
+if [ -f ./.META ]; then
+
+#pkgname|nameonly|version|pkgrelease|category|size|path|fullfilename|dependencies|description|
+
+pkgname="$FOLDR"
+nameonly=`cat ./.META | grep -e "^N" | sed -e "s#^N##g"`
+version=`cat ./.META | grep -e "^V" | sed -e "s#^V##g"`
+pkgrelease=`cat ./.META | grep -e "^r" | sed -e "s#^r##g"`
+size=`cat ./.META | grep -e "^S" | sed -e "s#^S##g"`
+fullfilename="$CARDS"
+dependencies=""
+
+for dep1 in `cat ./.META | grep -e "^b" | sed -e "s#^b##g"`
+do
+ if [ "$dependencies" == "" ]; then
+ dependencies="+$dep1"
+ else
+ dependencies="$dependencies,+$dep1"
+ fi
+done 
+
+description=`cat ./.META | grep -e "^D" | sed -e "s#^D##g"`
+
+echo "$pkgname|$nameonly|$version|$pkgrelease|$category|$size|$path|$fullfilename|$dependencies|$description|" > ./pet.specs
+
+rm -f ./.META
+
+else
+echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+fi
+
+while IFS='' read -r line || [[ -n $line ]]
+do
+echo "/$line" >> ./files.tmp
+done < ./.MTREE
+
+rm ./.MTREE
+
+rm -f $BNAME
+
+transfer_install
+
+}
+
+install_tcz(){
+	
+TCZ=$1
+BNAME="$(basename $TCZ)"
+
+FOLDR=$(echo $BNAME |sed 's/\.tcz$//')
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+cd "$FOLDR"
+cpath=`pwd`
+
+if [ ! -d /mnt/tcz ]; then
+mkdir /mnt/tcz
+fi
+
+mount -o loop "$TCZ" /mnt/tcz
+retval=$?
+if [ $retval -ne 0 ]; then
+ fetch_error
+fi
+
+cp -r /mnt/tcz/* ./
+umount /mnt/tcz
+
+for fld in bin etc lib libexec share sbin
+do
+ if [ -d $cpath/usr/local/$fld ]; then
+  mv -f $cpath/usr/local/$fld $cpath/usr/
+ fi
+done
+
+for file1 in `find $cpath -name "*.desktop"`
+do
+	if [ "$file1" != "" ]; then	
+		if [ "`cat "$file1" | grep "X-FullPathIcon="`" != "" ]; then
+		
+			iconpath=`cat "$file1" | grep "Icon=" | grep "X-FullPathIcon=" | cut -f 2 -d "=" | sed 's#\/usr\/local\/share#\/usr\/share#g' | sed 's#\/#\\\/#g'`		
+			icon1=`cat "$file1" | grep "Icon=" | grep -v "X-FullPathIcon=" | cut -f 2 -d "=" | sed 's#\/#\\\/#g'`
+			
+			#sed -i -e "s#Icon=$icon1#Icon=$iconpath#g" $file1
+			sed -i -e 's#\/usr\/local\/share#\/usr\/share#g' -e 's#\/usr\/local\/bin#\/usr\/bin#g' -e 's#\/usr\/local\/sbin#\/usr\/sbin#g' -e 's#\/usr\/local\/libexec#\/usr\/libexec#g' $file1
+			
+		fi
+	fi
+done
+
+if [ -d /mnt/tcz ]; then
+rmdir /mnt/tcz
+fi
+
+#rm -f $BNAME
+
+find ./ -type f -name '*' | grep -Ev "^.\/$" | sed -e "s/.//" | grep -v "pet.specs" | grep -v "files.tmp" > ./files.tmp
+
+echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+
+transfer_install
+	
+}
+
+install_dsl(){
+
+DSL=$1
+BNAME="$(basename $DSL)"
+
+FOLDR=`basename $DSL .dsl`
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+
+cp "$DSL" "$FOLDR"
+
+cd "$FOLDR"
+cpath="/var/tmp/$FOLDR"
+DSL=`ls | grep ".dsl"`
+
+tar -zxf /var/tmp/$FOLDR/$BNAME
+retval=$?
+
+
+rm "$DSL"
+
+iconpath=""
+
+
+	if [ -f $cpath/tmp/mydsl.menu/$FOLDR ]; then
+	
+	while IFS='' read -r line || [[ -n $line ]]
+	do
+	
+		execfound=`echo $line | cut -f 2 -d "[" | cut -f 1 -d "]"`
+
+		if [ "$execfound" == "exec" ]; then
+		
+		echo "$line"
+
+		appname=`echo $line | cut -f 2 -d "(" | cut -f 1 -d ")"`
+		binname=`echo $line | cut -f 2 -d "{" | cut -f 1 -d "}"`
+
+		if [ ! -d $cpath/usr ]; then
+		mkdir $cpath/usr
+		fi
+
+		if [ ! -d $cpath/usr/share ]; then
+		mkdir $cpath/usr/share	
+		fi
+
+		if [ -d $cpath/tmp/mydsl.icons ]; then
+
+			if [ ! -d $cpath/usr/share/pixmaps ]; then
+			mkdir $cpath/usr/share/pixmaps	
+			fi
+
+			if [ -f $cpath/tmp/mydsl.icons/$FOLDR.xpm ]; then
+			iconpath="$cpath/tmp/mydsl.icons/$FOLDR.xpm"
+			iconb=`basename $iconpath`
+			elif [ -f $cpath/tmp/mydsl.icons/$FOLDR.png ]; then
+			iconpath="$cpath/tmp/mydsl.icons/$FOLDR.png"
+			iconb=`basename $iconpath`
+			elif [ -f $cpath/usr/share/pixmaps/$FOLDR.xpm ]; then
+			iconpath="$cpath/usr/share/pixmaps/$FOLDR.xpm"
+			iconb=`basename $iconpath`
+			elif [ -f $cpath/usr/share/pixmaps/$FOLDR.png ]; then
+			iconpath="$cpath/usr/share/pixmaps/$FOLDR.png"
+			iconb=`basename $iconpath`
+			fi
+			
+			if [ "$iconpath" != "" ]; then
+			cp $iconpath $cpath/usr/share/pixmaps/$iconb
+			iconpath="/usr/share/pixmaps/$iconb"
+			fi
+		fi
+
+
+		if [ ! -d $cpath/usr/share/applications ]; then
+			mkdir -p $cpath/usr/share/applications	
+		fi
+
+		PKGNAME="$appname"
+
+		echo "[Desktop Entry]" > $cpath/usr/share/applications/${PKGNAME}.desktop
+		echo "Encoding=UTF-8" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+		echo "Type=Application" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+		echo "Name=$appname" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+		echo "Comment=Damn Small Linux application" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+		echo "Exec=$binname" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+
+			if [ "$iconpath" != "" ]; then
+			echo "Icon=$iconpath" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+			else
+			echo "Icon=mini-dog.xpm" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+			fi
+
+		echo "Terminal=false" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+		echo "Categories=Utility;All;Applications;App;Apps;Program" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+		echo "StartupNotify=false" >> $cpath/usr/share/applications/${PKGNAME}.desktop
+
+		fi
+	
+	done < $cpath/tmp/mydsl.menu/$FOLDR
+
+	rm -rf $cpath/tmp/mydsl.menu
+	rm -rf $cpath/tmp/mydsl.icons
+
+	fi
+	
+cpath="$(pwd | sed -e "s#\/#\\\/#g")"	
+
+find ./ -type f -name '*' | grep -Ev "^.\/$" | sed -e "s/.//" | grep -v "pet.specs" | grep -v "files.tmp" > ./files.tmp
+
+echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+
+transfer_install
+	
+}
+
+install_slp(){
+
+SLP=$1
+BNAME="$(basename $SLP)"
+FOLDR=$(echo $BNAME |sed 's/\.slp$//')
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+cp "$SLP" "$FOLDR"
+cd "$FOLDR"
+SLP=`ls | grep ".slp"`
+
+tar -xf /var/tmp/$FOLDR/$BNAME
+retval=$?
+
+rm "$SLP"
+
+cpath="$(pwd | sed -e "s#\/#\\\/#g")"
+
+find ./ -type f -name '*' | grep -Ev "^.\/$" | sed -e "s/.//" | grep -v "pet.specs" | grep -v "files.tmp" > ./files.tmp
+
+echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+
+transfer_install
+
+}
+
+install_lzm(){
+
+LZM=$1
+
+BNAME="$(basename $LZM)"
+
+FOLDR=$(echo $BNAME |sed 's/\.lzm$//')
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+
+cd "$FOLDR"
+
+if [ ! -d /mnt/lzm ]; then
+mkdir /mnt/lzm
+fi
+	
+mount -o loop "$LZM" /mnt/lzm
+retval=$?
+if [ $retval -ne 0 ]; then
+ fetch_error
+fi
+
+cp -r /mnt/lzm/* ./
+umount /mnt/lzm
+
+if [ -d /mnt/lzm ]; then
+ rmdir /mnt/lzm
+fi
+
+cpath="$(pwd | sed -e "s#\/#\\\/#g")"
+
+find ./ -type f -name '*' | grep -Ev "^.\/$" | sed -e "s/.//" | grep -v "pet.specs" | grep -v "files.tmp" > ./files.tmp
+
+echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+
+transfer_install
+
+}
+
+install_xzm(){
+
+XZM=$1
+
+BNAME="$(basename $XZM)"
+
+FOLDR=$(echo $BNAME |sed 's/\.xzm$//')
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+
+cd "$FOLDR"
+
+if [ ! -d /mnt/xzm ]; then
+mkdir /mnt/xzm
+fi
+	
+mount -o loop "$XZM" /mnt/xzm
+retval=$?
+if [ $retval -ne 0 ]; then
+ fetch_error
+fi
+
+cp -r /mnt/xzm/* ./
+umount /mnt/xzm
+
+if [ -d /mnt/xzm ]; then
+ rmdir /mnt/xzm
+fi
+
+cpath="$(pwd | sed -e "s#\/#\\\/#g")"
+
+find ./ -type f -name '*' | grep -Ev "^.\/$" | sed -e "s/.//" | grep -v "pet.specs" | grep -v "files.tmp" > ./files.tmp
+
+echo "$FOLDR|$FOLDR||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+
+transfer_install
+
+}
+
+install_tce(){
+
+TCE=$1
+
+case "$TCE" in
+*.tcel) ext1=".tcel";;
+*.tcem) ext1=".tcem";;
+*)      ext1=".tce";;
+esac
+
+BNAME="$(basename $TCE)"
+
+FOLDR=$(echo $BNAME |sed 's/\'$ext1'$//')
+
+cd /var/tmp
+
+mkdir "$FOLDR"
+cp "$TCE" "/var/tmp/$FOLDR"
+cd "$FOLDR"
+cpath=`pwd`
+
+TCE=`ls | grep "$ext1"`
+
+tar -xzf "$TCE"
+retval=$?
+if [ $retval -ne 0 ]; then
+ fetch_error
+fi
+
+package=${TCE%%-[0-9\.]*}
+
+if [ -f $cpath/usr/local/tce.installed/$package ]; then
+ mv -f $cpath/usr/local/tce.installed/$package $cpath/pinstall.sh
+fi
+
+for fld in bin etc lib libexec share sbin
+do
+ if [ -d $cpath/usr/local/$fld ]; then
+  mv -f $cpath/usr/local/$fld $cpath/usr/
+ fi
+done
+
+for file1 in `find $cpath -name "*.desktop"`
+do
+	if [ "$file1" != "" ]; then	
+		if [ "`cat "$file1" | grep "X-FullPathIcon="`" != "" ]; then
+		
+			iconpath=`cat "$file1" | grep "Icon=" | grep "X-FullPathIcon=" | cut -f 2 -d "=" | sed 's#\/usr\/local\/share#\/usr\/share#g' | sed 's#\/#\\\/#g'`		
+			icon1=`cat "$file1" | grep "Icon=" | grep -v "X-FullPathIcon=" | cut -f 2 -d "=" | sed 's#\/#\\\/#g'`
+			
+			#sed -i -e "s#Icon=$icon1#Icon=$iconpath#g" $file1
+			sed -i -e 's#\/usr\/local\/share#\/usr\/share#g' -e 's#\/usr\/local\/bin#\/usr\/bin#g' -e 's#\/usr\/local\/sbin#\/usr\/sbin#g' -e 's#\/usr\/local\/libexec#\/usr\/libexec#g' $file1
+			
+		fi
+	fi
+done
+
+rm -f $BNAME
+
+cpath="$(pwd | sed -e "s#\/#\\\/#g")"
+
+find ./ -type f -name '*' | grep -Ev "^.\/$" | sed -e "s/.//" | grep -v "pet.specs" | grep -v "files.tmp" > ./files.tmp
+
+echo "$FOLDR|$package||||${PKGSIZEK}K||${BNAME}|||" > ./pet.specs
+
+transfer_install
+	
+}
+
+MODE="$1"
+PKGFNAME="$2"
+TARGET_PATH="$3"
+
+PKGSIZEB=`stat --format=%s "$PKGFNAME"`
+PKGSIZEK=`expr $PKGSIZEB \/ 1024`
+
+if [ ! -f $PKGFNAME ]; then
+ exit 50
+fi
+
+if [ "$TARGET_PATH" == "" ]; then
+ TARGET_PATH="/"
+fi
+
+if [ "$MODE" == "pisi" ]; then
+ install_pisi "$PKGFNAME"
+elif [ "$MODE" == "taz" ]; then
+ install_taz "$PKGFNAME"
+elif [ "$MODE" == "sb" ]; then
+ install_sb "$PKGFNAME"
+elif [ "$MODE" == "pfs" ]; then
+ install_pfs "$PKGFNAME"
+elif [ "$MODE" == "apk" ]; then
+ install_apk "$PKGFNAME"
+elif [ "$MODE" == "spack" ]; then
+ install_spack "$PKGFNAME"
+elif [ "$MODE" == "ipk" ]; then
+ install_ipk "$PKGFNAME"
+elif [ "$MODE" == "xbps" ]; then
+ install_xbps "$PKGFNAME"
+elif [ "$MODE" == "eopkg" ]; then
+ install_eopkg "$PKGFNAME"
+elif [ "$MODE" == "cards" ]; then
+ install_cards "$PKGFNAME"
+elif [ "$MODE" == "tcz" ]; then
+ install_tcz "$PKGFNAME"
+elif [ "$MODE" == "tce" ]; then
+ install_tce "$PKGFNAME" 
+elif [ "$MODE" == "dsl" ]; then
+ install_dsl "$PKGFNAME"
+elif [ "$MODE" == "slp" ]; then
+ install_slp "$PKGFNAME"
+elif [ "$MODE" == "lzm" ]; then
+ install_lzm "$PKGFNAME" 
+elif [ "$MODE" == "xzm" ]; then
+ install_xzm "$PKGFNAME" 
+else
+ exit 51
+fi

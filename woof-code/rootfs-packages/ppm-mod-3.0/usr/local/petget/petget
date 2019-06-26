@@ -1,0 +1,600 @@
+#!/bin/sh
+#(c) Copyright Barry Kauler 2009, puppylinux.com
+#2009 Lesser GPL licence v2 (http://www.fsf.org/licensing/licenses/lgpl.html).
+#Note: Puppy Package Manager is started from /usr/local/petget/pkg_chooser.sh for the GUI.
+#'petget' is for commandline execution, especially from ROX-Filer.
+#If passed param is a pkg name preceded by a + to install pkg, - to uninstall pkg.
+# example: +xbubble-0.2.4
+#For integration with Rox-Filer, commandline is a .pet|.deb|.tgz|.tar,gz with absolute path, install.
+# ex: petget /root/xbubble-0.2.4.pet
+#For integration with browser, ex: petget http://somewhere.on.internet/xbubble-0.2.4.pet
+#Note, petget also get called from /etc/rc.d/rc.update to remove packages. ex:
+# petget -xbubble-0.2.4
+# ...when X not running, removal will not put up any DLG windows, will remove without question.
+#w482 restart jwm immediately to update menu.
+#v424 fix .pet in path with space chars.
+#100616 add support for .txz slackware pkgs.
+#101116 call download_file to download pkg, instead of direct run of wget.
+#101221 yaf-splash fix.
+#110505 support sudo for non-root user.
+#110523 support for rpm pkgs.
+#120101 01micko: jwm >=547 has -reload, no screen flicker.
+#120116 rev. 514 introduced icon rendering method which broke -reload at 547. fixed at rev. 574.
+#120203 BK: internationalized.
+#120323 replace 'xmessage' with 'pupmessage'.
+#120504 now have /tmp/petget-proc/petget folder.
+#120719 support raspbian.
+#120819 having a category does not mean there will also be a menu entry.
+#120927 want to translate "CATEGORY:" and "PACKAGE:" that are in /tmp/petget-proc/petget-installed-pkgs-log (see installpkg.sh).
+#121011 L18L reported problem, category names also need translating.
+#160804 mistfire Add PUP package support
+
+export TEXTDOMAIN=petget___petget
+export OUTPUT_CHARSET=UTF-8
+
+[ "`whoami`" != "root" ] && exec sudo -A ${0} ${@} #110505
+
+if [ ! $1 ]; then
+exec /usr/local/petget/pkg_chooser.sh
+exit
+fi
+
+#export LANG=C
+. /etc/DISTRO_SPECS #has DISTRO_BINARY_COMPAT, DISTRO_COMPAT_VERSION
+
+PASSEDPARAM="$1"
+
+mkdir -p /tmp/petget-proc
+mkdir -p /tmp/petget-proc/petget #120504
+
+rm -f /tmp/petget-proc/{remove,install}_{,pets_}quietly 2>/dev/null
+
+[ ! "$DISPLAY" ] && touch /tmp/petget-proc/install_quietly
+
+if [ "`echo -n "$PASSEDPARAM" | grep '^\\-'`" != "" ];then
+ #remove a package...
+ PKGNAME="$(echo -n "$PASSEDPARAM" | cut -c 2-199)"
+ PKGNAME="$(basename $PKGNAME)"
+ if [ ! "$DISPLAY" ]; then
+  touch /tmp/petget-proc/remove_pets_quietly
+ fi
+ [ "$(echo "$PKGNAME" | rev | cut -f 1 -d '.' | rev | grep -E 'deb|pet|tgz|rpm|txz|pup')" != "" ] \
+  && TREE2=$(echo "$PKGNAME" | rev | cut -f 2-20 -d '.' | rev) || \
+   TREE2="$PKGNAME"
+ export TREE2
+ /usr/local/petget/removepreview.sh
+ exit
+fi
+
+#want to install a pkg...
+
+COMPAT_EXT=""
+case $DISTRO_BINARY_COMPAT in
+ slackware)
+  COMPAT_EXT=".tgz"
+ ;;
+ debian|devuan|ubuntu|raspbian)
+  COMPAT_EXT=".deb"
+ ;;
+ arch)
+  COMPAT_EXT=".tar.gz"
+ ;;
+ scientific|redhat|mandriva|mageia) #110523
+  COMPAT_EXT=".rpm"
+ ;;
+esac
+
+#what type is it...
+PASSEDBASE="`basename "$PASSEDPARAM"`"
+
+case $PASSEDBASE in
+ *.pet)
+  EXT=".pet"
+ ;;
+ *.deb)
+  EXT=".deb"
+ ;;
+ *.tgz)
+  EXT=".tgz"
+ ;;
+ *.txz)
+  EXT=".txz"
+ ;;
+ *.tar.gz)
+  EXT=".tar.gz"
+ ;;
+ *.tar.xz)
+  EXT=".tar.gz"
+ ;;
+ *.rpm) #110523
+  EXT=".rpm"
+ ;;
+  *.pup)
+  EXT=".pup"
+ ;;
+  *.sb)
+  EXT=".sb"
+ ;;
+  *.apk)
+  EXT=".apk"
+ ;;
+  *.spack)
+  EXT=".spack"
+ ;;
+  *.ipk)
+  EXT=".ipk"
+ ;;
+  *.xbps)
+  EXT=".xbps"
+ ;;
+  *.eopkg)
+  EXT=".eopkg"
+ ;;
+  *.pisi)
+  EXT=".pisi"
+ ;; 
+  *.tcz)
+  EXT=".tcz"
+ ;;
+  *.tce)
+  EXT=".tce"
+ ;;
+  *.tcel)
+  EXT=".tcel"
+ ;;
+  *.tcem)
+  EXT=".tcem"
+ ;;
+  *.dsl)
+  EXT=".dsl"
+ ;; 
+  *.pfs)
+  EXT=".pfs"
+ ;;
+  *.slp)
+  EXT=".slp"
+ ;;
+  *.tazpkg)
+  EXT=".tazpkg"
+ ;;
+  *.lzm)
+  EXT=".lzm"
+ ;;
+  *.xzm)
+  EXT=".xzm"
+ ;;
+ *)
+  EXT=""
+ ;;
+esac
+
+if [ "$EXT" == ""  ]; then
+	if [ "$DISPLAY" != "" ]; then
+	 /usr/lib/gtkdialog/box_ok "$(gettext 'Puppy package manager')" error "$(gettext 'Sorry, Invalid Package') $PASSEDBASE"
+	 exit
+	else
+	 dialog --msgbox "$(gettext 'Sorry, Invalid Package') $PASSEDBASE" 0 0
+	 exit
+	fi
+fi
+
+#download if required...
+PKGNAME=""
+DOWNLOADED=""
+if [ "`echo -n "$PASSEDPARAM" | grep -E '^ftp|^http'`" != "" ];then
+ cd /root
+ #101116 use download_file utility...
+ download_file "$PASSEDPARAM"
+ PKGPATH="`dirname "$PASSEDPARAM"`" #really a url.
+ FULLPKGNAME="`basename "$PASSEDPARAM"`"
+ PKGMAIN="`basename "$PASSEDPARAM" ${EXT}`"
+ if [ ! -f "$FULLPKGNAME" ];then
+  if [ "$DISPLAY"  ]; then
+   /usr/lib/gtkdialog/box_ok "$(gettext 'Puppy package manager')" error "$(gettext 'Sorry, failed to download') $FULLPKGNAME"
+   exit
+  else
+   dialog --msgbox "$(gettext 'Sorry, failed to download') $FULLPKGNAME" 0 0
+   exit
+  fi
+ fi
+ DOWNLOADED="yes"
+else
+ #get rid of any leading '+'...
+ PASSEDPARAM="`echo -n "$PASSEDPARAM" | sed -e 's%^+%%'`"
+ FIRSTCHAR="`echo -n "$PASSEDPARAM" | cut -c 1`"
+ if [ "$FIRSTCHAR" = "/" -o "$FIRSTCHAR" = "." ];then
+  PKGPATH="`dirname "$PASSEDPARAM"`"
+  FULLPKGNAME="`basename "$PASSEDPARAM"`"
+  PKGMAIN="`basename "$PASSEDPARAM" ${EXT}`"
+ else
+  PKGPATH="`pwd`"
+  if [ "$EXT" = "" ];then
+   PKGMAIN="$PASSEDPARAM"
+   FULLPKGNAME="${PKGMAIN}.pet"
+   EXT=".pet"
+  else
+   FULLPKGNAME="`basename "$PASSEDPARAM"`"
+   PKGMAIN="`basename "$PASSEDPARAM" ${EXT}`"
+  fi
+ fi
+ cp -f "${PKGPATH}/${FULLPKGNAME}" /var/tmp 2>/dev/null #v424 fix if spaces in path.
+fi
+originPKGPATH="$PKGPATH" #w482
+
+PKGPATH=/var/tmp
+
+. /etc/rc.d/PUPSTATE
+
+case $PUPMODE in
+  6|12)
+   if [ -L /initrd/pup_rw ]; then
+    SIZEFREEM=`df -m | grep ' /initrd/mnt/dev_save$' | tr -s ' ' | cut -f 4 -d ' '`
+   else
+    SIZEFREEM=`df -m | grep ' /initrd/pup_rw$' | tr -s ' ' | cut -f 4 -d ' '`
+   fi
+  ;;
+  3|7|13)
+   if [ -L /initrd/pup_ro1 ]; then
+    SIZEFREEM=`df -m | grep ' /initrd/mnt/dev_save$' | tr -s ' ' | cut -f 4 -d ' '`
+   else
+    SIZEFREEM=`df -m | grep ' /initrd/pup_ro1$' | tr -s ' ' | cut -f 4 -d ' '`
+   fi
+  ;;
+  16|24|17|25)
+   memFREEK=`free | grep -o 'Mem: .*' | tr -s ' ' | cut -f 4 -d ' '`
+   swapFREEK=`free | grep -o 'Swap: .*' | tr -s ' ' | cut -f 4 -d ' '`
+   SIZEFREEK=`expr $memFREEK + $swapFREEK`
+   SIZEFREEM=`expr $SIZEFREEK \/ 1024`
+  ;;
+  *)
+   SIZEFREEM=`df -m | grep ' /$' | head -n 1 | tr -s ' ' | cut -f 4 -d ' '` #110509 rerwin: insert head -n 1
+  ;;
+esac
+
+SIZEFREEK=`expr $SIZEFREEM \* 1024`
+
+PKGSIZEB=`stat --format=%s "${PKGPATH}/${FULLPKGNAME}"`
+PKGSIZEK=`expr $PKGSIZEB \/ 1024`
+EXPSIZEK=`expr $PKGSIZEK \* 5`
+
+if [ $SIZEFREEK -le $EXPSIZEK ]; then
+	if [ "$DISPLAY" != "" ]; then
+	 /usr/lib/gtkdialog/box_ok "$(gettext 'Puppy package manager')" error "$(gettext 'Sorry, the package is too big to install. Free some disk space') $PASSEDBASE"
+	 exit
+	else
+	 dialog --msgbox "$(gettext 'Sorry, the package is too big to install. Free some disk space') $PASSEDBASE" 0 0
+	 exit
+	fi
+fi
+
+#split PKGMAIN, ex: FULLPKGNAME=xvidtune-1.0.1-i486-1.tgz has PKGNAME=xvidtune-1.0.1
+ case $EXT in
+  .deb)
+   #deb ex: xsltproc_1.1.24-1ubuntu2_i386.deb  xserver-common_1.5.2-2ubuntu3_all.deb
+   DB_nameonly="`echo -n "$PKGMAIN" | cut -f 1 -d '_'`"
+   DB_pkgrelease="`echo -n "$PKGMAIN" | rev | cut -f 2 -d '_' | cut -f 1 -d '-' | rev`"
+   prPATTERN="s%\\-${DB_pkgrelease}.*%%"
+   PKGNAME="`echo -n "$PKGMAIN" | sed -e "$prPATTERN"`"
+   DB_version="`echo "$PKGNAME" | cut -f 2 -d '_'`"
+  ;;
+  .pet)
+   PKGNAME="$PKGMAIN"
+   DB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%'`"
+   xDB_version="`echo -n "$DB_version" | sed -e 's%\\-%\\\\-%g' -e 's%\\.%\\\\.%g'`"
+   xPATTERN="s%${xDB_version}%%"
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "$xPATTERN" -e 's%\-$%%'`"
+   DB_pkgrelease=""
+  ;;
+  .pup)
+   PKGNAME="$PKGMAIN"
+   DB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%'`"
+   xDB_version="`echo -n "$DB_version" | sed -e 's%\\-%\\\\-%g' -e 's%\\.%\\\\.%g'`"
+   xPATTERN="s%${xDB_version}%%"
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "$xPATTERN" -e 's%\-$%%'`"
+   DB_pkgrelease=""
+  ;;
+  .tgz|.txz)
+   #slack ex: xvidtune-1.0.1-i486-1.tgz  printproto-1.0.4-noarch-1.tgz
+   PKGNAME="`echo -n "$PKGMAIN" | sed -e 's%\-i[3456]86.*%%' -e 's%\-noarch.*%%'`"
+   DB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%'`"
+   xDB_version="`echo -n "$DB_version" | sed -e 's%\\-%\\\\-%g' -e 's%\\.%\\\\.%g'`"
+   xPATTERN="s%${xDB_version}%%"
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "$xPATTERN" -e 's%\-$%%'`"
+   DB_pkgrelease="`echo -n "$PKGMAIN" | sed -e 's%.*\-i[3456]86%%' -e 's%.*\-noarch%%' -e 's%^\-%%'`"
+  ;;
+  .tar.gz|.tar.xz)
+   #arch ex: xproto-7.0.14-1-i686.pkg.tar.gz  trapproto-3.4.3-1.pkg.tar.gz
+   PKGNAME="`echo -n "$PKGMAIN" | sed -e 's%\-i[3456]86.*%%' -e 's%\.pkg$%%' | rev | cut -f 2-9 -d '-' | rev`"
+   DB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%'`"
+   xDB_version="`echo -n "$DB_version" | sed -e 's%\\-%\\\\-%g' -e 's%\\.%\\\\.%g'`"
+   xPATTERN="s%${xDB_version}%%"
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "$xPATTERN" -e 's%\-$%%'`"
+   DB_pkgrelease="`echo -n "$PKGMAIN" | sed -e 's%\-i[3456]86.*%%' -e 's%\.pkg$%%' | rev | cut -f 1 -d '-' | rev`"
+  ;;
+  .rpm) #110523
+   #exs: hunspell-fr-3.4-1.1.el6.noarch.rpm
+   PKGNAME="$PKGMAIN"
+   DB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%'`"
+   xDB_version="`echo -n "$DB_version" | sed -e 's%\\-%\\\\-%g' -e 's%\\.%\\\\.%g'`"
+   xPATTERN="s%${xDB_version}%%"
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "$xPATTERN" -e 's%\-$%%'`"
+   DB_pkgrelease=""
+  ;;
+  .sb)
+   PKGNAME="$PKGMAIN"
+   DB_version=""
+   xDB_version=""
+   xPATTERN=""
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "s/^[0-9]\-//"`"
+   DB_pkgrelease=""
+  ;;
+  .tcz)
+   PKGNAME="$PKGMAIN"
+   DB_version=""
+   xDB_version=""
+   xPATTERN=""
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "s/^[0-9]\-//"`"
+   DB_pkgrelease=""
+  ;;
+  .apk)
+   PKGNAME="$PKGMAIN"
+   DB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%g' | cut -f 1 -d '-'`"
+   xDB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*'`"
+   xPATTERN="s%${xDB_version}%%"
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "$xPATTERN"`"
+   DB_pkgrelease="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%g' | cut -f 2 -d '-' | sed -e "s%^r%%"`"
+  ;;
+  .spack)
+   PKGNAME="`echo -n "$PKGMAIN" | sed -e 's%\-i[3456]86.*%%' -e 's%\-noarch.*%%'`"
+   DB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%'`"
+   xDB_version="`echo -n "$DB_version" | sed -e 's%\\-%\\\\-%g' -e 's%\\.%\\\\.%g'`"
+   xPATTERN="s%${xDB_version}%%"
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "$xPATTERN" -e 's%\-$%%'`"
+   DB_pkgrelease="`echo -n "$PKGMAIN" | sed -e 's%.*\-i[3456]86%%' -e 's%.*\-noarch%%' -e 's%.*\-x86_64%%' -e 's%.*\-amd64%%' -e 's%^\-%%'`"
+  ;;
+  .ipk)
+   DB_nameonly="`echo -n "$PKGMAIN" | cut -f 1 -d '_'`"
+   DB_pkgrelease="`echo -n "$PKGMAIN" | rev | cut -f 2 -d '_' | cut -f 1 -d '-' | rev`"
+   prPATTERN="s%\-${DB_pkgrelease}.*%%"
+   PKGNAME="`echo -n "$PKGMAIN" | sed -e "$prPATTERN"`"
+   DB_version="`echo "$PKGNAME" | cut -f 2 -d '_'`"
+  ;;
+  .xbps)
+   DB_nameonly="`echo -n "$PKGMAIN" | cut -f 1 -d '_' | rev | cut -f 2 -d '-' | rev`"
+   DB_pkgrelease="`echo -n "$PKGMAIN" | cut -f 2 -d '_' | cut -f 1 -d '.'`"
+   PKGNAME="`echo -n "$PKGMAIN" | sed -e 's%.*\-i[3456]86%%' -e 's%.*\-noarch%%' -e 's%.*\-x86_64%%' -e 's%.*\-amd64%%'`"
+   DB_version="`echo -n "$PKGMAIN" | cut -f 1 -d '_' | rev | cut -f 1 -d '-' | rev`"
+  ;;
+  .eopkg)
+   PKGNAME="$PKGMAIN"
+   DB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%' | cut -f 1 -d '-'`"
+   xDB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*'`"
+   xPATTERN="s%${xDB_version}%%"
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "$xPATTERN" -e 's%\-$%%'`"
+   DB_pkgrelease="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%' | cut -f 2 -d '-'`"
+  ;;
+  .cards.tar.xz|.cards.tar.gz)
+   PKGNAME="$PKGMAIN"
+   DB_version=""
+   xDB_version=""
+   xPATTERN=""
+   DB_nameonly="$PKGMAIN"
+   DB_pkgrelease=""
+  ;;
+  .pisi)
+   PKGNAME="$PKGMAIN"
+   DB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%' | cut -f 1 -d '-'`"
+   xDB_version="`echo "$PKGNAME" | grep -o '\-[0-9].*'`"
+   xPATTERN="s%${xDB_version}%%"
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "$xPATTERN" -e 's%\-$%%'`"
+   DB_pkgrelease="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%' | cut -f 2-d '-'`"
+  ;;
+  .dsl|.slp)
+   PKGNAME="$PKGMAIN"
+   DB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%'`"
+   xDB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*'`"
+   xPATTERN="s%${xDB_version}%%"
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "$xPATTERN" -e 's%\-$%%'`"
+   DB_pkgrelease=""
+  ;;
+  .pfs)
+   PKGNAME="$PKGMAIN"
+   DB_version="`echo -n "$PKGNAME" | grep -o '\-[0-9].*' | sed -e 's%^\-%%'`"
+   xDB_version="`echo -n "$DB_version" | sed -e 's%\\-%\\\\-%g' -e 's%\\.%\\\\.%g'`"
+   xPATTERN="s%${xDB_version}%%"
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "$xPATTERN" -e 's%\-$%%'`"
+   DB_pkgrelease=""
+  ;;
+  .lzm)
+   PKGNAME="$PKGMAIN"
+   DB_version=""
+   xDB_version=""
+   xPATTERN=""
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "s/^[0-9]\-//"`"
+   DB_pkgrelease=""
+  ;;
+  .xzm)
+   PKGNAME="$PKGMAIN"
+   DB_version=""
+   xDB_version=""
+   xPATTERN=""
+   DB_nameonly="`echo -n "$PKGNAME" | sed -e "s/^[0-9]\-//"`"
+   DB_pkgrelease=""
+  ;;
+ esac
+
+cd "$PKGPATH" #well, this is /root
+
+#confirm want to install...
+if [ "$DISPLAY" ]; then
+ . /usr/lib/gtkdialog/box_yesno "$(gettext 'Puppy Package Manager')" "$(gettext 'Do you want to install this package:')" "<b>${FULLPKGNAME}</b>"
+ if [ "$EXIT" != "yes" ]; then
+  if [ "$DOWNLOADED" = "yes" -o "$originPKGPATH" = "/root" ]; then
+   exit 0
+  else
+   #rm -f /root/${FULLPKGNAME}
+   exit 0
+  fi
+ fi
+else
+  dialog --yesno "$(gettext 'Do you want to install this package:') $FULLPKGNAME" 0 0
+  if [ $? -ne 0 ];then
+  if [ "$DOWNLOADED" = "yes" -o "$originPKGPATH" = "/root" ]; then
+   exit 0
+  else
+   #rm -f /root/${FULLPKGNAME}
+   exit 0
+  fi
+ fi
+fi
+
+if [ "$EXT" = ".pup" ];then
+exec dotpuprox2 $PASSEDPARAM
+exit
+fi
+
+#find entry in databases...
+#pkgname|nameonly|version|pkgrelease|category|size|path|fullfilename|dependencies|description|
+#optionally on the end: compileddistro|compiledrelease|repo| (fields 11,12,13)
+pPATTERN='^'"$PKGNAME"'|'
+if [ "$EXT" = ".pet" ];then
+ DB_ENTRY="`cat /root/.packages/repo/Packages-puppy-* | grep "$pPATTERN" | sort -r | head -n 1`"
+else
+ DB_ENTRY="`cat /root/.packages/repo/Packages-${DISTRO_BINARY_COMPAT}-* | grep "$pPATTERN" | head -n 1`"
+fi
+
+#w482 doesn't matter if incomplete, installpkg.sh will read .desktop file for description and category...
+#also, if .pet pkg has pet.specs, that will get written to /root/.packages/user-packages-installed
+if [ "$DB_ENTRY" = "" ];then
+ DB_ENTRY="${PKGNAME}|${DB_nameonly}|${DB_version}|${DB_pkgrelease}||||${FULLPKGNAME}|||"
+fi
+
+#w482 hack, if pkg was originally at /root then don't delete it...
+[ "$originPKGPATH" = "$PKGPATH" ] && cp -f ${PKGPATH}/${FULLPKGNAME} ${PKGPATH}/${FULLPKGNAME}-TEMPBACKUP
+
+#install pkg...
+rm -f /tmp/petget-proc/petget_missing_dbentries-Packages-* 2>/dev/null
+rm -f /tmp/petget-proc/petget-installed-pkgs-log 2>/dev/null
+echo "$DB_ENTRY" > /tmp/petget-proc/petget_missing_dbentries-Packages-alien
+/usr/local/petget/installpkg.sh $PKGPATH/$FULLPKGNAME
+RETVAL=$?
+
+#installpkg.sh has already done this...
+rm -f $PKGPATH/$FULLPKGNAME 2>/dev/null
+rm -f $PKGPATH/${PKGNAME}.tar.gz 2>/dev/null
+
+#w482 hack, if pkg was originally at /root then don't delete it...
+[ "$originPKGPATH" = "$PKGPATH" ] && mv -f ${PKGPATH}/${FULLPKGNAME}-TEMPBACKUP ${PKGPATH}/${FULLPKGNAME}
+
+#announce result...
+if [ $RETVAL -ne 0 -o ! -s /tmp/petget-proc/petget-installed-pkgs-log ];then
+ ISTHERE="$(grep ${FULLPKGNAME} /root/.packages/user-installed-packages)"
+ if [ "$DISPLAY" ]; then
+  [ "$ISTHERE" = "" ] && . /usr/lib/gtkdialog/box_ok "$(gettext 'Puppy Package Manager')" error "<b>${FULLPKGNAME} $(gettext 'failed to install')</b>"
+  exit
+ else
+  [ "$ISTHERE" = "" ] && dialog --msgbox "$FULLPKGNAME $(gettext ' failed to install') " 0 0
+  exit
+ fi
+fi
+
+INSTALLEDMSG="`cat /tmp/petget-proc/petget-installed-pkgs-log`"
+#121011 L18L reported problem, category names also need translating...
+ZDesktop="$(gettext 'Desktop')"
+ZSystem="$(gettext 'System')"
+ZSetup="$(gettext 'Setup')"
+ZUtility="$(gettext 'Utility')"
+ZFilesystem="$(gettext 'Filesystem')"
+ZGraphic="$(gettext 'Graphic')"
+ZDocument="$(gettext 'Document')"
+ZBusiness="$(gettext 'Business')"
+ZPersonal="$(gettext 'Personal')"
+ZNetwork="$(gettext 'Network')"
+ZInternet="$(gettext 'Internet')"
+ZMultimedia="$(gettext 'Multimedia')"
+ZFun="$(gettext 'Fun')"
+ZHelp="$(gettext 'Help')"
+Znone="$(gettext 'none')"
+ZPTNDesktop="s%CATEGORY: Desktop%CATEGORY: ${ZDesktop}%"
+ZPTNSystem="s%CATEGORY: System%CATEGORY: ${ZSystem}%"
+ZPTNSetup="s%CATEGORY: Setup%CATEGORY: ${ZSetup}%"
+ZPTNUtility="s%CATEGORY: Utility%CATEGORY: ${ZUtility}%"
+ZPTNFilesystem="s%CATEGORY: Filesystem%CATEGORY: ${ZFilesystem}%"
+ZPTNGraphic="s%CATEGORY: Graphic%CATEGORY: ${ZGraphic}%"
+ZPTNDocument="s%CATEGORY: Document%CATEGORY: ${ZDocument}%"
+ZPTNBusiness="s%CATEGORY: Business%CATEGORY: ${ZBusiness}%"
+ZPTNPersonal="s%CATEGORY: Personal%CATEGORY: ${ZPersonal}%"
+ZPTNNetwork="s%CATEGORY: Network%CATEGORY: ${ZNetwork}%"
+ZPTNInternet="s%CATEGORY: Internet%CATEGORY: ${ZInternet}%"
+ZPTNMultimedia="s%CATEGORY: Multimedia%CATEGORY: ${ZMultimedia}%"
+ZPTNFun="s%CATEGORY: Fun%CATEGORY: ${ZFun}%"
+ZPTNHelp="s%CATEGORY: Help%CATEGORY: ${ZHelp}%"
+ZPTNnone="s%CATEGORY: none%CATEGORY: ${Znone}%"
+#120927 want to translate "CATEGORY:" and "PACKAGE:" that are in /tmp/petget-proc/petget-installed-pkgs-log (see installpkg.sh)...
+#note, same code in downloadpkgs.sh...
+ZCATEGORY="$(gettext 'CATEGORY:')"
+ZPACKAGE="$(gettext 'PACKAGE:')"
+ZPTN1="s%CATEGORY:%${ZCATEGORY}%"
+ZPTN2="s%PACKAGE:%${ZPACKAGE}%"
+ZINSTALLEDMSG="$(sed -e "$ZPTNDesktop" -e "$ZPTNSystem" -e "$ZPTNSetup" -e "$ZPTNUtility" -e "$ZPTNFilesystem" -e "$ZPTNGraphic" -e "$ZPTNDocument" -e "$ZPTNBusiness" -e "$ZPTNPersonal" -e "$ZPTNNetwork" -e "$ZPTNInternet" -e "$ZPTNMultimedia" -e "$ZPTNFun" -e "$ZPTNHelp" -e "$ZPTNnone" -e "$ZPTN1" -e "$ZPTN2" /tmp/petget-proc/petget-installed-pkgs-log)" #121011 more ptns.
+MENUMSG=""
+INSTALLEDCAT="`echo -n "$INSTALLEDMSG" | rev | cut -f 1 -d ' ' | rev`"
+ZINSTALLEDCAT="`echo -n "$ZINSTALLEDMSG" | rev | cut -f 1 -d ' ' | rev`" #121011
+if [ "$INSTALLEDCAT" = "none" ];then
+ MENUMSG="$(gettext '...note, this package does not have a menu entry.')"
+else
+ MENUMSG="$(gettext '...look in') '${ZINSTALLEDCAT}' $(gettext 'in the menu (bottom-left of screen) to run the application.')" #121011
+fi
+
+#120819 having a category does not mean there will also be a menu entry...
+if [ "`grep '/usr/.*share/applications/.*\.desktop$' /root/.packages/package-files/${PKGNAME}.files`" = "" ];then
+ MENUMSG="$(gettext '...note, this package does not have a menu entry.')"
+fi
+
+#installpkg.sh will have logged to /tmp/petget-proc/petget-installed-pkgs-log
+if [ "$DISPLAY" ]; then
+ . /usr/lib/gtkdialog/box_ok "$(gettext 'Puppy Package Manager')" complete "$(gettext 'The following package has been successfully installed:')" "<b>${ZINSTALLEDMSG}</b>" "${MENUMSG}"
+else
+  dialog --msgbox "$(gettext 'The following package has been successfully installed:') ${ZINSTALLEDMSG} ${MENUMSG}" 0 0
+fi
+
+RESTARTMSG="$(gettext 'Please wait, updating help page and menu...')"
+if [ "`pidof jwm`" != "" ];then #120101
+ JWMVER=`jwm -v|head -n1|cut -d ' ' -f2|cut -d - -f2`
+ if vercmp $JWMVER lt 574;then #120116 547 to 574.
+  RESTARTMSG="$(gettext 'Please wait, updating help page and menu (the screen will flicker!)...')"
+ fi
+fi
+[ "$INSTALLEDCAT" = "none" ] && RESTARTMSG="$(gettext 'Please wait, updating help page...')"
+if [ "$DISPLAY"  ]; then
+ . /usr/lib/gtkdialog/box_splash -text "${RESTARTMSG}" &
+ X3PID=$!
+else
+ dialog --timeout 3 --msgbox "$(gettext 'Done. Updating menus and help pages')" 0 0
+fi
+
+#w0910 update image cache...
+if [ -f /root/.packages/package-files/${PKGNAME}.files ];then
+ if [ "`grep 'usr/share/icons/hicolor' /root/.packages/package-files/${PKGNAME}.files`" != "" ];then
+  gtk-update-icon-cache -f /usr/share/icons/hicolor/
+ fi
+fi
+
+#master help index has to be updated...
+/usr/sbin/indexgen.sh
+#Reconstruct configuration files for JWM, Fvwm95, IceWM...
+if [ "$INSTALLEDCAT" != "none" ];then
+ /usr/sbin/fixmenus
+ if [ "`pidof jwm`" != "" ];then #120101
+  if vercmp $JWMVER lt 574;then #120116 547 to 574.
+   [ "$DISPLAY" ] && jwm -restart #w482
+  else
+   [ "$DISPLAY" ] && jwm -reload
+  fi
+ fi
+fi
+
+kill $X3PID 2>/dev/null
+[ ! "$DISPLAY" ] && rm -r /tmp/petget-proc/{remove_pets,install}_quietly 2>/dev/null
+
+###END###

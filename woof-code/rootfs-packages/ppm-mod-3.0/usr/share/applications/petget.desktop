@@ -1,0 +1,8 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Application
+NoDisplay=true
+Name=PetGet Package Manager
+Exec=petget %f
+MimeType=application/pet;application/apk;application/dsl;application/eopkg;application/ipk;application/nutyx;application/pfs;application/pisi;application/pup;application/sb;application/spack;application/tazpkg;application/tcz;application/xbps;application/tce;application/slp;application/porteus-module;application/x-slack;
+Icon=/usr/share/pixmaps/puppy/package_pet.svg
