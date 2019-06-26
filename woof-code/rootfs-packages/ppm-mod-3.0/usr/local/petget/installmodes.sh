@@ -225,6 +225,13 @@ check_total_size () {
 	 12) AVAILABLE=$(df -m | grep pup_rw | awk '{print $4}')
 		[ "$AVAILABLE" = "" ] && AVAILABLE=$(df -m | grep dev_save | awk '{print $4}');;
    esac
+   if [ "$AVAILABLE" = "" ]; then #s243a: stuff to try if the above fails.
+     case $PUPMODE in
+     13|12) AVAILABLE=$(df -m | grep "$(mount | grep dev_save | cut -d' ' -f1)" \
+                               | awk '{print $4}') ;;
+     5) AVAILABLE=$(df -m | grep '/initrd/mnt/tmpfs' | awk '{print $4}');;
+     esac
+   fi 
    if [ ! "$AVAILABLE" ]; then
     echo "Free space estimation error. Exiting" > /tmp/petget-proc/petget/install_status
 	. /usr/lib/gtkdialog/box_ok "$(gettext 'Free space error')" error "$(gettext 'This is a rare error that fails to report the available free space. It should be OK after a restart')"
