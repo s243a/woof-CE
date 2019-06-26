@@ -692,7 +692,7 @@ sync
 #120909 moved down...
 if [ "$RUNNINGPUP" = "yes" -a "$DBmethod" = "true" ];then
  
-dbfound="$(find /root/.packages -maxdepth 1 -name 'Packages-*')" 
+dbfound="$(find "`realpath /root/.packages`" -maxdepth 1 -name 'Packages-*')" 
 
 if [ "$dbfound" != "" ]; then
 echo "Updating package database..."

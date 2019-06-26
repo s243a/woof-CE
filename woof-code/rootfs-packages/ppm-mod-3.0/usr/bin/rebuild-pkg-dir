@@ -51,13 +51,13 @@ if [ ! -d /root/.packages/package-files ]; then
 
 	mkdir /root/.packages/package-files
 	
-	if [ "$(find /root/.packages -maxdepth 1 -name '*.files')" != "" ]; then
+	if [ "$(find "`realpath /root/.packages`" -maxdepth 1 -name '*.files')" != "" ]; then
 	mv -f /root/.packages/*.files /root/.packages/package-files/
 	fi
 	
 	result="$result package-files"
 else
-	if [ "$(find /root/.packages -maxdepth 1 -name '*.files')" != "" ]; then
+	if [ "$(find "`realpath /root/.packages`" -maxdepth 1 -name '*.files')" != "" ]; then
 	mv -f /root/.packages/*.files /root/.packages/package-files/
 	result="$result package-files"
 	fi
@@ -69,13 +69,13 @@ if [ ! -d /root/.packages/repo ]; then
 
 	mkdir /root/.packages/repo
 	
-	if [ "$(find /root/.packages -maxdepth 1 -name 'Packages-*')" != "" ]; then
+	if [ "$(find "`realpath /root/.packages`" -maxdepth 1 -name 'Packages-*')" != "" ]; then
 	mv -f /root/.packages/Packages-* /root/.packages/repo/ 
 	fi
 
 	result="$result repo"
 else
-	if [ "$(find /root/.packages -maxdepth 1 -name 'Packages-*')" != "" ]; then
+	if [ "$(find "`realpath /root/.packages`" -maxdepth 1 -name 'Packages-*')" != "" ]; then
 	mv -f /root/.packages/Packages-* /root/.packages/repo/ 
 	result="$result repo"
 	fi	
@@ -99,13 +99,13 @@ if [ ! -d /root/.packages/remove-script ]; then
 
 	mkdir /root/.packages/remove-script
 	
-	if [ "$(find /root/.packages -maxdepth 1 -name '*.remove')" != "" ]; then
+	if [ "$(find "`realpath /root/.packages`" -maxdepth 1 -name '*.remove')" != "" ]; then
 	mv -f /root/.packages/*.remove /root/.packages/remove-script/ 
 	fi
 	
 	result="$result remove-script"
 else
-	if [ "$(find /root/.packages -maxdepth 1 -name '*.remove')" != "" ]; then
+	if [ "$(find "`realpath /root/.packages`" -maxdepth 1 -name '*.remove')" != "" ]; then
 	mv -f /root/.packages/*.remove /root/.packages/remove-script/ 
 	result="$result remove-script"
 	fi
