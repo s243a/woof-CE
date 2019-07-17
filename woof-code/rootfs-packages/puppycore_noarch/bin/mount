@@ -14,7 +14,10 @@
 #if an ntfs partition, puppy uses user-mode ntfs-3g driver.
 #the mount and umount scripts allow seamless mounting and unmounting of ntfs f.s.
 
-[ ! $1 ] && exec busybox mount
+if [ ! $1 ]; then 
+  busybox mount || busybox.suid mount || mount-FULL || exit 1
+  exit 0
+fi
 
 if [ "`whoami`" != "root" ] ; then
 	exec sudo -A ${0} ${@}

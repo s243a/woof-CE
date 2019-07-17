@@ -45,9 +45,12 @@ debianutils
 gettext-base
 gettext
 %dummy base-files #Tinycore probably already has these
-zlib1g #dependency of libmagic & perl
+zlib1g #dependency of libmagic, perl & squashfs-tools
 tar
-liblzma5
+liblzma5  #Dependency of squashfs-tools
+liblz4-1  #Dependency of squashfs-tools
+liblzo2-2 #Dependency of squashfs-tools
+squashfs-tools
 libbz2-1.0
 libattr1
 libacl1
