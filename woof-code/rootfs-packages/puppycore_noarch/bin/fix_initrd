@@ -1,0 +1,23 @@
+#!/bin/sh
+. /etc/rc.d/PUPSTATE
+SAVE_REL="$(echo $PUPSAVE | cut -d',' -f3)"
+SAVE_PATH="/initrd/mnt/dev_save$SAVE_REL"
+RW_PATH="/initrd/mnt/tmpfs$RW_LAYER"
+
+if [ -d "$SAVE_PATH/initrd/pup_ro1" ]; then
+     cp -arfv --remove-destination "$SAVE_PATH/initrd/pup_ro1" "$SAVE_PATH"
+     rm -rf /initrd/pup_ro1  
+fi
+if [ "$(realpath /initrd/pup_ro1)" != "$(realpath "$SAVE_PATH")" ]; then
+  if [ -d /initrd/pup_ro1 ] && [ ! -L /initrd/pup_ro1 ]; then
+     cp -arfv --remove-destination /initrd/pup_ro1 "$SAVE_PATH"
+     rm -rf /initrd/pup_ro1  
+     ln -sv "$SAVE_PATH" /initrd/pup_ro1 #for after switch
+  elif [ ! -e /initrd/pup_ro1 ]; then
+    ln -sv "$SAVE_PATH" /initrd/pup_ro1 #for after switch
+  fi
+fi
+if [ ! -e "/initrd/pup_rw" ]; then 
+  ln -sv  "$RW_PATH" "/initrd/pup_rw" 
+fi 
+

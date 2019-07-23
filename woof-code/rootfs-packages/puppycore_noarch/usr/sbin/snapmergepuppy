@@ -234,7 +234,7 @@ Filesystem check of the savefile (pfix=fsck) is highly recommended.")"
 	error_msg "$ERRMSG"
 	ERRSTATUS=1
 fi
-
+fix_initrd
 exit $ERRSTATUS
 
 # =============================================================================

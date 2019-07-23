@@ -148,7 +148,13 @@ wget
 nano
 # xorg packages
 
-
+######## THe following tools are needed to remaster puppy ###################
+aufs-tools
+#Already added: liblzo2-2 #Dependency of squashfs-tools
+#Already added: squashfs-tools 
+growisofs
+syslinux-utils
+#########################################################################
 
 #rxvt-unicode using aterm instead
 aterm           #Same name in tinycore
@@ -161,6 +167,7 @@ libimlib2       #Instead of imlib2-bin & imlib2  (from tinycore)
 
 
 alsa-utils      #apulse is called from /root/.xinitrc
+
 
 ####### Maybe keep this since we dont' have matches for Xlibs, Xprogs, Xvesa but turn off dependency tracking 
 
