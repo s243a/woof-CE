@@ -271,6 +271,7 @@ iptables
 %addpkg simple_network_setup
 %addpkg network_wizard
 rfkill
+setserial #Needed if one is using a modem (Called from rc.sysinit)
 #yad #Needed for PortaBrowseInstall-i386-0.4; depends on libwayland-client0
 curl #Needed for PortaBrowseInstall-i386-0.4
 #gxmessage #Required for PortaBrowseInstall-i386-0.4
