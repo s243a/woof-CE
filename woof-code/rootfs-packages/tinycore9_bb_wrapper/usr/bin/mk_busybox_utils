@@ -1,0 +1,70 @@
+#!/bin/bash
+BB_UTIL_DIR=/bin/bb_utils
+BB_PATH=/bin/busybox
+BB_DIR=/bin
+BB_NAME=busybox
+[ ! -e "$BB_UTIL_DIR" ] && mkdir -p "$BB_UTIL_DIR"
+[ ! -e "$BB_UTIL_DIR/busybox.nosuid" ] && ln $BB_DIR/busybox "$BB_UTIL_DIR/busybox.nosuid"
+if [ ! -e "$BB_UTIL_DIR/busybox.suid" ]  && 
+       [ -e "$BB_DIR/busybox.suid" ]; then
+  ln "$BB_DIR/busybox.suid" "$BB_UTIL_DIR/busybox.suid"
+fi
+cd "$BB_UTIL_DIR"
+for aBB_NAME in busybox.nosuid busybox.suid; do
+  cd "$BB_UTIL_DIR"
+  [ ! -e "./$aBB_NAME" ] && continue
+  #TODO considering adding an EOF at the end of --list to make sure that the read teminates
+  "./$aBB_NAME" --list |
+  while read UTIL_NAME; do
+       cd "$BB_UTIL_DIR"
+       if [ ! -e "./$UTIL_NAME" ]; then 
+         ln -s "$aBB_NAME" "$UTIL_NAME"
+       fi
+       #echo "reading $UTIL_NAME"
+       #set -x
+       UTIL_REAL_PATH="$(realpath $(which "$UTIL_NAME"))"
+       UTIL_REAL_BB_PATH="$(realpath "$BB_DIR/$aBB_NAME" )"
+       UTIL_REAL_bname="$(basename "$UTIL_REAL_PATH")"
+       UTIL_REAL_DIR="$(dirname "$UTIL_REAL_PATH")"
+       #UTIL_REAL_BB_DIR="$(dirname UTIL_REAL_BB_PATH)"
+       #The second condition requires bash: TODO make compataqble with ash
+       #Todo, consider considering the case where versions of busybox have overlapping applets
+       DIR_OK=0
+       [ "$UTIL_REAL_DIR" = "$BB_DIR" ] && DIR_OK=1
+       [ "$UTIL_REAL_DIR" = "$BB_UTIL_DIR" ] && DIR_OK=1
+       if [ $DIR_OK -eq 1 ] && [[ "$UTIL_REAL_bname" == *busybox* ]]; then         
+       #if [ "$(realpath $(which "$UTIL_NAME"))" = "$(realpath "$BB_DIR/$aBB_NAME" )" ] ; then
+         echo 'chaing util path of '"$(which "$UTIL_NAME")"
+         UTIL_PATH="$(which "$UTIL_NAME")"
+         if [ ! -z "$(which "$UTIL_PATH")" ]; then        
+           UTIL_DIR="$(dirname $UTIL_PATH)"
+           cd "$UTIL_DIR"
+           UTIL_SYM_LINK="$(realpath --relative-to="$UTIL_DIR" "$BB_UTIL_DIR/$UTIL_NAME")"
+           if [ -e "$UTIL_SYM_LINK" ]; then 
+             rm  "$(which "$UTIL_NAME")"
+             ln -s "$UTIL_SYM_LINK" "$UTIL_PATH"
+           elif [ -e "$BB_UTIL_DIR/UTIL_NAME" ]; then [ #In case we don't have the full version of realpath or we make a mistake
+             rm  "$(which "$UTIL_NAME")"
+             ln -s "$BB_UTIL_DIR/UTIL_NAME" "$UTIL_PATH"
+           fi
+         fi
+       fi
+       #set +x
+  done
+done
+
+if  [ -e "$BB_DIR/busybox" ] &&   
+    [ $(file --mime-type "$BB_DIR/busybox" | grep -c text) -eq 0 ]; then 
+
+mv "$BB_DIR/busybox" "$BB_DIR/busybox.back.$$"
+
+
+echo "#!/bin/sh
+script=\${0##*/}
+script2=\$1
+if [ \"\$script\" = \"busybox\" ]; then
+  script=\$script2 ; shift
+fi
+exec \"$BB_UTIL_DIR/\$script\" \"\$@\"" > "/$BB_DIR/busybox"
+chmod +x "/$BB_DIR/busybox"
+fi

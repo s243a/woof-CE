@@ -56,6 +56,7 @@ libattr1
 libacl1
 %addpkg tinycore9_base_gz
 %importpkg tinycore9_bb_links_coreutils
+%addpkg tinycore9_bb_wrapper
 #%addpkg tinycore9_base_gz_users
 %addpkg puppycore_noarch
 %addpkg puppycore_users
@@ -154,6 +155,7 @@ aufs-tools
 #Already added: squashfs-tools 
 growisofs
 syslinux-utils
+#Added below: cdrtools #need mkisofs from this package
 #########################################################################
 
 #rxvt-unicode using aterm instead
@@ -321,11 +323,13 @@ ln -s ../bin/gtkdialog /usr/sbin/gtkdialog
 # install puppy-base - MUST BE LAST - unless overriding puppy-base
 #%mkdir /dev
 
-
-%addpkg --forced tinycore9_base_gz
+#Not sure if we should reinstall tinycore9_base_gz at this point or not
+#%addpkg --forced tinycore9_base_gz
+#%addpkg --forced tinycore9_bb_wrapper
 %addpkg --forced puppycore_noarch
 
 #%addpkg --forced tinycore9_base_gz_users #Can use instead of puppycore_users
+%addpkg --forced tinycore9_bb_wrapper
 %addpkg --forced puppycore_users
 
 %addpkg --forced puppycore_i386_strech
@@ -399,6 +403,8 @@ librsvg2-bin #Required for puppy themes
 %chroot pkg -i uextract-3.36.pet
 %chroot pkg -i CLInet-0.8.pet
 %chroot pkg -i ppm-mod-3.0.pet
+%chroot pkg -i cdrtools-3.02a06-i686-precise-20160317.pet #needed for mkisofs, which is used in puppies remaster script
+                                                          #See post http://murga-linux.com/puppy/viewtopic.php?p=1032661#1032661
 %addpkg ppm-mod-3.0_patch #Currently only contains printcols (i386 version)
 %chroot cp -sr /var/packages/repo /var/packages
 %remove ad_hock_repo
