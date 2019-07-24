@@ -307,8 +307,41 @@ do_install() { bootstrap_install; } # enable bootstrap installer by default
 install_pkg() {
 	if ! is_already_installed $PKG || [ "$1" = force ]; then
 		echo Installing "$PKGFILE" ... 
-		do_install 
+		do_install && fix_file_list
 	fi
+}
+fix_file_list(){
+  if [ ! -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" ] &&
+     [ ! -e "$CHROOT_DIR$ADMIN_DIR/info/${PKG}:i386.list" ]; then 
+    cp "$REPO_DIR/$PKGFILE" $CHROOT_DIR/tmp     
+    if [ ! -z "`which dpkg-deb`" ]; then
+      dpkg-deb --contents "$CHROOT_DIR/tmp/$PKGFILE" \
+              | grep -v '/$' \
+              | tr -s ' ' \
+              | cut -f6 -d' ' \
+              | sed -e 's/^.//g' 2>/dev/null \
+              | grep -v '^$' > "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" #"$PACKAGE_FILE_LIST_DIR/${PKGNAME}.files"
+    elif [ ! -z "$(chroot $CHROOT_DIR which dpkg-deb)" ]; then
+      chroot $CHROOT_DIR dpkg-deb --contents "$CHROOT_DIR/tmp/$PKGFILE" \
+              | grep -v '/$' \
+              | tr -s ' ' \
+              | cut -f6 -d' ' \
+              | sed -e 's/^.//g' 2>/dev/null \
+              | grep -v '^$' > "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list" #"$PACKAGE_FILE_LIST_DIR/${PKGNAME}.files"    
+    else
+		data=$(ar t "$REPO_DIR/$PKGFILE" | grep data)
+		case $data in
+			*xz) decompressor="unxz -c" ;;
+			*gz) decompressor="gunzip -c" ;;
+			*bz2) decompressor="bunzip2 -c" ;;
+			*lzma) decompressor="unlzma -c" ;;
+		esac
+		ar p "$REPO_DIR/$PKGFILE" $data | $decompressor | tar -xv --overwrite -C /dev/null |
+	    sed '1 s|^.*$|/.|; s|^\.||' > "$CHROOT_DIR$ADMIN_DIR/info/${PKG}.list"
+    fi
+    rm -f $CHROOT_DIR/tmp/"$PKGFILE"
+  fi
+     
 }
 ### choice of bootstrap or dpkg 
 dpkg_install() {

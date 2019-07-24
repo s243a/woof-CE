@@ -1,8 +1,8 @@
 #!/bin/bash
-BB_UTIL_DIR=/bin/bb_utils
-BB_PATH=/bin/busybox
-BB_DIR=/bin
-BB_NAME=busybox
+BB_UTIL_DIR=$CHROOT_DIR${BB_UTIL_DIR:-/bin/bb_utils}
+BB_PATH=$CHROOT_DIR${BB_PATH:-/bin/busybox}
+BB_DIR=$CHROOT_DIR${BB_DIR:-/bin}
+BB_NAME=$CHROOT_DIR${BB_NAME:-busybox}
 [ ! -e "$BB_UTIL_DIR" ] && mkdir -p "$BB_UTIL_DIR"
 [ ! -e "$BB_UTIL_DIR/busybox.nosuid" ] && ln $BB_DIR/busybox "$BB_UTIL_DIR/busybox.nosuid"
 if [ ! -e "$BB_UTIL_DIR/busybox.suid" ]  && 
