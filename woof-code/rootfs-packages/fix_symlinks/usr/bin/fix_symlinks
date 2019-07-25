@@ -74,3 +74,21 @@ X11
 xorg
 xtables
 EOM
+cd /var/lib/dpkg/info
+DISTRO_ARCHDIR=i386-linux-gnu
+grep -rwl . -e 'i386-linux-gnu' | sort | grep .list |
+while read aList; do
+  cat "$aList" |
+  while read aFile; do
+    if [[ "$aFile" != *"i386-linux-gnu"* ]]; then
+      continue
+    fi
+    set -x
+    aFile2="$(echo "$aFile" | sed "s/$DISTRO_ARCHDIR\///")"
+    echo "aFile=$aFile"
+      echo "aFile2=$aFile2"
+    if [ ! -e "$aFile" ] && [ -e "$aFile2" ]; then  
+      ln -s "$aFile2" "$aFile" --relative-to="$(dirname "$aFile")" || ln -s "$aFile2" "$aFile"
+    fi
+  done
+done
