@@ -115,7 +115,7 @@ fi
  done < <( find / -wholename "$PKGS_DIR"/'*-installed-packages' )
 #}  
 #mk_spec_file_list_arry
-echo "SPEC_DB_PATHS=${SPEC_DB_PATHS[@]}"
+#echo "SPEC_DB_PATHS=${SPEC_DB_PATHS[@]}"
 
 #mk_all_repo_file_list_arry(){
  declare -gA ALL_REPO_DB_PATHS=()
@@ -130,13 +130,13 @@ echo "SPEC_DB_PATHS=${SPEC_DB_PATHS[@]}"
      #REPO_FILE="$(realpath "$REPO_FILE")"
      bname="$(basename "$REPO_FILE")"   
      ALL_REPO_DB_PATHS+=( ["$bname"]="$REPO_FILE" )
-     echo "ALL_REPO_DB_PATHS=${ALL_REPO_DB_PATHS[@]}"
-     echo "ALL_REPO_DB_PATHS=${ALL_REPO_DB_PATHS[@]}"
+     #echo "ALL_REPO_DB_PATHS=${ALL_REPO_DB_PATHS[@]}"
+     #echo "ALL_REPO_DB_PATHS=${ALL_REPO_DB_PATHS[@]}"
  done < <( find / -wholename "$REPO_DB_FILE_DIR"/'Packages-*' )
 #}  
 #mk_all_repo_file_list_arry
-echo "exited: mk_all_repo_file_list_arry()"
-echo "ALL_REPO_DB_PATHS=${ALL_REPO_DB_PATHS[@]}"
+#echo "exited: mk_all_repo_file_list_arry()"
+#echo "ALL_REPO_DB_PATHS=${ALL_REPO_DB_PATHS[@]}"
 
 #Moved after the function repo_file_list
 #mk_repo_file_list_arry
@@ -1310,14 +1310,14 @@ declare -ga REPO_DB_PATHS
  #https://stackoverflow.com/questions/13091700/why-is-my-array-gone-after-exiting-loop 
  # repo_file_list |
  while read REPO_FILE_NAME; do
-    echo "REPO_FILE_NAME=$REPO_FILE_NAME"
+    #echo "REPO_FILE_NAME=$REPO_FILE_NAME"
     RF_FILE_PATH="${ALL_REPO_DB_PATHS[$REPO_FILE_NAME]}"
     if [ -e "$RF_FILE_PATH" ]; then
       REPO_DB_PATHS+=( "$RF_FILE_PATH" )
     fi
  done < <( repo_file_list )
- echo "REPO_DB_PATHS=${ALL_REPO_DB_PATHS[@]}"
- echo "REPO_DB_PATHS_keys=${!ALL_REPO_DB_PATHS[@]}"   
+ #echo "REPO_DB_PATHS=${ALL_REPO_DB_PATHS[@]}"
+ #echo "REPO_DB_PATHS_keys=${!ALL_REPO_DB_PATHS[@]}"   
 #}
 #mk_repo_file_list_arry
 
