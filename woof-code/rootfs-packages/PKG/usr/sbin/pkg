@@ -57,7 +57,7 @@ green="\e[32m"; red="\e[91m"; magenta="\e[95m"; lightblue="\e[36m"; yellow="\e[9
 [ -z "$PKG_CONFIGURE"  ] && export PKG_CONFIGURE=''     # reset
 [ -z "$PKG_CFLAGS"     ] && export PKG_CFLAGS=''        # reset
 
-[ -z "$PKGS_DIR" ] && PKGS_DIR="$(realpath "${HOME}/.packages")"
+[ -z "$PKGS_DIR" ] && export PKGS_DIR="$(realpath "${HOME}/.packages")"
 #These are files of the form
 #[ -z "$PET_SPEC_DIR_ROOT" ] && PET_SPEC_DIR_ROOT="$PKGS_DIR"
 if [ -z "$REPO_DB_FILE_DIR" ]; then
@@ -843,8 +843,12 @@ is_repo_pkg (){                   # return true if $1 is a pkg in a supported re
   local all_supported_repofiles
 
   # all repo files, full paths
-  all_supported_repofiles=`repo_file_list | sed "s#^#$PKGS_DIR/#" | tr '\n' ' '`
-
+  #all_supported_repofiles=`repo_file_list | sed "s#^#$PKGS_DIR/#" | tr '\n' ' '`
+  
+  #Don't need sed, but could use if you want to do wildcards
+  #all_supported_repofiles=`repo_file_list | sed 's#$#*#' | xargs find -name  | tr '\n' ' '`
+  #echo "repo_file_list | xargs find \"$PKGS_DIR\" -name  | tr '\n' ' '"
+  all_supported_repofiles="$(repo_file_list | while read a; do find "$REPO_DB_FILE_DIR" -name "$a"'*'; done  | tr '\n' ' ')"
   # search all repo files for the $1
   repo_pkg="`cut -f1,2,8 -d '|' $all_supported_repofiles 2>/dev/null\
     | sed -e 's/ //g' -e 's@^@|@' -e 's@$@|@' \
