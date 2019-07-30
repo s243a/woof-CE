@@ -1,0 +1,11 @@
+#!/bin/sh
+PKG_PATH="`which pkg`"
+if [ ! -z "$PKG_PATH"]; then
+  "$PKG_PATH" -i "$@"
+else
+  CUR_DIR=dirname "$(readlink -f "$0")" #https://stackoverflow.com/questions/59895/get-the-source-directory-of-a-bash-script-from-within-the-script-itself
+  cd "$CUR_DIR"
+  PETGET_PATH="../local/petget/petget" #See if a relative path is possible (useful in prefixed systems)
+  [ ! -x "$(readlink -f "$PETGET_PATH")" ] && PETGET_PATH="/usr/local/petget/petget" #otherwise use absolute paths
+  "$PETGET_PATH" "$@"
+fi

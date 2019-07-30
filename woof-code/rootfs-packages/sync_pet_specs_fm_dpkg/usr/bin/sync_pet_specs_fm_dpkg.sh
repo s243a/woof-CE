@@ -14,7 +14,18 @@ trap close_FDs SIGTERM
 spec_target=${spec_target:-"$PUPPY_ADMIN/woof-installed-packages"}
 mkdir -p /sync_pet_specs_fm_dpkg/deb-build/
 exec 15<> /sync_pet_specs_fm_dpkg/deb-build/fd_15
-
+mk_pkg_list_fm_md5sums(){
+    md5_file_list="$DPKG_ADMIN/$1.md5sums"
+    if [ ! -e "$md5_file_list" ]; then
+      md5_file_list="$(find $DPKG_ADMIN -iname "$(basename "$md5_file_list")" -print | head -n 1)";
+      [ -e "$md5_file_list" ] && pkg_file_list="$(realpath $md5_file_list)"
+    fi		
+    cd /
+    #s243a: TODO do this an alternate way if realpath isn't installed. 
+    [ -e "$md5_file_list" ] && cat "$md5_file_list" | \
+      while read a b; do echo "$(realpath -m "$b")"; done > "$DPKG_ADMIN/${pet_specs_PKG_NAME}.list"
+    
+}
 
 # process
 while read -r -u15 -d $'\n' line; do
@@ -68,16 +79,28 @@ while read -r -u15 -d $'\n' line; do
     pet_specs_SHORT_DESC="$val"
   ;;
   '')
-  
+    #set -x
     pkg_file_list="$DPKG_ADMIN/${pet_specs_PKG_NAME}.list"
+    if [ ! -e "$pkg_file_list" ]; then
+      pkg_file_list="$(find $DPKG_ADMIN -iname "$(basename "$pkg_file_list")" -print | head -n 1)";
+      [ -e "$pkg_file_list" ] && pkg_file_list="$(realpath $pkg_file_list)"
+    fi
     [ ! -e "$pkg_file_list" ] &&  \
-      pkg_file_list="$DPKG_ADMIN/${pet_specs_PKG_NAME}"':i386'".list" ]; 
+      pkg_file_list="$DPKG_ADMIN/${pet_specs_PKG_NAME}"':i386'".list" ;
+    if [ ! -e "$pkg_file_list" ]; then
+      pkg_file_list="$(find $DPKG_ADMIN -iname "$(basename "$pkg_file_list")" -print | head -n 1)";
+      [ -e "$pkg_file_list" ] && pkg_file_list="$(realpath $pkg_file_list)"
+    fi      
+    [ -e "$pkg_file_list" ] && mk_pkg_list_fm_md5sums "${pet_specs_PKG_NAME}"
     
-    if [ $(wc -c <"$pkg_file_list") -gt 4 ] || [ SYNC_DUMMY -eq 1 ]; then
+    #set +x 
+    #[ ! -e "$pkg_file_list" ] &&  \
+    #  pkg_file_list="$DPKG_ADMIN/puppy-${pet_specs_PKG_NAME}.list" ;     
+    if [ $(wc -c <"$pkg_file_list") -gt 4 ] || [ $SYNC_DUMMY -eq 1 ]; then
       [ -e "$PUPPY_ADMIN_LIST/$pet_specs_PKG_NAME" ] && \
         rm "$PUPPY_ADMIN_LIST/$pet_specs_PKG_NAME"
       if [ "$(basename "$PUPPY_ADMIN_LIST")" = builtin_files ]; then
-        if [ -e "$pkg_file_list"then
+        if [ -e "$pkg_file_list" ]; then
           ln "$pkg_file_list" \
              "$PUPPY_ADMIN_LIST/$pet_specs_PKG_NAME"    
         else
