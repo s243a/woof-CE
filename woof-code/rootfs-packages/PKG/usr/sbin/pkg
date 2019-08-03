@@ -2540,7 +2540,7 @@ which_repo(){                     # list repo of given package ($1) FUNCLIST
   PKGNAME_ONLY=`get_pkg_name_only "$1"`
   pkg_ext=`get_pkg_ext "$PKGNAME"`
 
-  repo_file="$(grep -l "|$PKGNAME.$pkg_ext|" "$PKGS_DIR"/Packages-*)"
+  repo_file="$(grep -l "|$PKGNAME.$pkg_ext|" "$REPO_DB_FILE_DIR"/Packages-*)"
   if [ "$repo_file" != '' ];then
     # get the repo name
     repo_name="`grep -m1 "$(basename $repo_file)|" ${HOME}/.pkg/sources | cut -f1 -d'|'`"
@@ -2917,9 +2917,9 @@ pkg_entry(){                      # show pkg ($1) repo entry, each field on a ne
   PKGNAME=`get_pkg_name "$PKGNAME"`
   PKGNAME_ONLY=`get_pkg_name_only "$PKGNAME"`
 
-  PKG_ENTRY="$(cat "$PKGS_DIR"/Packages-* | grep -m1 "|$PKGNAME|")"
-  [ "$PKG_ENTRY" = '' ] && PKG_ENTRY="$(cat "$PKGS_DIR"/Packages-* | grep -m1 "^$PKGNAME|")"
-  [ "$PKG_ENTRY" = '' ] && PKG_ENTRY="$(cat "$PKGS_DIR"/Packages-* | grep -m1 "|$PKGNAME_ONLY|")"
+  PKG_ENTRY="$(cat "$REPO_DB_FILE_DIR"/Packages-* | grep -m1 "|$PKGNAME|")"
+  [ "$PKG_ENTRY" = '' ] && PKG_ENTRY="$(cat "$REPO_DB_FILE_DIR"/Packages-* | grep -m1 "^$PKGNAME|")"
+  [ "$PKG_ENTRY" = '' ] && PKG_ENTRY="$(cat "$REPO_DB_FILE_DIR"/Packages-* | grep -m1 "|$PKGNAME_ONLY|")"
   if [ "$PKG_ENTRY" = '' ];then
     echo "$1 not found in $REPOFILE"
     exit 1
@@ -6678,7 +6678,7 @@ list_dependents(){                # list user installed pkgs that depend on $1 F
   fi
 
   # list all pkgs (from all repos) with $PKGNAME_ONLY as a dep
-  cut -f1,2,9 -d'|' $PKGS_DIR/Packages-* \
+  cut -f1,2,9 -d'|' "$REPO_DB_FILE_DIR"/Packages-* \
     | sed -e "s/:any//g" -e "s/&[geql][eqt][0-9a-z._-]*//g" 2>/dev/null \
     | grep -E "+${PKGNAME_ONLY},|+${PKGNAME_ONLY}\|" 2>/dev/null \
     | cut -f2 -d'|' 2>/dev/null \
