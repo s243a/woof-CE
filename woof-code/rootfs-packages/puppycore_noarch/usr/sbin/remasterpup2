@@ -438,7 +438,7 @@ $(gettext 'Please wait...')"
 	TOPPUPSFS=''
 	[ -e /${PUPPYSFS} ] && TOPPUPSFS="/${PUPPYSFS}"
 	# display terminal only for the first stage because it takes the most of time. 'squash' is a function, see above. 120512 $COMP added...
-	squash / $WKGMNTPT/puppylivecdbuild/$PUPPYSFS ${COMP} -e /etc /proc /initrd /var /tmp /archive /mnt /root $TOPPLCDB $ANOTHER_REMOVE $DIRHOME $DIRSYS $DIRLOST $TOPPUPSFS $DIRDEVSNDFILES $DIRDEVUDEV $ICONCACHE  #120605 end #120721 avoid wildecards option, icon-theme.cache 121021
+	squash / $WKGMNTPT/puppylivecdbuild/$PUPPYSFS ${COMP} -e /media /etc /proc /initrd /var /tmp /archive /mnt /root $TOPPLCDB $ANOTHER_REMOVE $DIRHOME $DIRSYS $DIRLOST $TOPPUPSFS $DIRDEVSNDFILES $DIRDEVUDEV $ICONCACHE  #120605 end #120721 avoid wildecards option, icon-theme.cache 121021
 	sync
 
 	#add pristine folders (out of current puppy.sfs)...
@@ -449,6 +449,8 @@ $(gettext 'Please wait...')"
 	mksquashfs /initrd${PUP_LAYER}/tmp $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
 	sync
 	mksquashfs /initrd${PUP_LAYER}/mnt $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
+	sync
+	mksquashfs /initrd${PUP_LAYER}/media $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
 	sync
 
 	kill $XPID
@@ -502,12 +504,15 @@ $(gettext 'Please wait...')"
 	cp -af /root/.pmountsingle /tmp/root/
 
 	#TODO think need to do this for /var also...
-
+    PKG_FILES_DIR="$(realpath /root/.pacakges)"
+    if [ -d "$PKG_FILES_DIR/package-files" ]; then
+      PKG_FILES_DIR="$PKG_FILES_DIR/package-files"
+    fi
 	#.packages/ .files, copy any files installed to /root...
 	echo -n "" > /tmp/allpkgs.files
-	for ONEPKG in `ls -1 /root/.packages/*.files 2>/dev/null | tr "\n" " "`
+	for ONEPKG in `ls -1 "$PKG_FILES_DIR/*.files" 2>/dev/null | tr "\n" " "`
 	do
-		grep '^/root/' $ONEPKG | \
+		grep '^'"$PKG_FILES_DIR" $ONEPKG | \
 		while read -r ONEFILE
 		do
 			if [ -d "$ONEFILE" ] && [ ! -L "$ONEFILE" ];then #w018
@@ -525,12 +530,16 @@ $(gettext 'Please wait...')"
 	#w018...
 	#modify /root/.packages/ files, as all installed packages are now part of the new cd...
 	cp -a -f /root/.packages /tmp/root/
+	if [ -d /var/packages ]; then 
+	  mkdir  -p /tmp/var #This is probably already done
+	  cp -a -f /var/packages /tmp/var/
+	fi 
 	touch /root/.packages/user-installed-packages
 	# 141008: move *.files to ~/.packages/builtin_files/
 	cat /root/.packages/user-installed-packages | \
 	while read -r ONEPKG
 	do
-		ONEFILE="/tmp/root/.packages/`echo "$ONEPKG" | cut -f1 -d '|'`.files"
+		ONEFILE="/tmp$PKG_FILES_DIR/`echo "$ONEPKG" | cut -f1 -d '|'`.files"
 		ONENAME="/tmp/root/.packages/builtin_files/`echo "$ONEPKG" | cut -f2 -d '|'`"
 		mv -f "$ONEFILE" "$ONENAME"
 	done

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=pFavorites
+Icon=/usr/share/pixmaps/pfavorites.svg
+Comment=Launch favorite applications
+Exec=pfavorites
+Terminal=false
+Type=Application
+Categories=Utility
+GenericName=pFavorites
+NoDisplay=true

@@ -155,6 +155,7 @@ aufs-tools
 #Already added: squashfs-tools 
 growisofs
 syslinux-utils
+libcap2
 #Added below: cdrtools #need mkisofs from this package
 #########################################################################
 
