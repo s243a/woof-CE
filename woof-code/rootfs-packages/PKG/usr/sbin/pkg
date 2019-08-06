@@ -112,7 +112,7 @@ fi
    [ -z "$DEVX_INST_PKGS_FILE" ] && \
      DEVX_INST_PKGS_FILE="$PKGS_DIR/devx-only-installed-packages"
    SPEC_DB_PATHS=( "$USER_INST_PKGS_FILE" "$WOOF_INST_PKGS_FILE" "${SPEC_DB_PATHS[@]}" )
- done < <( find / -wholename "$PKGS_DIR"/'*-installed-packages' )
+ done < <( find "$PKGS_DIR" -name '*-installed-packages' )
 #}  
 #mk_spec_file_list_arry
 #echo "SPEC_DB_PATHS=${SPEC_DB_PATHS[@]}"
@@ -132,7 +132,7 @@ fi
      ALL_REPO_DB_PATHS+=( ["$bname"]="$REPO_FILE" )
      #echo "ALL_REPO_DB_PATHS=${ALL_REPO_DB_PATHS[@]}"
      #echo "ALL_REPO_DB_PATHS=${ALL_REPO_DB_PATHS[@]}"
- done < <( find / -wholename "$REPO_DB_FILE_DIR"/'Packages-*' )
+ done < <( find "$REPO_DB_FILE_DIR" -name 'Packages-*' )
 #}  
 #mk_all_repo_file_list_arry
 #echo "exited: mk_all_repo_file_list_arry()"
@@ -4737,12 +4737,14 @@ pkg_install(){                    # install downloaded package ($1) FUNCLIST
 						  mkdir -p /tmp/$PKGNAME
 						  rm -rf /tmp/$PKGNAME/*
 						  dpkg-deb -x ${CURDIR}/${PKGNAME}.deb /tmp/$PKGNAME/ 2> $TMPDIR/$SELF-cp-errlog
-						  for f in $(find /tmp/$PKGNAME \( -type f -o -type l \))
+						  #set -x
+						  while read f 
 						  do
-							  xpath=$(echo "$f" |  cut  -f 4-30 -d "/" | sed "s/$DISTRO_ARCHDIR\///")
+							  xpath="$(echo "$f" |  cut  -f 4-30 -d "/" | sed "s/$DISTRO_ARCHDIR\///")"
 							  mkdir -p ${DIRECTSAVEPATH}/$(dirname "$xpath")
 							  cp -a "$f" ${DIRECTSAVEPATH}/$(dirname "$xpath")/
-						  done
+						  done < <(find "/tmp/$PKGNAME" \( -type f -o -type l \))
+						  #set +x
 						  rm -rf /tmp/$PKGNAME &>/dev/null
 						else
 						  dpkg-deb -x ${CURDIR}/${PKGNAME}.deb ${DIRECTSAVEPATH}/ 2> $TMPDIR/$SELF-cp-errlog
