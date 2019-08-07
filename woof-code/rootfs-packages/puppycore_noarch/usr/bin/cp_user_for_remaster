@@ -1,0 +1,72 @@
+#/bin/bash
+TargetBase=/tmp
+SourceBase=''
+if [ -h "/initrd$SAVE_LAYER" ]; then
+  SourceBase="/initrd$SAVE_LAYER"
+elif [ -h /initrd/pup_ro1 ]; then
+  SourceBase="/initrd/pup_ro1"  
+fi
+
+for aUser in root; do #remaster script should create a folder of user dirs instead of just root.
+                      #In which case we also add the following to the loop: spot puppy fido etc.
+  aHOME=$(eval echo "~$aUser")
+    if [ ! -z "$SourceBase" ]; then 
+      cd "$SourceBase"
+    else
+      cd /
+    fi  
+    cd ".$aHOME"      
+  while read aFile; do
+    if [ ! -z "$SourceBase" ]; then 
+      cd "$SourceBase"
+    else
+      cd /
+    fi
+    cd ".$aHOME"  
+    do_echo=0 #It doesn't really matter how we intialize this because we cover all cases below
+    aDIR="${aFile#./}"
+    aDIR="${aDIR%%/*}"
+    case "$aDIR" in
+    .cache) do_echo=0 ;; #Likely private browser settings in here
+    .config)  do_echo=1 ;; #TODO we should probably look at the specific files in this directory   
+    #There seems to be some /tmp folder in .jwm that we might want to exclude. 
+    Choices|.icons|.jwm) do_echo=1 ;; #These folder will probably only change if you change the theme
+    Desktop) do_echo=1 ;; # here normally shouldn't be private info here but maybe we need to consider this further. 
+    Download) do_echo=0 ;; #Exclude this stuff from the iso
+    .local) do_echo=0 ;; #Potential meta data in here that we want to exclude (e.g. /recently-used.xbel)
+    .mozilla) do_echo=0 ;; #Probably firefox profile info here
+    .pbookmarks|pfavorites) do_echo=0 ;; #Probably not much to wory about here but lets not copy since it probably isn't that useful.  
+    geany|gtk-3.0|ptheme) do_echo=1 ;;
+    rox.sourceforge.net) 
+      if [ -d /root/rox.sourceforge.net ]; then
+        do_echo=1
+      else #Because of the way find works this should never actually happen
+           #However, this folder might be symlinked to allow users to share rox settings. 
+        do_echo=0
+      fi    
+      ;;
+    pkg) do_echo=2 ;; #Let's make this directory if it doesn't exist. 
+    .pkg) do_echo=1 ;;
+    .pRecent) do_echo=0 ;; #Possible metadata here that we want to exclude
+    .ptheme) do_echo=0 ;; #This seems to be only temporary files used in the theme change. Perhaps we should even delete this stuff if exists on the live cd. 
+    puppy_reference) do_echo=1 ;; #This stuff might be usefull
+    .ssh) do_echo=0 ;; #Exclude this folder since it contains private keys
+    .subversion) do_echo=0  ;; #Possibly private keys in here. Further experimentaiton will be required to see if we need anything here. 
+    #The following are actually files
+    .bashrc|.gtkrc-2.0|.jwmrc|.profile|.xinitrc) #These are actually files
+      do_echo=1  ;; #Some of these files are auto generated such as .gtkrc-2.0, .jwmrc 
+    *)
+    do_echo=0
+  esac 
+  
+  if [ $do_echo -eq 1 ]; then
+    if [ "$aFile" -nt "$TargetBase$aHOME/$aFile" ] || \
+       [ ! -e "$TargetBase/$aFile" -a ! -h "$TargetBase$aHOME/$aFile" ]; then
+       cd "$SourceBase"
+       echo ".$aHOME/$aFile" | cpio -pd "$TargetBase"
+    fi
+  elif [ $do_echo -eq 2 ]; then
+    mkdir -p "$TargetBase$aHOME/$aDIR"
+  fi
+  done < <(find "." -name '*')
+done

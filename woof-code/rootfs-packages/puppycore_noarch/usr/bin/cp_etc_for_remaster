@@ -1,0 +1,102 @@
+#/bin/bash
+TargetBase=/tmp
+SourceBase=''
+keepDefaults(){
+	if [ $# -gt 0 ] ; then 
+	  TargetPath="$TargetBase/etc/$1"
+	else
+	  TargetPath="$TargetBase/etc/$aFile"
+	fi
+      if [ ! -e "$TargetPath" ]; then #TODO: Maybe just check the base sfs for the folder
+        do_echo=1
+      else
+        do_echo=0
+      fi	
+}
+if [ -h "/initrd$SAVE_LAYER" ]; then
+  SourceBase="/initrd$SAVE_LAYER"
+elif [ -h /initrd/pup_ro1 ]; then
+  SourceBase="/initrd/pup_ro1"  
+fi
+
+
+  
+    if [ ! -z "$SourceBase" ]; then 
+      cd "$SourceBase"
+    else
+      cd /
+    fi  
+    cd "etc"      
+  while read aFile; do
+    if [ ! -z "$SourceBase" ]; then 
+      cd "$SourceBase"
+    else
+      cd /
+    fi
+    cd etc 
+    do_echo=0 #It doesn't really matter how we intialize this because we cover all cases below
+    aDIR="${aFile#./}"
+    aDIR="${aDIR%%/*}"
+    case "$aDIR" in
+    alternatives|apache2|apm|bash_completion.d|ca-certificates) do_echo=1 ;; 
+    calendar) do_echo=1 ;; #This might be user specific but keep it for now
+    cron.daily) do_echo=1 ;; #Maybe any private related stuff to a cron script can be kept in another folder   
+    cron.weekly) do_echo=1 ;; #Maybe any private related stuff to a cron script can be kept in another folder 
+    dbus-1) do_echo=1 ;; #Some wpa_supplicant settings here but nothing that looks private
+    default) do_echo=0 ;; #These settings apear hardware specific
+    firefox-esr) do_echo=1 ;;  #This folder overwrides settings in about:config
+    fonts)  do_echo=1 ;;  
+    frisbee) #wpa_supplicant.conf needs to be excluded for sure, for the rest maybe keep the defaults.
+      keepDefaults "$aFile"
+      #TargetPath="$TargetBase"/etc/$aFile
+      #if [ ! -e "$TargetPath" ]; then
+      #  do_echo=1 ;;
+      #fi
+      if [ "$(basename "$aFile")" = wpa_supplicant.conf ]; then
+        do_echo=0
+      fi 
+      ;;
+    grof|gss|gtk-2.0|gtk-3.0) do_echo=1 ;;
+    ifplugd) do_echo=1 ;; #Any private info needed for these scripts could be put in another folder
+    init.d|jwm|ldap|ld.so.conf.d|libnl-3|logrotate.d|mc|menu-methods) do_echo=1 ;; 
+    modprobe.d) do_echo=0 ;; #There might be some hardware specific stuff here
+    modules) do_echo=0 ;; #There might be some hardware specific stuff here
+    network) do_echo=1 ;; #this stuff looks okay but research this more  
+    network-wizard) #This folder might contain some private network stuff so keep default values for now. 
+       do_echo=0 ;; 
+    newt|pam.d) do_echo=1 ;; 
+    pcmcia) do_echo=0 ;; #There might be some hardware specific stuff here
+    perl|pkg|pm) do_echo=1 ;;
+    ppp) do_echo=0 ;; #There might be some private network settings in here
+    profile.d) do_echo=1 ;; #Assume that people won't put private stuff here
+    rc.d) do_echo=1 ;; #not sure that PUPSTATE needs to be in the iso but it doesn't hurt anything
+    selinux|sensors.d) do_echo=1 ;;
+    simple_network_setup) #This folder might contain some private network stuff so keep default values for now. 
+       do_echo=0 ;; 
+    skel) do_echo=1 ;; 
+    ssh|ssl) do_echo=1 ;; #The keys are normally placed in the root folder so we should be okay here. 
+    subversion) keepDefaults "$aFile" ;; 
+    sysconfig) do_echo=0 ;; #There might be some hardware specific stuff here
+    sysctl.d) do_echo=1 ;; #I need to research this more
+    udev) do_echo=1 ;; #Rebuild initrd if this folder ismodified. See comments in /etc/udev/udev.conf
+    wbar.d) do_echo=1 ;;
+    wpa_supplicant) do_echo=1 ;; #Looks okay but verify before running script that no private network info is in folder.
+    X11) do_echo=0 ;; #This folder might contain custom settings so keep defaults for now. 
+    xdg) do_echo=1 ;;
+    #-------------------Now Let's look at files
+    profile|windowmanager)  do_echo=1 ;;
+    *) 
+    do_echo=0 ;;
+  esac 
+  
+  if [ $do_echo -eq 1 ]; then
+    if [ "$aFile" -nt "$TargetBase/$aFile" ] || \
+       [ ! -e "$TargetBase/etc/$aFile" -a ! -h "$TargetBase/etc/$aFile" ]; then
+       cd "$SourceBase"
+       echo "./etc/$aFile" | cpio -pd "$TargetBase"
+    fi
+  elif [ $do_echo -eq 2 ]; then
+    mkdir -p "$TargetBase/etc/$aDIR"
+  fi
+  done < <(find "." -name '*')
+

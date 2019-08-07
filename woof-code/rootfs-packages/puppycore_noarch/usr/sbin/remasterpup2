@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #simple script to remaster the puppy live-cd.
 #(c) Copyright 2006 Barry Kauler, www.puppyos.com
 #2007 Lesser GPL licence v2 (http://www.fsf.org/licensing/licenses/lgpl.html)
@@ -95,8 +95,10 @@ KERNELVER="`uname -r`"
 
 . /etc/DISTRO_SPECS
 PUPPYSFS="$DISTRO_PUPPYSFS" #ex: puppy.sfs
+PUPSFS_ROOT="${PUPPYSFS%.sfs}"
 ZDRVSFS="$DISTRO_ZDRVSFS"   #ex: zdrv.sfs
 SFSBASE="`basename $PUPPYSFS .sfs`" #ex: puppy
+
 
 PPATTERN="/initrd${PUP_LAYER}"
 if [ "`mount | grep "$PPATTERN"`" = "" ];then
@@ -411,6 +413,71 @@ $(gettext 'Please wait...')"
 		echo $0 $@
 		rxvt -bg orange -fg black -title "$m_01" -geometry 80x6 -e mksquashfs $@ 2> /dev/null
 	}
+    fk_squash() {
+		echo $0 $@
+		#s243a: use set -x to echo cpio commands in fk_mksquashfs and pass to rxvt
+		#rxvt -bg orange -fg black -title "$m_01" -geometry 80x6 -e mksquashfs $@ 2> /dev/null
+		fk_mksquashfs $@ #Short term hack
+	}
+	do_squash(){
+	  if [ "$mode" = dir ]; then
+	    fk_squash $@ 	
+	  else
+	    squash $@ 
+	  fi
+	}	
+	fk_mksquashfs(){
+	  #source_dir=$1; shift
+	  #target_dir=$2; shift
+      option=""
+      out=() #Currently not used
+      args=()
+      declare -A exludes
+	  for arg in "$@";do
+	    if [[ "$arg" == -* ]]; then 
+	      case "$arg" in
+	      -*)
+	      option="$arg" ;;
+	      esac  
+	    else
+	      case option in
+	      -e)
+	        exludes+=( ["$arg"]=1 ) ;;
+	      '')
+	        args+=( "$arg" ) ;;
+	      *)
+	        out+=( "$arg" ) ;;
+	      esac
+	    fi
+	  done
+	  n_args=${#args}
+	  target_dir=$args[$n_args]
+	  target_dir="${target_dir%.sfs}"
+	  
+	  mkdir -p "$target_dir"
+	  unset 'args[$n_args-1]' #https://stackoverflow.com/questions/8247433/remove-the-last-element-from-an-array
+	  #while read aDir; do
+	  if [ realpath "$target_dir" != "/" ]; then
+        for aDir in "$args[@]"; do 
+	      excluded="${excludes[$aDir]}"
+	      [ -z "$excluded" ] && excluded=0
+	      if [ ! $excluded -eq 1 ]; then
+	        cd $aDir
+	        cpio -pd "$target_dir"
+	      fi
+	    done
+	  fi
+	  #done < <(ls -a -1)
+	  
+	}	
+	do_mksquashfs(){
+	  if [ "$mode" = dir ]; then
+	    fk_mksquashfs $@ 	
+	  else
+	    mksquashfs $@ 
+	  fi
+	}			
+	
 	DIRHOME=""
 	[ -d /home ] && DIRHOME="/home"
 	[ -d /sys ] && DIRSYS="/sys"
@@ -425,7 +492,7 @@ $(gettext 'Please wait...')"
 	ANOTHER_REMOVE="/lib/modules/$KERNELVER/initrd /lib/modules/*/modules.*"	# 28dec09 modules.*
 	if [ "$MKZDRV" = "yes" ]; then
 		rm -f $WKGMNTPT/puppylivecdbuild/$ZDRVSFS 2> /dev/null
-		mksquashfs /lib $WKGMNTPT/puppylivecdbuild/$ZDRVSFS -keep-as-directory -e /lib/[^m]* $ANOTHER_REMOVE
+		do_mksquashfs /lib $WKGMNTPT/puppylivecdbuild/$ZDRVSFS -keep-as-directory -e /lib/[^m]* $ANOTHER_REMOVE
 		ANOTHER_REMOVE="/lib/modules"
 	fi
 	#120605 Omit certain /dev subdir content and modem components loaded from firmware tarballs...
@@ -437,20 +504,23 @@ $(gettext 'Please wait...')"
 	[ -e /puppylivecdbuild ] && TOPPLCDB='/puppylivecdbuild'
 	TOPPUPSFS=''
 	[ -e /${PUPPYSFS} ] && TOPPUPSFS="/${PUPPYSFS}"
+	
+
+
 	# display terminal only for the first stage because it takes the most of time. 'squash' is a function, see above. 120512 $COMP added...
-	squash / $WKGMNTPT/puppylivecdbuild/$PUPPYSFS ${COMP} -e /media /etc /proc /initrd /var /tmp /archive /mnt /root $TOPPLCDB $ANOTHER_REMOVE $DIRHOME $DIRSYS $DIRLOST $TOPPUPSFS $DIRDEVSNDFILES $DIRDEVUDEV $ICONCACHE  #120605 end #120721 avoid wildecards option, icon-theme.cache 121021
+	do_squash / $WKGMNTPT/puppylivecdbuild/$PUPPYSFS ${COMP} -e /media /etc /proc /initrd /var /tmp /archive /mnt /root $TOPPLCDB $ANOTHER_REMOVE $DIRHOME $DIRSYS $DIRLOST $TOPPUPSFS $DIRDEVSNDFILES $DIRDEVUDEV $ICONCACHE  #120605 end #120721 avoid wildecards option, icon-theme.cache 121021
 	sync
 
 	#add pristine folders (out of current puppy.sfs)...
-	mksquashfs /initrd${PUP_LAYER}/home $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
+	do_mksquashfs /initrd${PUP_LAYER}/home $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
 	sync
-	mksquashfs /initrd${PUP_LAYER}/proc $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
+	do_mksquashfs /initrd${PUP_LAYER}/proc $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
 	sync
-	mksquashfs /initrd${PUP_LAYER}/tmp $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
+	do_mksquashfs /initrd${PUP_LAYER}/tmp $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
 	sync
-	mksquashfs /initrd${PUP_LAYER}/mnt $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
+	do_mksquashfs /initrd${PUP_LAYER}/mnt $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
 	sync
-	mksquashfs /initrd${PUP_LAYER}/media $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
+	do_mksquashfs /initrd${PUP_LAYER}/media $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
 	sync
 
 	kill $XPID
@@ -510,9 +580,10 @@ $(gettext 'Please wait...')"
     fi
 	#.packages/ .files, copy any files installed to /root...
 	echo -n "" > /tmp/allpkgs.files
-	for ONEPKG in `ls -1 "$PKG_FILES_DIR/*.files" 2>/dev/null | tr "\n" " "`
-	do
-		grep '^'"$PKG_FILES_DIR" $ONEPKG | \
+	#for ONEPKG in `ls -1 "$PKG_FILES_DIR/*.files" 2>/dev/null | tr "\n" " "`
+	#do
+	#	grep '^'"$PKG_FILES_DIR" $ONEPKG | \
+	#
 		while read -r ONEFILE
 		do
 			if [ -d "$ONEFILE" ] && [ ! -L "$ONEFILE" ];then #w018
@@ -524,8 +595,8 @@ $(gettext 'Please wait...')"
 				rm -f "/tmp${ONEFILE}" # if ONEFILE already exists and it's a link, needs to be removed
 				cp -a -f "$ONEFILE" "/tmp${DIRNAME}/"
 			fi
-		done
-	done
+		done < <(ls -1 "$PKG_FILES_DIR/*.files" 2>/dev/null)
+	#done
 
 	#w018...
 	#modify /root/.packages/ files, as all installed packages are now part of the new cd...
@@ -552,19 +623,8 @@ $(gettext 'Please wait...')"
 	rm -f /tmp/root/.packages/*.remove #120607
 
 	[ -f /tmp/root/.XLOADED ] && rm -f /tmp/root/.XLOADED #130527
+    #######END WORKING ON /root (Part #1)#######
 
-	m_19="$(eval_gettext 'This program has created folder /tmp/root, which has everything that is now going to be added as /root in the ${PUPPYSFS} file.')
-$(gettext "This is mostly 'pristine', as obviously you do not want all your cache files, temp files, email files, and other working/temporary files to be the ISO. However, if you are familiar with the workings of Puppy, you might like to take a look at /tmp/root right now, and possibly add anything that you want from /root (or remove something!)")
-$(gettext '(if you think that this program has missed out something important, please let us know..')
-
-$(eval_gettext "After examining /tmp/root, click 'Ok' to add /root in \${PUPPYSFS} file...")"
-	Xdialog --wrap --left --title "$m_01" --msgbox "$m_19" 0 80
-	sync
-	[ "`ls /tmp/root/.packages/*.files`" = "" ] && CLEARPKGLOG="yes" || CLEARPKGLOG="no" #120607 in case user copied entire /root to /tmp for boot disk.
-	mksquashfs /tmp/root $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
-	sync
-	rm -rf /tmp/root
-	#######END WORKING ON /root#######
 
 	#######START WORKING ON /etc#######
 	rm -rf /tmp/etc 2> /dev/null
@@ -640,6 +700,52 @@ network-wizard."
 
 	cp -f /tmp/etc/DISTRO_SPECS /tmp/DISTRO_SPECSupdated #keep this to put into initrd.gz.
 
+    #######END WORKING ON /etc (Part #1) #######
+
+
+	#######START WORKING ON /var#######
+	rm -rf /tmp/var 2> /dev/null
+	cp -a /initrd${PUP_LAYER}/var /tmp/var #pristine var
+
+	#.packages/ .files, copy any files installed to /var...
+	echo -n "" > /tmp/allpkgs.files
+	#for ONEPKG in `ls -1 "$PKG_FILES_DIR/"*.files 2>/dev/null | tr "\n" " "`
+	#do
+	#	grep '^/var/' $ONEPKG | \
+	#
+		while read -r ONEFILE
+		do
+			if [ -d "$ONEFILE" ] && [ ! -L "$ONEFILE" ];then #w018
+				mkdir -p "/tmp${ONEFILE}"
+			fi
+			if [ -f "$ONEFILE" ] || [ -L "$ONEFILE" ];then #w018
+				DIRNAME="`dirname "$ONEFILE"`"
+				mkdir -p "/tmp${DIRNAME}"
+				rm -f "/tmp${ONEFILE}" # if ONEFILE already exists and it's a link, needs to be removed
+				cp -a -f "$ONEFILE" "/tmp${DIRNAME}/"
+			fi
+		done < <(ls -1 "$PKG_FILES_DIR/"*.files 2>/dev/null)
+	#done
+	sync
+	[ "$CLEARPKGLOG" = "yes" ] && rm -f /tmp/var/log/packages/* #120607
+
+    #######END WORKING ON /var (Part #1)####### 
+
+	
+	#######Start WORKING ON /root (Part #2) #######	
+	m_19="$(eval_gettext 'This program has created folder /tmp/root, which has everything that is now going to be added as /root in the ${PUPPYSFS} file.')
+$(gettext "This is mostly 'pristine', as obviously you do not want all your cache files, temp files, email files, and other working/temporary files to be the ISO. However, if you are familiar with the workings of Puppy, you might like to take a look at /tmp/root right now, and possibly add anything that you want from /root (or remove something!)")
+$(gettext '(if you think that this program has missed out something important, please let us know..')
+
+$(eval_gettext "After examining /tmp/root, click 'Ok' to add /root in \${PUPPYSFS} file...")"
+	Xdialog --wrap --left --title "$m_01" --msgbox "$m_19" 0 80
+	sync
+	[ "`ls /tmp/root/.packages/*.files`" = "" ] && CLEARPKGLOG="yes" || CLEARPKGLOG="no" #120607 in case user copied entire /root to /tmp for boot disk.
+	do_mksquashfs /tmp/root $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
+	sync
+	rm -rf /tmp/root
+	#######END WORKING ON /root (Part #2) #######	
+    #######Start WORKING ON /etc (Part #2) #######
 	m_23="${MSG1}
 
 $(gettext 'If you know what you are doing, you can now modify any files in /tmp/etc folder. This is just about to be added to /etc in the .sfs file.')
@@ -663,41 +769,22 @@ $(eval_gettext "Click 'Ok' to add /etc in \${PUPPYSFS} file...")"
 
 	sync
 
-	mksquashfs /tmp/etc $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
+	do_mksquashfs /tmp/etc $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
 	sync
 	rm -rf /tmp/etc
-	#######END WORKING ON /etc#######
-
-	#######START WORKING ON /var#######
-	rm -rf /tmp/var 2> /dev/null
-	cp -a /initrd${PUP_LAYER}/var /tmp/var #pristine var
-
-	#.packages/ .files, copy any files installed to /var...
-	echo -n "" > /tmp/allpkgs.files
-	for ONEPKG in `ls -1 /root/.packages/*.files 2>/dev/null | tr "\n" " "`
-	do
-		grep '^/var/' $ONEPKG | \
-		while read -r ONEFILE
-		do
-			if [ -d "$ONEFILE" ] && [ ! -L "$ONEFILE" ];then #w018
-				mkdir -p "/tmp${ONEFILE}"
-			fi
-			if [ -f "$ONEFILE" ] || [ -L "$ONEFILE" ];then #w018
-				DIRNAME="`dirname "$ONEFILE"`"
-				mkdir -p "/tmp${DIRNAME}"
-				rm -f "/tmp${ONEFILE}" # if ONEFILE already exists and it's a link, needs to be removed
-				cp -a -f "$ONEFILE" "/tmp${DIRNAME}/"
-			fi
-		done
-	done
-	sync
-	[ "$CLEARPKGLOG" = "yes" ] && rm -f /tmp/var/log/packages/* #120607
+	#######END WORKING ON /etc (Part #2) #######	
+    
+    #######Start WORKING ON /var (Part #2) #######
 
 	sync
-	mksquashfs /tmp/var $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
+	do_mksquashfs /tmp/var $WKGMNTPT/puppylivecdbuild/$PUPPYSFS -keep-as-directory
 	sync
 	rm -rf /tmp/var
+	
+	#s243a: TODO: add prompt to modify the var folder like was done in the etc folder
+	
 	#######END WORKING ON /var#######
+	
 	chmod a+r $WKGMNTPT/puppylivecdbuild/* &>/dev/null
 	chmod a-x $WKGMNTPT/puppylivecdbuild/*.sfs &>/dev/null
 
