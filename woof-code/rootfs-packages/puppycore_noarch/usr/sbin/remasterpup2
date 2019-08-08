@@ -572,11 +572,16 @@ $(gettext 'Please wait...')"
 	cp -af /root/.pmountengine /tmp/root/
 	cp -af /root/.pmountquit /tmp/root/
 	cp -af /root/.pmountsingle /tmp/root/
+    if [ -d /var/packages ]; then
+      PKGS_DIR=/var/packages
+    else
+      PKGS_DIR="$(realpath /root/.pacakges)"
+    fi
 
-	#TODO think need to do this for /var also...
-    PKG_FILES_DIR="$(realpath /root/.pacakges)"
-    if [ -d "$PKG_FILES_DIR/package-files" ]; then
-      PKG_FILES_DIR="$PKG_FILES_DIR/package-files"
+    if [ -d "$PKGS_DIR/package-files" ]; then
+      PKG_FILES_DIR="$PKGS_DIR/package-files"
+    else
+      PKG_FILES_DIR="$PKGS_DIR"
     fi
 	#.packages/ .files, copy any files installed to /root...
 	echo -n "" > /tmp/allpkgs.files
@@ -584,40 +589,45 @@ $(gettext 'Please wait...')"
 	#do
 	#	grep '^'"$PKG_FILES_DIR" $ONEPKG | \
 	#
-		while read -r ONEFILE
-		do
-			if [ -d "$ONEFILE" ] && [ ! -L "$ONEFILE" ];then #w018
-				mkdir -p "/tmp${ONEFILE}"
-			fi
-			if [ -f "$ONEFILE" ] || [ -L "$ONEFILE" ];then #w018
-				DIRNAME="`dirname "$ONEFILE"`"
-				mkdir -p "/tmp${DIRNAME}"
-				rm -f "/tmp${ONEFILE}" # if ONEFILE already exists and it's a link, needs to be removed
-				cp -a -f "$ONEFILE" "/tmp${DIRNAME}/"
-			fi
-		done < <(ls -1 "$PKG_FILES_DIR/*.files" 2>/dev/null)
+	#modify /root/.packages/ files, as all installed packages are now part of the new cd...
+	cp -a -f /root/.packages /tmp/root/
+	#if [ ${PKG_FILES_DIR:0:5} = '/root/' ]; then
+	#	while read -r ONEFILE
+	#	do
+	#		if [ -d "$ONEFILE" ] && [ ! -L "$ONEFILE" ];then #w018
+	#			mkdir -p "/tmp${ONEFILE}"
+	#		fi
+	#		if [ -f "$ONEFILE" ] || [ -L "$ONEFILE" ];then #w018
+	#			DIRNAME="`dirname "$ONEFILE"`"
+	#			mkdir -p "/tmp${DIRNAME}"
+	#			rm -f "/tmp${ONEFILE}" # if ONEFILE already exists and it's a link, needs to be removed
+	#			cp -a -f "$ONEFILE" "/tmp${DIRNAME}/"
+	#		fi
+	#	done < <(ls -1 "$PKG_FILES_DIR/*.files" 2>/dev/null)
+	#fi
 	#done
 
 	#w018...
-	#modify /root/.packages/ files, as all installed packages are now part of the new cd...
-	cp -a -f /root/.packages /tmp/root/
-	if [ -d /var/packages ]; then 
-	  mkdir  -p /tmp/var #This is probably already done
-	  cp -a -f /var/packages /tmp/var/
-	fi 
-	touch /root/.packages/user-installed-packages
+
+
+	
+
 	# 141008: move *.files to ~/.packages/builtin_files/
-	cat /root/.packages/user-installed-packages | \
-	while read -r ONEPKG
-	do
+	if [ ${PKG_FILES_DIR:0:5} = '/root/' ]; then
+	  touch /root/.packages/user-installed-packages	
+	  cat /root/.packages/user-installed-packages | \
+	  while read -r ONEPKG
+	  do
 		ONEFILE="/tmp$PKG_FILES_DIR/`echo "$ONEPKG" | cut -f1 -d '|'`.files"
 		ONENAME="/tmp/root/.packages/builtin_files/`echo "$ONEPKG" | cut -f2 -d '|'`"
 		mv -f "$ONEFILE" "$ONENAME"
-	done
-	cat /root/.packages/user-installed-packages >> /tmp/root/.packages/woof-installed-packages
-	sort -u --key=1 --field-separator="|" /tmp/root/.packages/woof-installed-packages > /tmp/woof-installed-packages-tmp #110722
-	mv -f /tmp/woof-installed-packages-tmp /tmp/root/.packages/woof-installed-packages
-	echo -n "" > /tmp/root/.packages/user-installed-packages #v431
+	  done
+	  cat /root/.packages/user-installed-packages >> /tmp/root/.packages/woof-installed-packages
+	  sort -u --key=1 --field-separator="|" /tmp/root/.packages/woof-installed-packages > /tmp/woof-installed-packages-tmp #110722
+	  mv -f /tmp/woof-installed-packages-tmp /tmp/root/.packages/woof-installed-packages
+	  echo -n "" > /tmp/root/.packages/user-installed-packages #v431	  
+	fi
+
 	sync #120607
 	rm -f /tmp/root/.packages/*.files #120607
 	rm -f /tmp/root/.packages/*.remove #120607
@@ -635,22 +645,22 @@ $(gettext 'Please wait...')"
 
 	#.packages/ .files, copy any files installed to /etc...
 	echo -n "" > /tmp/allpkgs.files
-	for ONEPKG in `ls -1 /root/.packages/*.files 2>/dev/null | tr "\n" " "`
-	do
-		grep '^/etc/' $ONEPKG | \
-		while read -r ONEFILE
-		do
-			if [ -d "$ONEFILE" ] && [ ! -L "$ONEFILE" ];then #w018
-				mkdir -p "/tmp${ONEFILE}"
-			fi
-			if [ -f "$ONEFILE" ] || [ -L "$ONEFILE" ];then #w018
-				DIRNAME="`dirname "$ONEFILE"`"
-				mkdir -p "/tmp${DIRNAME}"
-				rm -f "/tmp${ONEFILE}" # if ONEFILE already exists and it's a link, needs to be removed
-				cp -a -f "$ONEFILE" "/tmp${DIRNAME}/"
-			fi
-		done
-	done
+	#for ONEPKG in `ls -1 /root/.packages/*.files 2>/dev/null | tr "\n" " "`
+	#do
+	#	grep '^/etc/' $ONEPKG | \
+	#	while read -r ONEFILE
+	#	do
+	#		if [ -d "$ONEFILE" ] && [ ! -L "$ONEFILE" ];then #w018
+	#			mkdir -p "/tmp${ONEFILE}"
+	#		fi
+	#		if [ -f "$ONEFILE" ] || [ -L "$ONEFILE" ];then #w018
+	#			DIRNAME="`dirname "$ONEFILE"`"
+	#			mkdir -p "/tmp${DIRNAME}"
+	#			rm -f "/tmp${ONEFILE}" # if ONEFILE already exists and it's a link, needs to be removed
+	#			cp -a -f "$ONEFILE" "/tmp${DIRNAME}/"
+	#		fi
+	#	done
+	#done
 	sync
 
 	cp -af /etc/eventmanager /tmp/etc/ #v411
@@ -706,26 +716,52 @@ network-wizard."
 	#######START WORKING ON /var#######
 	rm -rf /tmp/var 2> /dev/null
 	cp -a /initrd${PUP_LAYER}/var /tmp/var #pristine var
-
+   
 	#.packages/ .files, copy any files installed to /var...
 	echo -n "" > /tmp/allpkgs.files
 	#for ONEPKG in `ls -1 "$PKG_FILES_DIR/"*.files 2>/dev/null | tr "\n" " "`
 	#do
 	#	grep '^/var/' $ONEPKG | \
-	#
-		while read -r ONEFILE
-		do
-			if [ -d "$ONEFILE" ] && [ ! -L "$ONEFILE" ];then #w018
-				mkdir -p "/tmp${ONEFILE}"
-			fi
-			if [ -f "$ONEFILE" ] || [ -L "$ONEFILE" ];then #w018
-				DIRNAME="`dirname "$ONEFILE"`"
-				mkdir -p "/tmp${DIRNAME}"
-				rm -f "/tmp${ONEFILE}" # if ONEFILE already exists and it's a link, needs to be removed
-				cp -a -f "$ONEFILE" "/tmp${DIRNAME}/"
-			fi
-		done < <(ls -1 "$PKG_FILES_DIR/"*.files 2>/dev/null)
+
+	if [ ! -d /var/packages ]; then 
+	  mkdir  -p /tmp/var #This is probably already done
+	fi 
+	[ -d /var/packages ] && cp -arf --remove-destination /var/packages/* /tmp/var/packages
+	if [ ${PKG_FILES_DIR:0:5} = '/var/' ]; then
+		#while read -r ONEFILE
+		#do
+		#	if [ -d "$ONEFILE" ] && [ ! -L "$ONEFILE" ];then #w018
+		#		mkdir -p "/tmp${ONEFILE}"
+		#	fi
+		#	if [ -f "$ONEFILE" ] || [ -L "$ONEFILE" ];then #w018
+		#		DIRNAME="`dirname "$ONEFILE"`"
+		#		mkdir -p "/tmp${DIRNAME}"
+		#		rm -f "/tmp${ONEFILE}" # if ONEFILE already exists and it's a link, needs to be removed
+		#		cp -a -f "$ONEFILE" "/tmp${DIRNAME}/"
+		#	fi
+		#done < <(ls -1 "$PKG_FILES_DIR/"*.files 2>/dev/null)
+    
 	#done
+		
+	# 141008: move *.files to ~/.packages/builtin_files/
+	  if [ ${PKG_FILES_DIR:0:5} = '/var/' ]; then
+	    touch "$PKGS_DIR/user-installed-packages"
+	    cat "$PKGS_DIR/user-installed-packages" | \
+	    while read -r ONEPKG
+	    do
+		  ONEFILE="/tmp$PKG_FILES_DIR/`echo "$ONEPKG" | cut -f1 -d '|'`.files"
+		  ONENAME="$BUILTIN_FILES_DIR/`echo "$ONEPKG" | cut -f2 -d '|'`"
+		  mv -f "$ONEFILE" "$ONENAME"
+	    done
+	  fi
+	  #cat "$PKGS_DIR/user-installed-packages" >> "/tmp$PKGS_DIR/woof-installed-packages"
+	  sort -u --key=1 --field-separator="|" /tmp$PKGS_DIR/woof-installed-packages > /tmp/woof-installed-packages-tmp #110722
+	  mv -f /tmp/woof-installed-packages-tmp /tmp$PKGS_DIR/woof-installed-packages
+	  echo -n "" > /tmp$PKGS_DIR//user-installed-packages #v431
+	  sync #120607
+	  rm -f /tmp$PKGS_DIR/*.files #120607
+	  rm -f /tmp$PKGS_DIR/*.remove #120607
+    fi
 	sync
 	[ "$CLEARPKGLOG" = "yes" ] && rm -f /tmp/var/log/packages/* #120607
 
