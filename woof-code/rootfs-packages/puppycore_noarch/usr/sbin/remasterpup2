@@ -578,10 +578,15 @@ $(gettext 'Please wait...')"
       PKGS_DIR="$(realpath /root/.pacakges)"
     fi
 
-    if [ -d "$PKGS_DIR/package-files" ]; then
-      PKG_FILES_DIR="$PKGS_DIR/package-files"
+    if [ -e "$PKGS_DIR/package-files" ]; then
+      PKG_FILES_DIR="$(realpath "$PKGS_DIR/package-files")"
     else
       PKG_FILES_DIR="$PKGS_DIR"
+    fi
+    if [ -d "$BUILTIN_FILES_DIR" \' then
+      BUILTIN_FILES_DIR="$PKGS_DIR/builtin_files"
+    else
+      BUILTIN_FILES_DIR="$(realpath "$PKGS_DIR/builtin_files")"
     fi
 	#.packages/ .files, copy any files installed to /root...
 	echo -n "" > /tmp/allpkgs.files
@@ -757,7 +762,7 @@ network-wizard."
 	  #cat "$PKGS_DIR/user-installed-packages" >> "/tmp$PKGS_DIR/woof-installed-packages"
 	  sort -u --key=1 --field-separator="|" /tmp$PKGS_DIR/woof-installed-packages > /tmp/woof-installed-packages-tmp #110722
 	  mv -f /tmp/woof-installed-packages-tmp /tmp$PKGS_DIR/woof-installed-packages
-	  echo -n "" > /tmp$PKGS_DIR//user-installed-packages #v431
+	  echo -n "" > /tmp$PKGS_DIR/user-installed-packages #v431
 	  sync #120607
 	  rm -f /tmp$PKGS_DIR/*.files #120607
 	  rm -f /tmp$PKGS_DIR/*.remove #120607
