@@ -583,7 +583,7 @@ $(gettext 'Please wait...')"
     else
       PKG_FILES_DIR="$PKGS_DIR"
     fi
-    if [ -d "$BUILTIN_FILES_DIR" \' then
+    if [ -d "$BUILTIN_FILES_DIR" \' ]; then
       BUILTIN_FILES_DIR="$PKGS_DIR/builtin_files"
     else
       BUILTIN_FILES_DIR="$(realpath "$PKGS_DIR/builtin_files")"
@@ -755,7 +755,7 @@ network-wizard."
 	    while read -r ONEPKG
 	    do
 		  ONEFILE="/tmp$PKG_FILES_DIR/`echo "$ONEPKG" | cut -f1 -d '|'`.files"
-		  ONENAME="$BUILTIN_FILES_DIR/`echo "$ONEPKG" | cut -f2 -d '|'`"
+		  ONENAME="/tmp$BUILTIN_FILES_DIR/`echo "$ONEPKG" | cut -f2 -d '|'`"
 		  mv -f "$ONEFILE" "$ONENAME"
 	    done
 	  fi
