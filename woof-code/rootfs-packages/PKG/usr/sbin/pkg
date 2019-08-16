@@ -7589,7 +7589,9 @@ while [ $# != 0 ]; do # get all options ($# means all options)
   --names-exact-all|-nea|names-exact-all|nea) [ ! "$2" ] && list_all_pkg_names || for x in $opt; do [ "$x" -a "$x" != "-" ] && list_all_pkg_names "$x\$"; done; exit 0 ;;
 
       # get, download, install, remove, pkgs
-      --download|-d|download|d)         [ ! "$2" ] && pkg_download || for x in $opt; do [ "$x" -a "$x" != "-" ] && pkg_download "$x";  done;;
+      --download|-d|download|d) 
+        AUTOCLEAN_override='no'  
+        [ ! "$2" ] && pkg_download || for x in $opt; do [ "$x" -a "$x" != "-" ] && pkg_download "$x";  done;;
       --install|-i|install|i)           [ ! "$2" ] && pkg_install  || for x in $opt; do [ "$x" -a "$x" != "-" ] && pkg_install "$x";   done;;
       --uninstall|-u|uninstall|u)       [ ! "$2" ] && pkg_uninstall|| for x in $opt; do [ "$x" -a "$x" != "-" ] && pkg_uninstall "$x"; done;;
       --remove|-rm|remove|rm)           [ ! "$2" ] && pkg_remove   || for x in $opt; do [ "$x" -a "$x" != "-" ] && pkg_remove "$x";    done;;
@@ -7716,7 +7718,7 @@ done
 
 #====================  main interface  ======================#
 code=$?
-
+[ ! -z "$AUTOCLEAN_override" ] && AUTOCLEAN="$AUTOCLEAN_override"
 # if AUTOCLEAN=true silently delete all pkgs in WORKDIR that are already installed
 if [ "$AUTOCLEAN" = 'yes' -a "`HIDE_BUILTINS=true list_installed_pkgs`" != '' ];then
   clean_pkgs &>/dev/null
