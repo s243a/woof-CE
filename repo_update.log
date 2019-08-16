@@ -1,0 +1,1219 @@
++ APPNAME=Pkg
++ APPVER=1.9.22
++ APPTITLE='Pkg 1.9.22'
++ USER_LANG=en_CA.UTF-8
++ USER_LC_ALL=
+++ basename /usr/sbin/pkg
++ SELF=pkg
++ QTAG=
++ LANG=C
++ LC_ALL=C
++ EDITOR=mp
++ PAGER=less
++ CURDIR=/mnt/sdc1/git_projects/woof-next/woof-CE
+++ whoami
++ whoami=root
++ TMPDIR=/tmp/pkg/root
++ green='\e[32m'
++ red='\e[91m'
++ magenta='\e[95m'
++ lightblue='\e[36m'
++ yellow='\e[93m'
++ bold='\e[1m'
++ endcolour='\e[0m'
++ '[' -z '' ']'
++ export PKGRC=/root/.pkg/pkgrc
++ PKGRC=/root/.pkg/pkgrc
++ '[' -z '' ']'
++ ASK=false
++ '[' -z '' ']'
++ QUIET=false
++ '[' -z '' ']'
++ FORCE=false
++ '[' -z '' ']'
++ export HIDE_INSTALLED=false
++ HIDE_INSTALLED=false
++ '[' -z '' ']'
++ export HIDE_BUILTINS=true
++ HIDE_BUILTINS=true
++ '[' -z '' ']'
++ export HIDE_USER_PKGS=true
++ HIDE_USER_PKGS=true
++ '[' -z '' ']'
++ export NO_ALIASES=false
++ NO_ALIASES=false
++ '[' -z '' ']'
++ export NO_INSTALL=false
++ NO_INSTALL=false
++ '[' -z '' ']'
++ export PKG_NO_COLOURS=false
++ PKG_NO_COLOURS=false
++ '[' -z '' ']'
++ export PKG_CONFIGURE=
++ PKG_CONFIGURE=
++ '[' -z '' ']'
++ export PKG_CFLAGS=
++ PKG_CFLAGS=
++ '[' -z '' ']'
+++ realpath /root/.packages
++ export PKGS_DIR=/var/packages
++ PKGS_DIR=/var/packages
++ '[' -z '' ']'
++ '[' -d /var/packages/repo ']'
+++ realpath /var/packages/repo
++ export REPO_DB_FILE_DIR=/var/packages/repo
++ REPO_DB_FILE_DIR=/var/packages/repo
++ '[' -z '' ']'
++ '[' -d /var/packages/package-files ']'
+++ realpath /var/packages/package-files
++ export PACKAGE_FILE_LIST_DIR=/var/packages/package-files
++ PACKAGE_FILE_LIST_DIR=/var/packages/package-files
++ '[' -z '' ']'
++ BUILTIN_FILE_LIST_DIR=/var/packages/builtin_files
++ SPEC_DB_PATHS=()
++ declare -ga SPEC_DB_PATHS
++ read SPEC_FILE
+++ find /var/packages -name '*-installed-packages'
+++ basename /var/packages/user-installed-packages
++ bname=user-installed-packages
++ case "$bname" in
++ export USER_INST_PKGS_FILE=/var/packages/user-installed-packages
++ USER_INST_PKGS_FILE=/var/packages/user-installed-packages
++ '[' -z /var/packages/user-installed-packages ']'
++ '[' -z '' ']'
++ WOOF_INST_PKGS_FILE=/var/packages/woof-installed-packages
++ '[' -z '' ']'
++ LAYER_INST_PKGS_FILE='/var/packages/layers-installed packages'
++ '[' -z '' ']'
++ DEVX_INST_PKGS_FILE=/var/packages/devx-only-installed-packages
++ SPEC_DB_PATHS=("$USER_INST_PKGS_FILE" "$WOOF_INST_PKGS_FILE" "${SPEC_DB_PATHS[@]}")
++ read SPEC_FILE
+++ basename /var/packages/woof-installed-packages
++ bname=woof-installed-packages
++ case "$bname" in
++ export WOOF_INST_PKGS_FILE=/var/packages/woof-installed-packages
++ WOOF_INST_PKGS_FILE=/var/packages/woof-installed-packages
++ '[' -z /var/packages/user-installed-packages ']'
++ '[' -z /var/packages/woof-installed-packages ']'
++ '[' -z '/var/packages/layers-installed packages' ']'
++ '[' -z /var/packages/devx-only-installed-packages ']'
++ SPEC_DB_PATHS=("$USER_INST_PKGS_FILE" "$WOOF_INST_PKGS_FILE" "${SPEC_DB_PATHS[@]}")
++ read SPEC_FILE
++ ALL_REPO_DB_PATHS=()
++ declare -gA ALL_REPO_DB_PATHS
++ bname=
++ read REPO_FILE
+++ find /var/packages/repo -name 'Packages-*'
+++ basename /var/packages/repo/Packages-devuan-ascii-contrib
++ bname=Packages-devuan-ascii-contrib
++ ALL_REPO_DB_PATHS+=(["$bname"]="$REPO_FILE")
++ read REPO_FILE
+++ basename /var/packages/repo/Packages-puppy-common-official
++ bname=Packages-puppy-common-official
++ ALL_REPO_DB_PATHS+=(["$bname"]="$REPO_FILE")
++ read REPO_FILE
+++ basename /var/packages/repo/Packages-devuan-ascii-main
++ bname=Packages-devuan-ascii-main
++ ALL_REPO_DB_PATHS+=(["$bname"]="$REPO_FILE")
++ read REPO_FILE
+++ basename /var/packages/repo/Packages-puppy-noarch-official
++ bname=Packages-puppy-noarch-official
++ ALL_REPO_DB_PATHS+=(["$bname"]="$REPO_FILE")
++ read REPO_FILE
+++ basename /var/packages/repo/Packages-devuan-ascii-non-free
++ bname=Packages-devuan-ascii-non-free
++ ALL_REPO_DB_PATHS+=(["$bname"]="$REPO_FILE")
++ read REPO_FILE
+++ basename /usr/sbin/pkg
++ '[' pkg '!=' pkg -o false = true ']'
++ trap 'cleanup ${LINENO:-none} $?' EXIT INT TERM
+++ whoami
++ whoami=root
++ '[' root '!=' root ']'
++ '[' '!' -f /root/.pkg/pkgrc ']'
++ '[' -f /etc/rc.d/PUPSTATE ']'
++ . /etc/rc.d/PUPSTATE
+++ PUPMODE=13
+++ PDEV1=sdb1
+++ DEV1FS=ext4
+++ PUPSFS=sdb1,ext4,/tiny_puduan/ascii/PreAlpha12/puppy_tascii.sfs
+++ PUPSAVE=sdb1,ext4,/tiny_puduan/ascii/PreAlpha12/asciisave
+++ PMEDIA=usbflash
+++ ATADRIVES='sda sdb sdc sdd '
+++ ATAOPTICALDRIVES='sr0 '
+++ RW_LAYER=/pup_rw
+++ SAVE_LAYER=/pup_ro1
+++ PUP_LAYER=/pup_ro2
+++ PUP_HOME=/mnt/dev_save
+++ ZDRV=sdb1,ext4,/tiny_puduan/ascii/PreAlpha12/zdrv_tascii_0.sfs
+++ FDRV=sdb1,ext4,/tiny_puduan/ascii/PreAlpha12/fdrv_tascii_0.sfs
+++ ADRV=
+++ YDRV=
+++ PSAVEMARK=
+++ PSAVEPART=
+++ PSAVEDIR=
+++ PSUBDIR=/tiny_puduan/ascii/PreAlpha12
+++ PUNIONFS=aufs
+++ DOIMODS=yes
+++ DOMIBS=no
++ '[' -f /etc/DISTRO_SPECS ']'
++ . /etc/DISTRO_SPECS
+++ DISTRO_NAME='Tiny Devaun'
+++ DISTRO_VERSION=0
+++ DISTRO_BINARY_COMPAT=devuan
+++ DISTRO_FILE_PREFIX=ascii
+++ DISTRO_COMPAT_VERSION=ascii
+++ DISTRO_KERNEL_PET=Huge_Kernel
+++ DISTRO_XORG_AUTO=yes
+++ DISTRO_DB_SUBNAME=ascii
+++ DISTRO_TARGETARCH=x86
+++ BUILD_FROM_WOOF='testing;deb00746;2019-01-06 13:27:08 -0600'
+++ DISTRO_PUPPYSFS=puppy_tascii.sfs
+++ DISTRO_ZDRVSFS=zdrv_tascii_0.sfs
+++ DISTRO_FDRVSFS=fdrv_tascii_0.sfs
+++ DISTRO_ADRVSFS=adrv_tascii_0.sfs
+++ DISTRO_YDRVSFS=ydrv_tascii_0.sfs
+++ DISTRO_PUPPYDATE='Jun 2019'
+++ DISTRO_ARCHDIR=i386-linux-gnu
++ '[' -f /etc/rc.d/BOOTCONFIG ']'
++ . /etc/rc.d/BOOTCONFIG
+++ LASTUNIONRECORD='asciisave puppy_tascii.sfs fdrv_tascii_0.sfs zdrv_tascii_0.sfs'
++ '[' -f /etc/xdg/menus/hierarchy ']'
++ . /etc/xdg/menus/hierarchy
+++ PUPHIERARCHY='
+CATEGORY   SUB-CATEGORY    XDG-CATEGORIES                    EXAMPLES
+
+Desktop    :Sub            X-Desktop                                           #eventmanager
+Desktop    :appearance     X-Desktop-appearance,DesktopSettings                #desk_icon_theme_browndust gtk_theme_fishpie pwallpaper pcur
+Desktop    :settings       X-Desktop-settings,X-DesktopCountry,Accessibility   #pupx xclock xkbconfigmanager
+Desktop    :windows        X-Desktop-windows                                   #blackbox e16 fbpanel fluxbox fvwm icewm jwm2 lxpanel
+Desktop    :sleep          X-Desktop-sleep,Screensaver                         #xlock_gui xlockmore
+Desktop    :applet         X-Desktop-applet,X-DesktopApplets,Clock             #gfontsel glipper minixcal xclipboard
+
+System     :Sub            X-System,System,HardwareSettings,Core               #bootmanager
+System     :process        X-System-process,Monitor,X-SystemSchedule           #asapm lxtask pprocess pschedule
+System     :memory         X-System-memory,X-SystemMemory                      #freememapplet_xlib memtest
+System     :print          X-System-print                                      #gtklp hpijs
+System     :storage        X-System-storage                                    #gparted grub
+System     :security       X-System-security,Security                          #loginmanager
+
+Setup      :Sub            X-Setup                                             #
+Setup      :puppy          X-Setup-puppy,X-SetupEntry,PackageManager           #petget quicksetup
+Setup      :wizard         X-Setup-wizard,X-SetupWizard                        #net_setup
+Setup      :installation   X-Setup-installation,X-SetupUtility                 #
+
+Utility    :Sub            X-Utility,Utility,Electronics,Emulator,Engineering  #xdelta
+Utility    :development    X-Utility-development,Development,Building,Debugger,IDE,Profiling,ProjectManagement,RevisionControl,Translation,GUIDesigner #anjuta bacon lxrad
+Utility    :package        X-Utility-package,Archiving,Compression             #pbackup pmirror xarchiver
+Utility    :shell          X-Utility-shell,TerminalEmulator,Shell              #cutecom minicom picocom rxvt
+Utility    :help           X-Utility-help,Documentation                        #linux-faqs linux-howtos man-pages
+
+Filesystem :Sub            X-Filesystem,FileSystem,FileTools                   #
+Filesystem :filemanager    X-Filesystem-filemanager,FileManager                #gfnrename gwhere mc nautilus rox_filer
+Filesystem :mount          X-Filesystem-mount,X-FilesystemMount                #pdrive 
+Filesystem :find           X-Filesystem-find,X-FilesystemFind                  #pfind zfind
+Filesystem :storage        X-Filesystem-storage,X-FilesystemUtility            #gdmap partview
+
+Graphic    :Sub            X-Graphic,2DGraphics,3DGraphics                     #
+Graphic    :paint          X-Graphic-paint,RasterGraphics                      #mtpaint xpaint
+Graphic    :draw           X-Graphic-draw,VectorGraphics                       #inkscape inkscapelite inkview varicad xfig
+Graphic    :flow           X-Graphic-flow,Chart,FlowChart,Presentation         #dia
+Graphic    :viewer         X-Graphic-viewer,Viewer,X-Graphic-viewer            #eog flphoto fotoxx gimageview gpicview
+Graphic    :camera         X-Graphic-camera,Photography                        #gphoto2 gtkam pupcamera
+Graphic    :scanner        X-Graphic-scanner,Scanning,OCR                      #peasyscan xsane
+Graphic    :print          X-Graphic-print                                     #peasyprint
+Graphic    :utility        X-Graphic-utility,X-GraphicUtility                  #gcolor2 grabc scale2x
+
+Document   :Sub            X-Document                                          #
+Document   :layout         X-Document-layout,Publishing,WordProcessor,WebDevelopment      #abiword amaya lyx scribus
+Document   :catalog        X-Document-catalog,Dictionary                       #
+Document   :edit           X-Document-edit,TextEditor                          #bluefish e3 geany gedit jed joe leafpad medit
+Document   :viewer         X-Document-viewer,Viewer                            #epdfview xman xpdf
+Document   :utility        X-Document-utility,X-DocumentUtility                #PeasyPDF pdict
+
+Business   :Sub            X-Business,X-Calculate                              #
+Business   :spreadsheet    X-Business-spreadsheet,Spreadsheet                  #gnumeric
+Business   :planner        X-Business-planner,ProjectManagement                #planner
+Business   :finance        X-Business-finance,Finance                          #acct expensetracker grisbi homebank moneymanagerx
+Business   :calc           X-Business-calc,Calculator,X-CalculateUtility       #calcoo cgtkcalc galculator gmeasures ycalc xcalc
+
+Personal   :Sub            X-Personal                                          #
+Personal   :database       X-Personal-database,ContactManagement               #dlume
+Personal   :date           X-Personal-date,Calendar                            #osmo
+Personal   :organizer      X-Personal-organizer,PDA                            #didiwiki notecase pplog
+Personal   :security       X-Personal-security                                 #fpm2
+Personal   :timing         X-Personal-timing,X-PersonalUtility                 #pstopwatch ptimer
+Personal   :education      X-Personal-education,Languages,Science,ArtificialIntelligence,Astronomy,Biology,Chemistry,ComputerScience,DataVisualization,Economy,Electricity,Geography,Geology,Geoscience,History,ImageProcessing,Literature,Math,NumericalAnalysis,MedicalSoftware,Physics,Robotics,Sports,ParallelComputing #
+
+Network    :Sub            X-Network,Network                                   #
+Network    :firewall       X-Network-firewall                                  #fwbuilder linux_firewall
+Network    :phone          X-Network-phone,Dialup                              #gnome-ppp gpptp pppoeconf_pup rp_pppoe_cli wvdial
+Network    :connect        X-Network-connect,HamRadio,RemoteAccess             #pwireless
+Network    :transfer       X-Network-transfer                                  #file_sharing-curlftpfs-mpscan pure_ftpd
+Network    :utility        X-Network-utility                                   #
+
+Internet   :Sub            X-Internet                                          #
+Internet   :browser        X-Internet-browser,WebBrowser                       #dillo seamonkey
+Internet   :chat           X-Internet-chat,Chat,InstantMessaging,VideoConference  #ayttm pidgin pidgin_perl psip wengophone xchat
+Internet   :mailnews       X-Internet-mailnews,Email,News                      #fetchmail getmail mailx mozilla-thunderbird pan sendmail sylpheed
+Internet   :transfer       X-Internet-transfer,Telephony,IRCClient,FileTransfer,P2P #axel bareftp gcurl gftp lftp ncftp puppy-podcast-grabber pwget
+Internet   :login          X-Internet-login                                    #ssh_gui
+Internet   :block          X-Internet-block                                    #adblock
+Internet   :utility        X-Internet-utility                                  #flashplayer gurlchecker
+
+Multimedia :Sub            X-Multimedia,Recorder                               #
+Multimedia :mediaplayer    X-Multimedia-mediaplayer,Player                     #amarok amp audacious gecko-mediaplayer gnome-mplayer gxine
+Multimedia :audiovideo     X-Multimedia-audiovideo,AudioVideo,AudioVideoEditing,Tuner      #
+Multimedia :sound          X-Multimedia-sound,Music,Audio,Midi,Mixer,Sequencer #absvolume absvolume_puppy audacity aumix madplay mhwaveedit sgmixer
+Multimedia :video          X-Multimedia-video,Video,TV                         #pupdvdtool
+Multimedia :optical        X-Multimedia-optical,DiskBurning                    #cdw grafburn pburn
+Multimedia :utility        X-Multimedia-utility                                #
+
+Fun        :Sub            X-Fun,Game,Amusement,BlocksGame,KidsGame,Simulation,SportsGame #
+Fun        :adventure      X-Fun-adventure,ActionGame,AdventureGame,RolePlaying  #lincity
+Fun        :boardgame      X-Fun-boardgame,BoardGame                           #gnuchess
+Fun        :cardgame       X-Fun-cardgame,CardGame                             #
+Fun        :puzzle         X-Fun-puzzle,StrategyGame,LogicGame                 #picpuz rubix
+Fun        :shooter        X-Fun-shooter                                       #xsoldier
+Fun        :arcade         X-Fun-arcade,ArcadeGame                             #
+'
++ '[' -f /var/packages/DISTRO_PKGS_SPECS ']'
++ . /var/packages/DISTRO_PKGS_SPECS
+++ FALLBACKS_COMPAT_VERSIONS=jessie
+++ PKGS_SPECS_TABLE='
+yes|915resolution||exe,dev,doc>null,nls>null
+yes|a52dec|liba52-0.7.4,liba52-0.7.4-dev|exe,dev,doc>null,nls>null
+yes|aalib|libaa1|exe,dev>null,doc>null,nls>null #ascii library, needed by mplayer, gphoto
+yes|acl|libacl1,libacl1-dev|exe,dev,doc>null,nls>null
+yes|acpi|acpi|exe,dev,doc>null,nls>null
+yes|acpid-busibox||exe
+yes|advancecomp|advancecomp|exe>dev,dev,doc>null,nls>null
+yes|align||exe
+yes|alsa-lib|libasound2,libasound2-data,libasound2-dev,libasound2-plugins,libspeexdsp1|exe,dev,doc>null,nls>null
+###yes|alsa-base|alsa-base|exe,dev,doc>null,nls>null #stretch ditched this
+yes|alsa-utils|alsa-utils|exe,dev,doc>null,nls>null
+yes|aspell|libaspell15,libaspell-dev|exe,dev,doc>null,nls>null #needed by abiword.
+yes|atk|libatk1.0-0,libatk1.0-dev|exe,dev,doc>null,nls>null
+yes|at-spi2-atk|libatspi2.0-0,libatk-bridge2.0-0,libatk-adaptor,libatk-bridge2.0-dev|exe,dev,doc>null,nls>null #needed by gtk+3.
+yes|attr|libattr1,libattr1-dev|exe,dev,doc>null,nls>null
+yes|audiofile|libaudiofile1,libaudiofile-dev|exe,dev,doc>null,nls>null
+yes|audit|libaudit-common,libaudit1,libaudit-dev|exe,dev,doc>null,nls>null #needed by xorg.
+yes|autoconf|autoconf|exe>dev,dev,doc>null,nls>null
+yes|automake|automake,autotools-dev|exe>dev,dev,doc>null,nls>null
+yes|autopoint|autopoint|exe>dev,dev,doc>null,nls>null
+yes|avahi|libavahi-client3,libavahi-client-dev,libavahi-glib1,libavahi-glib-dev,libavahi-common3,libavahi-common-data,libavahi-common-dev,libavahi-compat-libdnssd1,libavahi-compat-libdnssd-dev|exe,dev,doc>null,nls>null
+yes|axel|axel|exe,dev>null,doc>null,nls>null
+##--yes|baconrecorder||exe,dev
+yes|bash|bash|exe,dev,doc>null,nls>null
+yes|bbc_provided||exe
+yes|bbe|bbe|exe,dev,doc>null,nls>null #sed-like editor for binary files.
+yes|bc|bc|exe,dev,doc>null,nls>null
+yes|bcrypt|bcrypt|exe,dev,doc>null,nls>null
+yes|bdb|libdb5.3,libdb-dev,libdb5.3-dev|exe,dev,doc>null,nls>null
+yes|bin86|bin86|exe>dev,dev,doc>null,nls>null
+yes|binutils|binutils,binutils-dev|exe>dev,dev,doc>null,nls>null
+yes|bison|bison|exe>dev,dev,doc>null,nls>null
+yes|boehm-gc|libgc1c2,libgc-dev|exe,dev,doc>null,nls>null
+yes|busybox||exe
+yes|bzip2|bzip2,libbz2-1.0,libbz2-dev|exe,dev,doc>null,nls>null
+yes|ca-certificates|ca-certificates|exe,dev,doc>null,nls>null
+yes|cairo|libcairo2,libcairo2-dev,libcairo-gobject2,libcairo-gobject2,libcairo-script-interpreter2|exe,dev,doc>null,nls>null
+yes|cddetect||exe,dev>null,doc>null,nls>null
+yes|cdparanoia|cdparanoia,libcdparanoia0,libcdparanoia-dev|exe,dev,doc>null,nls>null
+yes|cdrtools||exe,dev,doc>null,nls>null
+yes|close-dvd+rwtools||exe,doc>null,nls>null
+yes|copy-fast||exe,doc>null,nls>null
+yes|coreutils|coreutils|exe,doc>null,nls>null
+yes|cmake|cmake,cmake-data,cmake-curses-gui,libuv1|exe>dev,dev,doc>null,nls>null
+yes|colord|libcolord2,libcolord-dev|exe,dev,doc>null,nls>null #needed by gtk+3.
+yes|cpio|cpio|exe,dev>null,doc>null,nls>null
+yes|ctorrent|ctorrent|exe,dev>null,doc>null,nls>null
+yes|cryptsetup|cryptsetup-bin,libcryptsetup4|exe,dev>null,doc>null,nls>null
+yes|cups|cups-bsd,cups,cups-common,cups-core-drivers,cups-server-common,cups-client,cups-ppdc,libcups2,libcups2-dev,libcupsimage2,libcupsimage2-dev,libcupsmime1,libcupscgi1,libcupsppdc1,cups-daemon|exe,dev,doc>null,nls>null
+yes|cups-filters|cups-filters,cups-filters-core-drivers,libcupsfilters1,libcupsfilters-dev,libfontembed1,libfontembed-dev|exe,dev,doc>null,nls>null #extra cups filters, especially pdftops.
+yes|cups_pdf||exe,dev,doc>null,nls>null
+yes|curl|curl,libcurl3,libcurl4-openssl-dev|exe,dev,doc>null,nls>null
+yes|cvs|cvs|exe>dev,dev,doc>null,nls>null
+yes|cyrus-sasl2|libsasl2-2,libsasl2-dev|exe,dev,doc>null,nls>null
+yes|dash|dash|exe>dev,dev,doc>null,nls>null
+yes|dbus||exe,dev,doc>null,nls>null
+yes|dbus-glib|libdbus-glib-1-2,libdbus-glib-1-dev|exe,dev,doc>null,nls>null
+yes|libdbus|libdbus-1-3|exe,dev,doc>null,nls>null #required
+yes|d-conf|dconf-gsettings-backend,dconf-service,libdconf1|exe,dev,doc>null,nls>null #needed by gsettings-desktop-settings
+yes|debianutils|debianutils|exe,dev,doc>null,nls>null
+yes|desk_icon_theme_blue_moon||exe
+##--yes|desk_icon_theme_ardis||exe
+no|desk_icon_theme_oranchelo||exe
+no|desk_icon_theme_Sarai||exe
+yes|desk_icon_theme_neon||exe
+no|desk_icon_theme_original||exe
+##yes|desk_icon_theme_jq8raised||exe
+no|desk_icon_theme_smooth_color||exe
+no|desk_icon_theme_stardust||exe
+yes|devmapper|libdevmapper1.02.1,libdevmapper-dev,libdevmapper-event1.02.1|exe,dev,doc>null,nls>null
+yes|dhcpcd|dhcpcd5|exe,dev>null,doc>null,nls>null
+yes|dialog|dialog|exe,dev>null,doc>null,nls>null
+yes|dictd_client||exe,dev>null,doc>null,nls>null
+yes|dietlibc|dietlibc-dev|exe>dev,dev,doc>null,nls>null
+yes|diffstat|diffstat|exe,dev>null,doc>null,nls>null
+yes|diffutils|diffutils|exe,dev>null,doc>null,nls>null
+yes|directfb|libdirectfb-1.2-9,libdirectfb-dev,libdirectfb-extra|exe,dev,doc>null,nls>null
+yes|disktype||exe,dev>null,doc>null,nls>null
+yes|dmidecode|dmidecode|exe,dev>null,doc>null,nls>null
+yes|dosfstools|dosfstools|exe,dev>null,doc>null,nls>null
+yes|dpkg-deb|dpkg|exe,dev>null,doc>null,nls>null
+yes|dvdauthor|dvdauthor|exe,dev>null,doc>null,nls>null
+yes|dvd+rwtools|dvd+rw-tools,growisofs|exe,dev>null,doc>null,nls>null
+yes|e2fsprogs|e2fsprogs,e2fslibs,e2fslibs-dev,libblkid1,libblkid-dev,libcomerr2,comerr-dev,libss2,ss-dev,libuuid1,uuid-dev|exe,dev,doc>null,nls>null #note, strange ubuntu seems to have lost the dev component of libuuid.
+yes|edid|read-edid|exe,dev>null,doc>null,nls>null
+yes|eject|eject|exe,dev>null,doc>null,nls>null
+yes|elfutils|elfutils,libasm1,libasm-dev,libdw1,libdw-dev,libelf1,libelf-dev|exe,dev,doc>null,nls>null #note, libelf is a different pkg.
+yes|elspci||exe,dev>null,doc>null,nls>null
+yes|enchant|libenchant1c2a,libenchant-dev|exe,dev,doc>null,nls>null
+yes|esound|esound-common,libesd0,libesd0-dev|exe,dev,doc>null,nls>null
+yes|ethtool|ethtool|exe,dev>null,doc>null,nls>null
+no|evince|evince,libevdocument3-4,libevview3-3,libsecret-1-0,evince-common|exe,dev,doc>null,nls>null #gtk3 pdf viewer
+##--yes|evince||exe,dev,doc>null,nls>null #needs gtk2, poppler.
+yes|exiv2|exiv2,libexiv2-14,libexiv2-dev|exe,dev,doc>null,nls>null
+yes|exfat|exfat-fuse,exfat-utils|exe,dev,doc,nls #requires fuse
+yes|expat|libexpat1,libexpat1-dev|exe,dev,doc>null,nls>null
+yes|f2fs-tools||exe,dev
+yes|faac|libfaac0|exe,dev,doc>null,nls>null
+yes|faad|faad,libfaad2,libfaad-dev|exe,dev,doc>null,nls>null
+yes|ffconvert||exe,dev,doc>null,nls>null
+yes|ffmpeg|ffmpeg,libavcodec57,libavcodec-extra57,libavcodec-dev,libavutil55,libavdevice57,libavdevice-dev,libswresample2,libswresample-dev,libavresample3,libavresample-dev,libavfilter-extra6,libpostproc54,libpostproc-dev,libavutil-dev,libavutil-dev,libavformat57,libavformat-dev,libavdevice-dev,libavfilter6,libavfilter-dev,libbs2b0,libbs2b-dev,libflite1,libgme0,libiec61883-0,libjack-jackd2-0,libjack-jackd2-dev,libnuma1,libnuma-dev,libopenal1,libopenal-data,libopenal-dev,libshine3,libshine-dev,libsnappy1v5,libsodium18,libsodium-dev,libsoxr0,libsoxr-dev,libssh-gcrypt-4,libssh-gcrypt-dev,libswscale4,libswscale-dev,libwavpack1,libwavpack-dev,libzmq5,libsndio6.1,libsndio-dev,libsdl2-2.0-0,libsdl2-dev,libavc1394-0,libtwolame0,libmodplug1,librubberband2,libebur128-1,libass5,libass-dev,libchromaprint1,libzvbi0,libzvbi-common,libwebpmux2,libwebp6,libcrystalhd3,libjson-c3,libjson-c-dev,libspeex1,libcaca0,libopenmpt0,libmpg123-0,libpgm-5.2-0|exe,dev,doc>null,nls>null
+yes|file|file,libmagic1,libmagic-mgc,libmagic-dev|exe,dev,doc>null,nls>null
+yes|file_sharing-curlftpfs-mpscan||exe
+yes|findutils|findutils|exe,dev>null,doc>null,nls>null
+yes|firefox-esr|firefox-esr|exe,dev>null,doc>null,nls>null
+yes|firmware_linux_module_b43||exe| #120919 have taken these out of woof, now pets.
+yes|firmware_linux_module_b43legacy||exe
+yes|flac|flac,libflac8,libflac-dev|exe,dev,doc>null,nls>null
+yes|flex|flex|exe>dev,dev,doc>null,nls>null
+yes|flsynclient||exe,dev,doc>null,nls>null
+yes|fontconfig|fontconfig-config,fonts-dejavu-core|exe,dev,doc>null,nls>null
+yes|foomatic-db-engine|foomatic-db-engine|exe,dev,doc>null,nls>null
+yes|foomatic-filters|foomatic-filters|exe,dev,doc>null,nls>null
+yes|fpm2||exe,dev
+yes|freeglut|freeglut3,freeglut3-dev|exe,dev,doc>null,nls>null
+yes|freememapplet_tray||exe
+yes|freetype|libfreetype6,libfreetype6-dev|exe,dev,doc>null,nls>null
+yes|fribidi|libfribidi0,libfribidi-dev|exe,dev,doc>null,nls>null
+no|frisbee||exe,dev,doc,nls #created by jemimah, puppified by rerwin.
+yes|fuse|fuse,libfuse2,libfuse-dev|exe,dev,doc>null,nls>null
+yes|gadmin-rsync|gadmin-rsync|exe,dev>null,doc>null,nls>null
+yes|gail|libgail18,libgail-common,libgail-dev|exe,dev,doc>null,nls>null
+yes|galculator|galculator|exe,dev>null,doc>null,nls>null
+yes|gamin|gamin,libgamin0,libgamin-dev|exe,dev,doc>null,nls>null
+yes|gawk|gawk|exe,dev>null,doc>null,nls>null
+yes|gcc_dev|gcc-6-base,gcc,gcc-6,g++,g++-6,cpp,cpp-6,cloog-isl|exe>dev,dev,doc>null,nls>null
+yes|gcc_lib|libasan3,libatomic1,libcloog-isl4,libgcc1,libgcc-6-dev,libgomp1,libisl15,libitm1,libquadmath0|exe,dev,doc>null,nls>null
+yes|gcolor2|gcolor2|exe,dev>null,doc>null,nls>null
+yes|gconf|gconf2-common,gconf2,libgconf2-4,libgconf2-dev,libgconf-2-4,gconf-service|exe,dev,doc>null,nls>null
+yes|gdb|gdb,libdb5.3,libbabeltrace-ctf1,libbabeltrace1,libmpdec2,libpython3.5,libpython3.5-minimal,libpython3.5-stdlib,mime-support|exe>dev,dev,doc>null,nls>null
+yes|gdbm|libgdbm3,libgdbm-dev|exe,dev,doc>null,nls>null
+yes|gdk-pixbuf|libgdk-pixbuf2.0-0,libgdk-pixbuf2.0-common,libgdk-pixbuf2.0-dev|exe,dev,doc>null,nls>null
+yes|gdmap|gdmap|exe,dev>null,doc>null,nls>null
+yes|geany|geany,geany-common|exe,dev,doc>null,nls>null
+yes|get_libreoffice||exe
+no|getflash||exe
+yes|gettext_devxonly|gettext-base,gettext|exe>dev,dev,doc>null,nls>null
+yes|gettext|gettext-base,gettext|exe,dev>null,doc>null,nls>null
+yes|gexec|gexec|exe,dev>null,doc>null,nls>null
+yes|gftp|gftp-gtk,gftp-common|exe,dev>null,doc>null,nls>null
+yes|ghostscript|ghostscript,ghostscript-x,libgs9,libgs9-common,libgs-dev|exe,dev,doc>null,nls>null
+yes|gifsicle|gifsicle|exe,dev>null,doc>null,nls>null
+yes|git|git|exe>dev,dev,doc>null,nls>null
+no|glade3|glade,libgladeui-2-4,libgladeui-common,libgladeui-dev|exe>dev,dev,doc>null,nls>null #needs gtk3. note, have libglade-2.so runtime that does not need gtk3.
+yes|glade2|glade,libgladeui-2-6,libgladeui-common,libgladeui-dev|exe>dev,dev,doc>null,nls>null
+yes|glib|libglib2.0-bin,libglib2.0-0,libglib2.0-data,libglib2.0-dev|exe>null,dev>null,doc>null,nls>null #theres glib 2.50.3 pet pkg
+yes|glibc|libc-bin,libc6,libc6-dev,tzdata|exe,dev,doc>null,nls>null
+yes|glibc_locales|locales|exe,dev,doc>null,nls>exe
+yes|gmeasures||exe,dev>null,doc>null,nls>null
+yes|gmp|libgmp10,libgmpxx4ldbl,libgmp-dev,libgmp3-dev|exe,dev,doc>null,nls>null #in precise, this was only in devx, but abiword needs it.
+yes|gnome-doc-utils|gnome-doc-utils|exe>dev,dev,doc>null,nls>null|+python-libxml2
+yes|gnome-keyring|libgnome-keyring0,libgnome-keyring-dev|exe,dev,doc>null,nls>null
+yes|gnome-menus||exe,dev #use my pet, version 2.14.3, needed by xdg_puppy.
+##--yes|gnome-mplayer||exe #needs libgmlib1. needs gtk3.
+yes|gnome-vfs|libgnomevfs2-0,libgnomevfs2-dev,libgnomevfs2-common|exe,dev,doc>null,nls>null
+yes|gnutls|gnutls-bin,libgnutls30,libgnutls28-dev,libopts25,libopts25-dev,libgnutls-dane0,libunbound2|exe,dev,doc>null,nls>null
+yes|gpart|gpart|exe,dev>null,doc>null,nls>null #gparted
+yes|gparted|gparted,libglibmm-2.4-1v5,libglibmm-2.4-dev,libatkmm-1.6-1v5,libatkmm-1.6-dev,libcairomm-1.0-1v5,libcairomm-1.0-dev,libpangomm-1.4-1v5,libpangomm-1.4-dev,libgtkmm-2.4-1v5,libgtkmm-2.4-dev|exe,dev,doc>null,nls>null
+yes|gperf|gperf|exe,dev>null,doc>null,nls>null
+yes|gphoto2|gphoto2|exe,dev>null,doc>null,nls>null
+yes|gphotofs|gphotofs|exe,dev>null,doc>null,nls>null
+yes|gpm|libgpm2|exe,dev>null,doc>null,nls>null #needed by mplayer, gphoto2.
+yes|gpptp||exe,dev>null,doc>null,nls>null
+yes|graphite2|libgraphite2-3,libgraphite2-dev|exe,dev,doc>null,nls>null #needed by harfbuzz.
+yes|grep|grep|exe,dev>null,doc>null,nls>null
+yes|groff|groff|exe>dev,dev,doc>null,nls>null
+yes|grub|| # not found in debian streatch
+yes|grub4dos||exe,dev>null,doc>null,nls>null
+yes|gsettings-desktop-schemas|gsettings-desktop-schemas|exe,dev #needs d-conf.
+yes|gsm|libgsm1,libgsm1-dev|exe,dev,doc>null,nls>null
+yes|gstreamer1|libgstreamer1.0-0,libgstreamer-plugins-base1.0-0|exe,dev,doc>null,nls>null
+yes|gtk+|libgtk2.0-0,libgtk2.0-dev|exe,dev,doc>null,nls>null
+yes|gtk2-engines-pixbuf|gtk2-engines-pixbuf|exe,dev,doc>null,nls>null
+yes|gtk+3|libgtk-3-0,libgtk-3-dev,libgtk-3-common,gtk-update-icon-cache,librest-0.7-0,libsoup-gnome2.4-1|exe,dev,doc>null,nls>null #have taken out all gtk3 apps. 140127 still have gnome-mplayer --no
+yes|gtkam|gtkam|exe,dev>null,doc>null,nls>null
+yes|gtk-chtheme|gtk-chtheme|exe,dev>null,doc>null,nls>null
+yes|gtkdialog3||exe,dev,doc>dev,nls|
+yes|gtkdialog4||exe,dev,doc>dev,nls| #modify all pets that need this to explicitly call gtkdialog or gtkdialog4.
+##--yes|gtkhash||exe,dev
+yes|gtklp|gtklp|exe,dev,doc>null,nls>null
+yes|gtk_theme_stark||exe
+yes|gtk_theme_flatbluecontrast||exe
+yes|gtk_theme_flat_grey_rounded||exe
+yes|gtk_theme_gradient_grey||exe
+yes|gtk_theme_polished_blue||exe
+yes|gtk_theme_stark-blueish||exe
+yes|gtksourceview|libgtksourceview2.0-0,libgtksourceview2.0-common,libgtksourceview2.0-dev|exe,dev,doc>null,nls>null
+yes|gtkspell|libgtkspell0,libgtkspell-dev|exe,dev,doc>null,nls>null
+yes|gutenprint|ijsgutenprint,printer-driver-gutenprint,libgutenprint2,libgutenprint-dev,libgutenprintui2-1,libgutenprintui2-dev,printer-driver-gutenprint|exe,dev,doc>null,nls>null
+yes|gview||exe,dev,dev>null,doc>null,nls>null
+yes|gwhere||exe,dev,dev>null,doc>null,nls>null
+yes|gxmessage||exe #use my pet, as has xmessage symlink to gxmessage.
+### yes|gobject-introspection|gir1.2-glib-2.0,gir1.2-freedesktop,gobject-introspection,libgirepository-1.0-1,libgirepository1.0-dev|exe>dev,dev,doc>null,nls>null #requires python3
+yes|gzip|gzip|exe,dev>null,doc>null,nls>null
+yes|hardinfo||exe,dev #our pet is patched to recognise puppy linux distro.
+yes|harfbuzz|libharfbuzz0b|exe,dev,doc>null,nls>null #needed by pango. unfortunately, needs icu. no, maybe pango not need icu, take out libharfbuzz-icu0,libharfbuzz-dev
+yes|harfbuzz-dev|libharfbuzz-dev|exe>dev,dev,doc>null,nls>null #need harfbuzz.pc, for pkg-config --cflags gtk+-2.0. broken, leaving out libharfbuzz-icu0, libharfbuzz-gobject0
+yes|hdparm|hdparm|exe,dev>null,doc>null,nls>null
+yes|heimdal|heimdal-dev,heimdal-multidev,libasn1-8-heimdal,libgssapi3-heimdal,libhcrypto4-heimdal,libhdb9-heimdal,libheimbase1-heimdal,libhx509-5-heimdal,libkadm5clnt7-heimdal,libkadm5srv8-heimdal,libkafs0-heimdal,libkdc2-heimdal,libkrb5-26-heimdal,libwind0-heimdal,libroken18-heimdal,libheimntlm0-heimdal,libsl0-heimdal|exe,dev,doc>null,nls>null #all this crap needed by cupsd.
+yes|helpsurfer||exe| #simple html viewer, needs libgtkhtml.
+yes|hexchat|hexchat,libproxy1v5|exe,dev,doc>null,nls>null
+yes|hicolor-icon-theme|hicolor-icon-theme|exe,dev>null,doc>null,nls>null
+yes|hotplug2stdout||exe,dev>null,doc>null,nls>null
+yes|htop|htop|exe,dev>null,doc>null,nls>null
+yes|hunspell|hunspell,libhunspell-1.4-0,libhunspell-dev|exe,dev,doc>null,nls>null
+yes|hunspell-en-us|hunspell-en-us|exe,dev,doc>null,nls>null
+yes|icu|libicu57,libicu-dev|exe,dev,doc>null,nls>null #scribus needs this though it is not listed as a dep. note, it is big, 7MB pkg. crap, better put it into main f.s. NO have manually put this dep into main db. harfbuzz needs icu also.
+yes|id3lib|libid3-3.8.3v5,libid3-3.8.3-dev|exe,dev,doc>null,nls>null
+yes|ifplugd|ifplugd|exe,dev,doc>null,nls>null
+yes|ijs|libijs-0.35,libijs-dev|exe,dev,doc>null,nls>null
+yes|imake|xutils-dev|exe>dev,dev,doc>null,nls>null
+yes|initscripts|initscripts|exe,dev,doc>null,nls>null
+yes|init-system-helpers|init-system-helpers|exe>null,dev>null,doc>null,nls>null #to prevent it from being installed as dependency..
+yes|inkscapelite||exe,dev,doc>null,nls>null
+yes|inotail||exe,dev,dev>null,doc>null,nls>null
+yes|inotify-tools|inotify-tools,libinotifytools0|exe,dev,doc>null,nls>null
+yes|installwatch||exe
+yes|intltool|intltool|exe,dev,doc>null,nls>null #previously only in devx, but need in main f.s. to run momanager without devx.
+yes|iptables|iptables,libip4tc0,libip6tc0,libxtables12,iptables-dev|exe,dev,doc>null,nls>null
+yes|iso-codes|iso-codes|exe,dev,doc>null,nls>null #needed by gstreamer. very big. GSTREAMER1.0 GSTREAMER0.10
+yes|isomaster|isomaster|exe,dev,doc>null,nls>null
+yes|jbig2dec|libjbig2dec0,libjbig2dec0-dev|exe,dev,doc>null,nls>null #needed by ghostscript.
+yes|jbigkit|libjbig0,libjbig-dev|exe,dev,doc>null,nls>null #needed by libtiff5.
+yes|jimtcl||exe,dev,doc>null,nls>null
+yes|jwm|jwm|exe,dev,doc>null,nls>null
+yes|jwmconfig3||exe
+yes|jwm_theme_deepbluebold||exe
+yes|keyutils|libkeyutils1|exe,dev>null,doc>null,nls>null
+yes|kmod|kmod,libkmod2,libkmod-dev|exe,dev,doc>null,nls>null #er, no, looks like compiled without gzip support --but i think only need that in initrd, where already have old modprobe.
+yes|krb5|libkrb5-3,libkrb5-dev,libkrb5support0,libk5crypto3,libgssapi-krb5-2|exe,dev,doc>null,nls>null
+yes|lame|lame,libmp3lame0,libmp3lame-dev|exe,dev,doc>null,nls>null
+yes|lcms|liblcms2-2,liblcms2-dev,liblcms2-utils|exe,dev,doc>null,nls>null
+yes|lcms2|liblcms2-2,liblcms2-dev,liblcms2-utils|exe,dev,doc>null,nls>null
+yes|leafpad|leafpad|exe,dev>null,doc>null,nls>null
+yes|legacy_grub_2013||exe
+yes|less|less|exe,dev>null,doc>null,nls>null
+yes|libaacs|libaacs0,libaacs-dev|exe,dev,doc>null,nls>null #mplayer needs this.
+yes|libao|libao4,libao-common,libao-dev|exe,dev,doc>null,nls>null
+yes|libappindicator|libappindicator3-1,libappindicator3-dev,libindicator3-7,libindicator3-dev|exe,dev,doc>null,nls>null #needs gtk3, needed by transmission. no, using my pet.
+yes|libarchive|libarchive13|exe,dev,doc>null,nls>null #needed by cmake.
+yes|libart|libart-2.0-2,libart-2.0-dev|exe,dev,doc>null,nls>null
+yes|libasyncns|libasyncns0,libasyncns-dev|exe,dev,doc>null,nls>null #needed by mplayer.
+yes|libbluray|libbluray1,libbluray-dev|exe,dev,doc>null,nls>null #needed by mplayer.
+yes|libbonobo|libbonobo2-0,libbonobo2-dev,libbonoboui2-0,libbonoboui2-dev|exe,dev,doc>null,nls>null
+yes|libboost-filesystem|libboost-filesystem1.62.0,libboost-filesystem1.62-dev|exe,dev,doc>null,nls>null
+yes|libboost-system|libboost-system1.62.0,libboost-system1.62-dev|exe,dev,doc>null,nls>null
+yes|libbsd|libbsd0,libbsd-dev|exe,dev,doc>null,nls>null #needed by libedit.
+yes|libcanberra|libcanberra0,libcanberra-dev|exe,dev,doc>null,nls>null #libbonobui needs this.
+yes|libcap|libcap2,libcap-dev|exe,dev,doc>null,nls>null
+yes|libcap-ng|libcap-ng0,libcap-ng-dev|exe,dev,doc>null,nls>null
+yes|libcddb|libcddb2,libcddb2-dev|exe,dev,doc>null,nls>null #debian/ubuntu pkg missing cddb_query, also very old version (warning: .deb cddb package has nothing to do with libcddb pkg). 120907 yes.
+yes|libcdio|libcdio13,libcdio-dev,libcdio-cdda1,libcdio-cdda-dev,libcdio-paranoia1,libcdio-paranoia-dev,libcdio-utils,libiso9660-8,libiso9660-dev,libudf0,libudf-dev|exe,dev,doc>null,nls>null #not compatible with my libcddb pet, use my pet. 120907 yes.
+yes|libcdk5|libcdk5,libcdk5-dev|exe,dev,doc>null,nls>null
+yes|libcroco|libcroco3,libcroco3-dev|exe,dev,doc>null,nls>null
+yes|libcurl3-gnutls|libcurl3-gnutls|exe,dev,doc>null,nls>null #this is needed by git in the devx sfs file. update: conky needs it in the main f.s.
+yes|libdaemon|libdaemon0,libdaemon-dev|exe,dev,doc>null,nls>null
+yes|libdatrie|libdatrie1,libdatrie-dev|exe,dev,doc>null,nls>null
+yes|libdb|libdb5.3,libdb5.3-dev|exe>dev,dev,doc>null,nls>null
+yes|libdbusmenu|libdbusmenu-gtk3-4,libdbusmenu-glib4|exe,dev,doc>null,nls>null #needed by libappindicator. left off dev debs.
+yes|libdc1394|libdc1394-22,libdc1394-22-dev|exe,dev,doc>null,nls>null #ffmpeg3 compiled in luci needs this
+yes|libdca|libdca0,libdca-dev|exe,dev,doc>null,nls>null #mplayer needs this.
+yes|libdmx|libdmx1,libdmx-dev|exe,dev,doc>null,nls>null #this is actaully part of xorg.
+yes|libdvdcss||exe,dev,doc>null,nls>null
+yes|libdvdnav|libdvdnav4,libdvdnav-dev|exe,dev,doc>null,nls>null #needed by mplayer.
+yes|libdvdread|libdvdread4,libdvdread-dev|exe,dev,doc>null,nls>null
+yes|libedit|libedit2,libedit-dev|exe,dev,doc>null,nls>null
+yes|libenca|libenca0,libenca-dev|exe,dev,doc>null,nls>null
+yes|liberror-perl|liberror-perl|exe>dev,dev,doc>null,nls>null #needed by git.
+yes|libevdev|libevdev2,libevdev-dev,libevdev-tools|exe,dev,doc>null,nls>null
+yes|libevent|libevent-core-2.0-5,libevent-2.0-5,libevent-extra-2.0-5,libevent-openssl-2.0-5,libevent-pthreads-2.0-5,libevent-dev|exe,dev,doc>null,nls>null #needed by transmission.
+yes|libexif|libexif12,libexif-dev|exe,dev,doc>null,nls>null
+yes|libexif-gtk|libexif-gtk5,libexif-gtk-dev|exe,dev,doc>null,nls>null
+yes|libffi|libffi6,libffi-dev|exe,dev,doc>null,nls>null
+yes|libfftw|libfftw3-double3,libfftw3-dev|exe,dev,doc>null,nls>null
+yes|libfs|libfs6,libfs-dev|exe,dev,doc>null,nls>null #120603 mavrothal reported need this for compiling xorg drivers.
+yes|libgcrypt|libgcrypt20,libgcrypt20-dev|exe,dev,doc>null,nls>null
+yes|libgd2|libgd3,libgd-dev|exe,dev,doc>null,nls>null #needed by libgphoto2.
+yes|libgee|libgee-0.8-2,libgee-0.8-dev|exe,dev,doc>null,nls>null
+yes|libgeoip|libgeoip1,libgeoip-dev|exe,dev,doc>null,nls>null
+yes|libgif|libgif7,libgif-dev|exe,dev,doc>null,nls>null
+yes|libglade2|libglade2-0,libglade2-dev|exe,dev,doc>null,nls>null
+yes|libgnome|libgnome-2-0,libgnome2-dev|exe,dev,doc>null,nls>null
+yes|libgnomecanvas2|libgnomecanvas2-0,libgnomecanvas2-dev|exe,dev,doc>null,nls>null
+yes|libgnomeui|libgnomeui-0,libgnomeui-dev|exe,dev,doc>null,nls>null
+yes|libgpg-error|libgpg-error0,libgpg-error-dev|exe,dev,doc>null,nls>null
+yes|libgphoto2|libgphoto2-6,libgphoto2-dev,libgphoto2-port12|exe,dev,doc>null,nls>null
+yes|libgringotts|libgringotts2,libgringotts-dev|exe,dev,doc>null,nls>null
+yes|libgsf|libgsf-1-114,libgsf-1-common,libgsf-1-dev|exe,dev,doc>null,nls>null
+yes|libgtkhtml||exe,dev,doc>null,nls>null #needed by my osmo pet.
+yes|libgudev|libgudev-1.0-0,libgudev-1.0-dev|exe,dev,doc>null,nls>null
+yes|libical|libical2,libical-dev|exe,dev,doc>null,nls>null
+yes|libid3tag|libid3tag0,libid3tag0-dev|exe,dev,doc>null,nls>null
+yes|libidl|libidl-2-0,libidl-dev|exe,dev,doc>null,nls>null
+yes|libidn|libidn11|exe,dev,doc>null,nls>null
+yes|libidn2|libidn2-0,libidn2-0-dev|exe,dev,doc>null,nls>null
+yes|libieee1284|libieee1284-3|exe,dev,doc>null,nls>null
+yes|libimlib|libimlib2,libimlib2-dev|exe,dev,doc>null,nls>null
+yes|libindicator|libindicator7,libindicator-dev|exe,dev,doc>null,nls>null #needed by libappindicator.
+yes|libinput|libinput10,libinput-dev,libwacom2,libwacom-dev|exe,dev,doc>null,nls>null
+yes|libjack|libjack0,libjack-dev|exe,dev,doc>null,nls>null
+yes|libjansson4|libjansson4,libjansson-dev|exe,dev,doc>null,nls>null
+yes|libjpeg62|libjpeg62-turbo,libjpeg62-turbo-dev,libjpeg-dev|exe,dev,doc>null,nls>null
+yes|libjpeg_old7||exe,dev>null,doc>null,nls>null
+yes|libjsoncpp1|libjsoncpp1,libjsoncpp-dev|exe,dev,doc>null,nls>null
+yes|libjson-glib|libjson-glib-1.0-0,libjson-glib-1.0-common,libjson-glib-dev|exe,dev,doc>null,nls>null
+yes|libloudmouth|libloudmouth1-0,libloudmouth1-dev|exe,dev,doc>null,nls>null
+yes|libltdl|libltdl7,libltdl-dev|exe,dev,doc>null,nls>null #note, this is really part of libtool pkg, but libs needed at runtime.
+yes|libmad|libmad0,libmad0-dev|exe,dev,doc>null,nls>null
+yes|libmcrypt|libmcrypt4,libmcrypt-dev|exe,dev,doc>null,nls>null
+yes|libmng|libmng1,libmng-dev|exe,dev,doc>null,nls>null
+yes|libmnl|libmnl0,libmnl-dev|exe,dev,doc>null,nls>null
+yes|libmpcdec|libmpcdec6,libmpcdec-dev|exe,dev,doc>null,nls>null
+yes|libmpfr|libmpfr4|exe,doc>null,nls>null
+yes|libnatpmp|libnatpmp1,libnatpmp-dev|exe,dev,doc>null,nls>null #needed by transmission.
+yes|libnfnetlink|libnfnetlink0,libnfnetlink-dev|exe,devdoc>null,nls>null
+yes|libnetfilter-conntrack|libnetfilter-conntrack3,libnetfilter-conntrack-dev|exe,dev,doc>null,nls>null
+yes|libnghttp2|libnghttp2-14,libnghttp2-dev|exe,dev,doc>null,nls>null #stretch: needed by curl, cmake, etc...
+yes|libnl|libnl-3-200,libnl-3-dev|exe,dev,doc>null,nls>null #this was used in lucid, perhaps not needed now.
+yes|libnl3|libnl-3-200,libnl-3-dev,libnl-cli-3-200,libnl-cli-3-dev,libnl-genl-3-200,libnl-genl-3-dev,libnl-nf-3-200,libnl-nf-3-dev,libnl-route-3-200,libnl-route-3-dev|exe,dev,doc>null,nls>null
+yes|libnotify|libnotify4,libnotify-dev|exe,dev,doc>null,nls>null
+yes|libopenjp2|libopenjp2-7,libopenjp2-7-dev|exe,dev,doc>null,nls>null
+yes|libopencore|libopencore-amrnb0,libopencore-amrnb-dev,libopencore-amrwb0,libopencore-amrwb-dev|exe,dev,doc>null,nls>null #was libopencore dep for ffmpeg3 or mplayer2--can delete if mplayer2
+yes|libogg|libogg0,libogg-dev|exe,dev,doc>null,nls>null
+yes|libpaper|libpaper1,libpaper-dev,libpaper-utils|exe,dev,doc>null,nls>null
+yes|libpcap|libpcap0.8,libpcap0.8-dev|exe,dev,doc>null,nls>null
+yes|libpciaccess|libpciaccess0,libpciaccess-dev|exe,dev,doc>null,nls>null
+yes|libpcsclite|libpcsclite1,libpcsclite-dev|exe,dev,doc>null,nls>null
+yes|libperl|libperl5.24,libperl-dev|exe,dev,doc>null,nls>null
+yes|libpipeline|libpipeline1|exe>dev,dev,doc>null,nls>null #needed by man pkg
+yes|libpng|libpng16-16,libpng-dev|exe,dev,doc>null,nls>null
+yes|libpng12||exe,dev>null,doc>null,nls>null #from precise..
+##--yes|libpng14||exe,dev>null,doc>null,nls>null
+yes|libpsl|libpsl5,libpsl-dev|exe,dev,doc>null,nls>null #stretch: wget dep
+yes|libpthread-stubs|libpthread-stubs0-dev|exe>dev,dev,doc>null,nls>null
+yes|libraw1394|libraw1394-11,libraw1394-dev|exe,dev,doc>null,nls>null
+yes|librevenge|librevenge-0.0-0,librevenge-dev|exe,dev,doc>null,nls>null
+yes|librsvg|librsvg2-2,librsvg2-dev,librsvg2-bin,librsvg2-common|exe,dev,doc>null,nls>null #shows gtk3 as dep, but might work without.
+yes|libsamplerate|libsamplerate0,libsamplerate0-dev|exe,dev,doc>null,nls>null
+yes|libselinux|libselinux1|exe,dev>null,doc>null,nls>null
+yes|libsepol|libsepol1,libsepol1-dev|exe,dev,doc>null,nls>null
+yes|libsigc++|libsigc++-2.0-0v5,libsigc++-2.0-dev|exe,dev,doc>null,nls>null
+yes|libsigsegv|libsigsegv2,libsigsegv-dev|exe,dev,doc>null,nls>null
+yes|libslang|libslang2|exe,dev>null,doc>null,nls>null
+yes|libsmartcols|libsmartcols1,libsmartcols-dev|exe,dev,doc>null,nls>null
+yes|libsndfile|libsndfile1,libsndfile1-dev,sndfile-programs|exe,dev,doc>null,nls>null
+yes|libsoup|libsoup2.4-1,libsoup2.4-dev|exe,dev,doc>null,nls>null
+yes|libssh2|libssh2-1,libssh2-1-dev|exe,dev,doc>null,nls>null #stretch: needed by curl, etc.
+yes|libstdc++5|libstdc++5|exe,dev,doc>null,nls>null #old libstdc++.so.5. some video codecs (/usr/lib/codecs) need it.
+yes|libstdc++6|libstdc++6,libstdc++-6-dev|exe,dev,doc>null,nls>null
+yes|libsystemd|libsystemd0,libsystemd-dev|exe,dev,doc>null,nls>null
+yes|libtar|libtar0,libtar-dev|exe,dev,doc>null,nls>null #needed by osmo.
+yes|libtasn1|libtasn1-6,libtasn1-6-dev|exe,dev,doc>null,nls>null
+yes|libthai|libthai0|exe,dev,doc>null,nls>null #have left out libthai-data and libthai-dev.
+yes|libtheora|libtheora0,libtheora-dev|exe,dev,doc>null,nls>null
+yes|libtiff|libtiff5,libtiff5-dev|exe,dev,doc>null,nls>null
+yes|libtool|libtool,autotools-dev|exe>dev,dev,doc>null,nls>null
+yes|libunistring|libunistring0,libunistring-dev|exe,dev,doc>null,nls>null
+yes|libusb|libusb-0.1-4,libusb-dev|exe,dev,doc>null,nls>null
+yes|libusb1|libusb-1.0-0,libusb-1.0-0-dev|exe,dev,doc>null,nls>null #libusb1 necesssary for ffmpeg3
+yes|libv4l|libv4l-0,libv4l-dev,libv4lconvert0|exe,dev,doc>null,nls>null
+yes|libva|libva1,libva-drm1,libva-dev,libva-glx1,libva-egl1,libva-x11-1,libva-wayland1,libva-tpi1,vainfo|exe,dev,doc>null,nls>null #needed by mplayer.
+yes|libvdpau|libvdpau1,mesa-vdpau-drivers,vdpau-va-driver,libvdpau-dev|exe,dev,doc>null,nls>null #needed by mplayer. no, this has another big dep: Failed to open VDPAU backend libvdpau_nvidia.so missing.
+yes|libvorbis|libvorbis0a,libvorbis-dev,libvorbisenc2,libvorbisfile3|exe,dev,doc>null,nls>null
+yes|libvpx|libvpx4,libvpx-dev|exe,dev,doc>null,nls>null #needed by mplayer.
+yes|libwmf|libwmf0.2-7,libwmf-dev|exe,dev,doc>null,nls>null
+yes|libwpg|libwpg-0.3-3|exe,dev>null,doc>null,nls>null
+yes|libwpd|libwpd-0.10-10,libwpd-dev|exe,dev,doc>null,nls>null
+yes|libx86|libx86-1,libx86-dev|exe,dev,doc>null,nls>null
+yes|libxcb_base|libxcb1,libxcb1-dev,libxcb-dri2-0,libxcb-dri2-0-dev,libxcb-dri3-0,libxcb-dri3-dev,libxcb-icccm4,libxcb-icccm4-dev,libxcb-image0,libxcb-image0-dev,libxcb-xkb1,libxcb-xkb-dev,libxcb-present0,libxcb-present-dev,libxcb-render0,libxcb-render0-dev,libxcb-render-util0,libxcb-render-util0-dev,libxcb-shape0,libxcb-shape0-dev,libxcb-shm0,libxcb-shm0-dev,libxcb-sync1,libxcb-sync-dev,libxcb-glx0,libxcb-glx0-dev,libxcb-xfixes0,libxcb-xfixes0-dev|exe,dev,doc>null,nls>null
+yes|libzip|libzip4,libzip-dev|exe,dev,doc>null,nls>null
+yes|xcb-util|libxcb-util0,libxcb-util0-dev|exe,dev,doc>null,nls>null
+yes|libxdg-basedir|libxdg-basedir1,libxdg-basedir-dev|exe,dev,doc>null,nls>null
+yes|libxkbcommon|libxkbcommon0,libxkbcommon-dev,libxkbcommon-x11-0,libxkbcommon-x11-dev|exe,dev,doc>null,nls>null #needed by gtk+3. have taken out gtk3
+yes|libxml2|libxml2,libxml2-dev|exe,dev,doc>null,nls>null
+yes|libxml2-utils|libxml2-utils|exe>dev,dev,doc>null,nls>null
+yes|libxshmfence|libxshmfence1,libxshmfence-dev|exe,dev,doc>null,nls>null #xorg needs this.
+yes|libxslt|libxslt1.1,libxslt1-dev,xsltproc|exe,dev,doc>null,nls>null
+yes|libxvmc|libxvmc1,libxvmc-dev|exe,dev,doc>null,nls>null #this is actually part of xorg.
+yes|linux_firmware_dvb||exe
+yes|linux-header|linux-libc-dev|exe>dev,dev,doc>null,nls>null
+yes|lirc|liblircclient0,liblircclient-dev|exe,dev,doc>null,nls>null
+yes|llvm|libllvm3.9|exe,dev| #needed by libgl1-mesa-dri, but huge 7MB deb. i left out dev components. 120605 removed. 120902 back.
+yes|lsb-base|lsb-base|exe,dev,doc>null,nls>null
+yes|lxde_apps|lxtask,lxterminal,lxrandr,gpicview,gmrun,lxinput|exe,dev,doc>null,nls>null
+yes|pcmanfm|pcmanfm,libfm4,libfm-data,libfm-extra4,libfm-gtk4,libfm-gtk-data,libmenu-cache3,libmenu-cache-bin,lxmenu-data
+yes|pup-volume-monitor||exe
+yes|lzma|lzma,lzma-dev|exe,dev,doc>null,nls>null
+yes|lz4|liblz4-1|exe,dev,doc>null,nls>null
+yes|lzo2|liblzo2-2,liblzo2-dev|exe,dev,doc>null,nls>null
+yes|m4|m4|exe>dev,dev,doc>null,nls>null
+yes|madplay|madplay|exe,dev,doc>null,nls>null
+yes|make|make|exe>dev,dev,doc>null,nls>null
+yes|makebootfat||exe| #must use my patched makebootfat.
+yes|man|man-db|exe>dev,dev,doc>null,nls>null
+yes|man_cut||exe,dev>null,doc>null,nls>null
+yes|mesa|libgbm1,libgbm-dev,libegl1-mesa,libwayland-egl1-mesa,libegl1-mesa-dev,libgles1-mesa,libgles1-mesa-dev,libgles2-mesa,libgles1-mesa-dev,mesa-va-drivers|exe,dev,doc>null,nls>null #have most in xorg_base. these extra needed by gstreamer. GSTREAMER1.0
+yes|mhash|libmhash2,libmhash-dev|exe,dev,doc>null,nls>null
+yes|mhwaveedit|mhwaveedit|exe,dev>null,doc>null,nls>null
+yes|mingetty|mingetty|exe,dev>null,doc>null,nls>null
+yes|miniupnpc|libminiupnpc10,libminiupnpc-dev|exe,dev,doc>null,nls>null #needed by transmission.
+yes|mirdir||exe
+yes|mktemp|mktemp|exe,dev>null,doc>null,nls>null
+yes|modem_stats||exe
+yes|mountcifs||exe
+yes|mpclib3|libmpc3|exe>dev,dev,doc>null,nls>null #needed by gcc.
+yes|mpeg2dec|libmpeg2-4,libmpeg2-4-dev|exe,dev,doc>null,nls>null #needed by mplayer.
+yes|mpfr|libmpfr4|exe>dev,dev,doc>null,nls>null
+yes|mplayer|mplayer,libdv4,liblirc-client0,libvorbisidec1|exe,dev,doc>null,nls>null
+yes|mpv|mpv,liblua5.2-0,liblua5.2-dev,libguess1|exe,dev,doc>null,nls>null
+##yes|gnome-mpv|gnome-mpv,libmpv1|gnome-mpv,libmpv1
+yes|mplayer_samba|libsmbclient,libldb1,libtalloc2,libtevent0,libwbclient0,python-talloc,samba-libs|exe,dev,doc>null,nls>null
+yes|ms-sys||exe
+yes|mtdev|libmtdev1,libmtdev-dev|exe,dev,doc>null,nls>null #needed by synaptics_drv.so in xorg.
+yes|mtpaint|mtpaint|exe,dev,doc>null,nls>null
+yes|mtr|mtr|exe,dev,doc>null,nls>null
+yes|musl|musl,musl-dev,musl-tools|exe>dev,dev,doc>null,nls>null
+yes|nano|nano|exe,dev,doc>null,nls>null
+yes|nas|libaudio2,libaudio-dev|exe,dev,doc>null,nls>null #needed by mplayer, qupzilla
+yes|nasm|nasm|exe>dev,dev,doc>null,nls>null
+yes|nbtscan||exe,dev
+yes|ncurses|ncurses-base,ncurses-bin,libncurses5,libncurses5-dev,libncursesw5,libncursesw5-dev,libtinfo5,libtinfo-dev|exe,dev,doc>null,nls>null
+yes|ndiswrapper|ndiswrapper,ndiswrapper-utils-1.9|exe,dev>null,doc>null,nls>null
+yes|nenscript||exe
+yes|netpbm|netpbm,libnetpbm10,libnetpbm10-dev|exe,dev,doc>null,nls>null
+no|netpbm||exe,dev,doc>null,nls>null
+yes|net_setup||exe
+yes|net-tools|net-tools|exe,dev,doc>null,nls>null
+yes|nettle|libnettle6,nettle-dev,libhogweed4|exe,dev,doc>null,nls>null #needed by libarchive.
+no|netsurf|netsurf,netsurf-common,netsurf-gtk,netsurf-fb,libvncserver1|exe,dev,doc>null,nls>null
+##--yes|netmon_wce||exe,dev
+yes|network_roxapp||exe
+yes|normalize|normalize-audio|exe,dev,doc>null,nls>null
+yes|notecase||exe,dev,doc>null,nls>null
+yes|nrg2iso|nrg2iso|exe,dev,doc>null,nls>null #used by pburn.
+yes|nspr|libnspr4,libnspr4-dev|exe,dev,doc>null,nls>null #using seamonkey pkg with these built-in. 120913 enabled.
+yes|nss|libnss3,libnss3-dev|exe,dev,doc>null,nls>null #using seamonkey pkg with these built-in. 120913 enabled.
+yes|ntfs-3g|ntfs-3g,libntfs-3g871,ntfs-3g-dev|exe,dev,doc>null,nls>null #this seems to have taken over the full functionality of ntfsprogs.
+yes|ntpdate||exe| #used by psync to sync local time and date from the internet.
+yes|numlockx||exe| #needed by shinobars firstrun.
+yes|opencv|libopencv-core2.4v5,libopencv-imgproc2.4v5|exe,dev>null,doc>null,nls>null #ffmpeg needs this. dep: libtbb2. have left off the dev deb.
+yes|openldap|libldap-2.4-2,libldap2-dev|exe,dev,doc>null,nls>null
+##yes|openslp|libslp1,libslp-dev|exe,dev,doc>null,nls>null
+yes|opensp|opensp,libosp-dev,libosp5|exe>dev,dev,doc>null,nls>null|+sgml-base,+sgml-data,+xml-core
+yes|openssh_client|openssh-client|exe,dev,doc>null,nls>null
+yes|openssl|openssl,libssl1.1,libssl-dev,libssl1.0.2|exe,dev,doc>null,nls>null #libssl1.0.2 = older libssl
+yes|optipng|optipng|exe>dev,dev,doc>null,nls>null
+yes|opus|libopus0,libopus-dev,opus-tools|exe,dev,doc>null,nls>null #needed by ffmpeg
+yes|orbit2|liborbit2,liborbit-2-0,liborbit2-dev|exe,dev,doc>null,nls>null
+yes|orc|liborc-0.4-0,liborc-0.4-dev|exe,dev,doc>null,nls>null #needed by mplayer.
+##--yes|osmo||exe,dev,doc>null,nls>null #needs libnotify, libgtkhtml, libtar, libgringotts, libical.
+yes|ots|libots0,libots-dev|exe,dev,doc>null,nls>null
+yes|p7zip-full|p7zip-full|exe,dev,doc>null,nls>null
+yes|p11-kit|libp11-kit0,libp11-kit-dev|exe,dev,doc>null,nls>null #needed by cupsd (ubuntu cups pkg). 121210 need dev pkg for gnutls, refer forum t=82092&start=135
+yes|PackIt||exe,dev
+yes|pam|libpam0g|exe,dev,doc>null,nls>null
+yes|pango|libpango-1.0-0,libpango1.0-0,libpango1.0-dev,libpangoft2-1.0-0,libpangocairo-1.0-0,libpangox-1.0-0,libpangoxft-1.0-0,gir1.2-pango-1.0|exe,dev,doc>null,nls>null
+yes|parted|parted,libparted2,libparted-fs-resize0,libparted-dev|exe,dev,doc>null,nls>null #gparted
+yes|patch|patch|exe>dev,dev,doc>null,nls>null
+yes|patchutils|patchutils|exe>dev,dev,doc>null,nls>null
+yes|pbackup||exe
+no|pburn||exe
+yes|pcdripper||exe
+yes|pciutils|pciutils,libpci3,libpci-dev|exe,dev,doc>null,nls>null
+yes|pcmciautils|pcmciautils|exe,dev,doc>null,nls>null
+yes|pcre|libpcre3,libpcre3-dev,libpcre16-3,libpcrecpp0v5|exe,dev,doc>null,nls>null
+yes|pdiag||exe| #diagnostic tool created by rerwin.
+yes|pdvdrsab||exe
+yes|peasydisc||exe
+yes|peasyglue||exe,dev
+yes|peasypdf||exe,dev
+yes|peasyport||exe| #rcrsn51, alternative to superscan.
+yes|peasyprint||exe,dev
+yes|peasyscale||exe #rcrsn51, jpg image resizer.
+yes|peasyscan_pdf_plugin||exe,dev
+yes|perl|perl,perl-base,perl-modules-5.24|exe>dev,dev
+yes|perl_tiny|perl,perl-base,perl-modules-5.24|exe,dev>null,doc>null,nls>null
+yes|perl-compress-zlib|libcompress-raw-zlib-perl|exe>dev,dev
+yes|perl-digest-sha1|libdigest-sha-perl|exe,dev
+yes|perl-extutils-depends|libextutils-depends-perl|exe>dev,dev
+yes|perl-extutils-pkgconfig|libextutils-pkgconfig-perl|exe>dev,dev
+yes|perl-html-parser|libhtml-parser-perl|exe,dev
+yes|perl-uri|liburi-perl|exe>dev,dev
+yes|perl-xml-parser|libxml-parser-perl|exe>dev,dev
+yes|perl-xml-simple|libxml-simple-perl|exe>dev,dev
+no|pfilesearch||exe
+no|pfind||exe
+yes|picocom|picocom|exe,dev
+yes|pixman|libpixman-1-0,libpixman-1-dev|exe,dev
+yes|pkgconfig|pkg-config|exe>dev,dev
+yes|pmetatagger||exe
+yes|pmirrorget||exe
+yes|pnethood||exe| #using network_roxapp and YASSM instead. leave it in, some users want it.
+no|policykit|libpolkit2|exe,dev
+yes|poppler|libpoppler64,libpoppler-dev,poppler-utils,libpoppler-glib8,libpoppler-glib-dev|exe,dev
+yes|popt|libpopt0,libpopt-dev|exe,dev
+yes|powerapplet_tray||exe
+yes|ppp|ppp|exe,dev>null
+yes|pptp|pptp-linux|exe,dev,doc>null,nls>null
+yes|procps|procps,libprocps4,libprocps4-dev|exe,dev,doc>null,nls>null
+yes|programchooser||exe
+no|pschedule||exe
+yes|psmisc|psmisc|exe,dev>null,doc>null,nls>null
+yes|psync||exe,dev
+no|ptiming||exe,dev
+yes|pulseaudio|libpulse-mainloop-glib0,libpulse0|exe,dev,doc>null,nls>null #needed by mplayer, gnome-mplayer and gmtk
+yes|Pup-SysInfo||exe
+yes|puppy_icon_theme||exe #gtk theme
+yes|puppyinputdetect||exe
+yes|puppy-podcast-grabber||exe
+yes|puppyserialdetect||exe
+yes|pure_ftpd||exe
+yes|pwsget||exe
+yes|python|python,python2.7-minimal,python2.7,libpython2.7,libpython2.7-stdlib,libpython2.7-minimal|exe,dev,doc>null,nls>null #121022 moved from devx to main f.s. /usr/include/python2.7 must also go into main f.s. so take out ,dev. see also libpython2.7 needed by gdb in devx. 130404 added libs.
+yes|python-libxml2|python-libxml2|exe,dev,doc>null,nls>null #121022 moved from devx to main f.s.
+yes|python-dev|libpython-dev,libpython2.7-dev,python-dev,python2.7-dev|exe,dev,doc>null,nls>null
+yes|qpdf|libqpdf17,libqpdf-dev|exe,dev,doc>null,nls>null #needed by cups.
+no|qt4|libqt4-dbus,libqt4-opengl,qdbus,qtchooser,libqt4-sql-sqlite,libqt4-declarative,libqt4-network,libqt4-script,libqt4-sql,libqt4-svg,libqt4-xml,libqt4-xmlpatterns,libqtcore4,libqtdbus4,libqtgui4|exe,dev
+no|qt4-dev|libqt4-designer,libqt4-dev,libqt4-dev-bin,libqt4-help,libqt4-opengl-dev,libqt4-private-dev,libqt4-qt3support,libqt4-scripttools,libqt4-test,qt4-default,qt4-dev-tools,qt4-qmake,qt4-qmlviewer,qt4-qtconfig|exe>dev,dev
+no|qt5|libqt5concurrent5,libqt5printsupport5,libqt5sql5,libqt5test5,libqt5xml5,qtchooser|exe,dev
+no|qt5-dev|qt5-qmake,qtbase5-dev,qtbase5-dev-tools,qt5-default,qttools5-dev-tools|exe>dev,dev,doc>dev,nls>dev
+yes|radeon_firmware||exe,dev
+yes|raptor2|libraptor2-0,libraptor2-dev|exe,dev,doc>null,nls>null #needed by redland.
+yes|readline|libreadline7,libreadline-dev,readline-common|exe,dev,doc>null,nls>null
+yes|redland|librdf0,librasqal3|exe,dev,doc>null,nls>null #needed by abiword. left out -dev libs.
+yes|retrovol||exe
+yes|rman|rman|exe>dev,dev,doc>null,nls>null
+yes|rox-filer||exe
+yes|rp_pppoe_cli||exe
+yes|rpl||exe
+yes|rsync|rsync|exe,dev
+yes|rtmpdump|rtmpdump,librtmp1,librtmp-dev,flvstreamer|exe,dev,doc>null,nls>null
+yes|rxvt-unicode||exe,dev>null,doc>null,nls>null
+no|samba_client|samba,samba-common,smbfs,smbclient|exe,dev>null
+yes|sane-backends|libsane,libsane-common,libsane-dev,sane-utils|exe,dev,doc>null,nls>null
+yes|scale2x||exe
+yes|screeny||exe,dev| #alternate screenshot app, created by 01micko.
+yes|sdl|libsdl1.2debian,libsdl-image1.2,libwebp6|exe,dev,doc>null,nls>null
+yes|sed|sed|exe,dev>null,doc>null,nls>null
+yes|serf|libserf-1-1|exe>dev,dev,doc>null,nls>null #needed by svn.
+yes|setserial|setserial|exe,dev>null,doc>null,nls>null
+yes|setvol||exe
+yes|sgml-base|sgml-base|exe>dev,dev,doc>null,nls>null
+yes|sgml-data|sgml-data|exe>dev,dev,doc>null,nls>null
+yes|shared-mime-info||exe,dev>exe,doc>null,nls>null
+yes|sqlite|sqlite3,libsqlite3-0,libsqlite3-dev|exe,dev,doc>null,nls>null
+yes|squashfs-tools|squashfs-tools|exe,dev,doc>null,nls>null
+yes|ssh_gui||exe
+yes|startup-notification|libstartup-notification0,libstartup-notification0-dev|exe,dev,doc>null,nls>null
+yes|strace|strace|exe>dev,dev,doc>null,nls>null
+yes|streamripper||exe,dev
+yes|subversion|subversion,libsvn1,libdb5.3,libneon27-gnutls,libaprutil1,libpq5,libapr1|exe>dev,dev,doc>null,nls>null
+yes|sudo||exe,dev
+yes|synclient||exe
+yes|sysfsutils|libsysfs2,libsysfs-dev,sysfsutils|exe,dev,doc>null,nls>null
+no|syslinux|syslinux,syslinux-common|exe,dev>null,doc>null,nls>null
+yes|syslinux||exe,dev| #must use pet syslinux pkg.
+no|sysprof|sysprof|exe>dev,dev,doc>null,nls>null
+yes|sysvinit||exe
+yes|taglib|libtag1v5,libtag1-dev,libtag1v5-vanilla|exe,dev,doc>null,nls>null #needed by lots of media apps.
+yes|tar|tar|exe,dev>null,doc>null,nls>null
+yes|tbb|libtbb2|exe,dev>null,doc>null,nls>null #needed by libopencv-core. have left off the dev.
+yes|tcp-wrappers|libwrap0,libwrap0-dev|exe,dev,doc>null,nls>null #needed by mplayer, skype
+yes|tdb|libtdb1,libtdb-dev|exe,dev,doc>null,nls>null #needed by mplayer and libcanberra.
+yes|telepathy-glib|libtelepathy-glib0|exe,dev,doc>null,nls>null #needed by abiword. left out -dev lib.
+yes|texinfo|texinfo|exe>dev,dev,doc>null,nls>null
+yes|tidy|libtidy5,libtidy-dev|exe,dev,doc>null,nls>null #needed by abiword.
+yes|time|time|exe,dev>null,doc>null,nls>null
+yes|transmission||exe,dev,doc>null,nls>null
+yes|tree|tree|exe,dev,doc>null,nls>null
+yes|udev|udev,libudev1,libudev-dev|exe>null,dev>null,doc>null,nls>null #fake install
+yes|eudev||exe,dev #pet pkg: replaces udev and libudev
+yes|uget|uget,aria2,libc-ares2,libc-ares-dev|exe,dev,doc>null,nls>null
+yes|unclutter|unclutter|exe,dev>null,doc>null,nls>null
+yes|unrar||exe,dev,doc>null,nls>null
+yes|unzip|unzip|exe,dev>null,doc>null,nls>null
+yes|UrxvtControl||exe,dev
+yes|usb-modeswitch||exe
+yes|usb-modeswitch-data||exe
+yes|usbutils|usbutils|exe,dev,doc>null,nls>null
+yes|util-linux|util-linux,mount,uuid-runtime,bsdutils,libuuid1,libblkid1,libfdisk1,libmount1,libsmartcols1,libfdisk-dev,libmount-dev,libsmartcols-dev,uuid-dev,libblkid-dev,libmount-dev|exe,dev,doc>null,nls>null
+yes|uextract||exe,dev
+yes|vala|valac,libvala-0.34-0|exe>dev,dev,doc>dev,nls>null
+yes|vamps|vamps|exe,dev,doc>null,nls>null
+yes|vobcopy|vobcopy|exe,dev,doc>null,nls>null
+yes|vorbis-tools|vorbis-tools|exe,dev,doc>null,nls>null
+yes|vte|libvte9,libvte-common,libvte-dev|exe,dev,doc>null,nls>null
+yes|wag_profiles||exe| #taken out of net_setup pet, see forum t=82092&start=300
+yes|waitmax||exe
+yes|wavplay||exe
+yes|wayland|libwayland-client0,libwayland-cursor0,libwayland-server0|exe,dev,doc>null,nls>null #needed by gtk+3. libwayland-server0 needed by gstreamer. GSTREAMER1.0 have taken out gtk3
+yes|wcpufreq||exe,dev| #using this instead of cpu-scaling-ondemand.
+yes|wget|wget|exe,dev>null,doc>null,nls>null
+yes|wireless-tools|wireless-tools,libiw30,libiw-dev|exe,dev,doc>null,nls>null
+yes|wmctrl|wmctrl|exe,dev,doc>null,nls>null
+yes|wpa_supplicant|wpasupplicant|exe,dev>null,doc>null,nls>null
+yes|wv|wv,libwv-1.2-4,libwv-dev|exe,dev,doc>null,nls>null
+yes|wvdial||exe
+yes|x11proto|x11proto-*-dev|exe>dev,dev,doc>null,nls>null
+yes|x264|libx264-148,libx264-dev|exe,dev,doc>null,nls>null
+yes|x265|libx265-95,libx265-dev|exe,dev,doc>null,nls>null
+yes|xarchive||exe
+yes|xclip|xclip|exe,dev,doc>null,nls>null
+yes|xdelta||exe
+yes|xdg_puppy_jwm||exe
+yes|xdotool|xdotool,libxdo3|exe,dev,doc>null,nls>null
+yes|xdialog||exe
+yes|xfdiff-cut||exe
+yes|xkbconfigmanager||exe
+yes|xlock_gui||exe
+yes|xlockmore||exe
+yes|xml-core|xml-core|exe>dev,dev,doc>null,nls>null
+yes|xorg_base_new|libglapi-mesa,libx11-xcb1,libx11-xcb-dev,xfonts-utils,libxmu-headers,mesa-common-dev,libgl1-mesa-dri,xinit,x11-xkb-utils,x11-xserver-utils,x11-utils,x11-apps,fontconfig,libdrm2,libdrm-dev,libdrm-amdgpu1,libdrm-intel1,libdrm-nouveau2,libdrm-radeon1,libepoxy0,libepoxy-dev,libfontconfig1,libfontconfig1-dev,libfontenc1,libfontenc-dev,libgl1-mesa-glx,libgl1-mesa-dev,libglu1-mesa,libglu1-mesa-dev,libice6,libice-dev,libsm6,libsm-dev,libx11-6,libx11-dev,libx11-data,libxau6,libxau-dev,libxaw7,libxaw7-dev,libxcomposite1,libxcomposite-dev,libxcursor1,libxcursor-dev,libxdamage1,libxdamage-dev,libxdmcp6,libxdmcp-dev,libxext6,libxext-dev,libxfixes3,libxfixes-dev,libxfont1,libxfont2,libxfont-dev,libxft2,libxft-dev,libxi6,libxi-dev,libxinerama1,libxinerama-dev,libxkbfile1,libxkbfile-dev,libxmu6,libxmu-dev,libxmuu1,libxmuu-dev,libxpm4,libxpm-dev,libxrandr2,libxrandr-dev,libxrender1,libxrender-dev,libxres1,libxres-dev,libxss1,libxss-dev,libxt6,libxt-dev,libxtst6,libxtst-dev,libxv1,libxv-dev,libxxf86dga1,libxxf86dga-dev,libxxf86vm1,libxxf86vm-dev,xkb-data,xinput|exe,dev,doc>null,nls
+yes|xorg_dri|libgl1-mesa-dri,mesa-utils,libglew2.0,libgl1-mesa-glx,libsensors4|exe,dev,doc>null,nls>null
+yes|xsane||exe
+yes|xserver_xorg|xserver-xorg-dev,xserver-common,xserver-xorg,xserver-xorg-core,xserver-xorg-video-*,xserver-xorg-input-*,-xserver-xorg-video-*-dbg,-xserver-xorg-video-dummy,-xserver-xorg-video-glint,-xserver-xorg-video-ivtv,-xserver-xorg-video-nsc,-xserver-xorg-video-tga,-xserver-xorg-video-vga,libxatracker2,libxwiimote2|exe,dev
+yes|xsoldier|xsoldier|exe,dev>null,doc>null,nls>null
+yes|xtrans|xtrans-dev|exe>dev,dev,doc>null,nls>null
+yes|xvidcore|libxvidcore4,libxvidcore-dev|exe,dev,doc>null,nls>null
+yes|xz|xz-utils,liblzma5,liblzma-dev|exe,dev,doc>null,nls>null
+yes|yad||exe
+yes|yajl|libyajl2,libyajl-dev|exe,dev,doc>null,nls>null #needed by raptor2.
+yes|yasm|yasm|exe>dev,dev>null,doc>null,nls>null
+yes|YASSM||exe,dev>null,doc>null,nls>null
+yes|zarfy||exe
+yes|zip|zip|exe,dev>null,doc>null,nls>null
+yes|zlib|zlib1g,zlib1g-dev|exe,dev,doc>null,nls>null
+yes|zzz_glib||exe,dev,doc>null,nls>null #pet
+'
++ '[' -f /var/packages/PKGS_MANAGEMENT ']'
++ . /var/packages/PKGS_MANAGEMENT
+++ PKG_CAT_Desktop=' blackbox compiz desk_icon_theme_browndust desk_icon_theme_darkfire desk_icon_theme_original e16 fbpanel fluxbox fvwm gfontsel glipper gtk-chtheme gtk_theme_citrus_cut gtk_theme_fishing_the_sky gtk_theme_fishpie gtk_theme_gradient_brown gtk_theme_gradient_grey gtk_theme_m8darker gtk_theme_phacile_blue gtk_theme_polished_blue gtk_theme_stardust_zigbert gxset icewm jwm2 jwmconfig2 lxpanel metacity minixcal obconf openbox pupx rox_filer rox_filer twm wallpaper windowmaker xclipboard xclock xkbconfigmanager xlock_gui xlockmore '
+++ PKG_CAT_System=' absvolume absvolume_puppy absvolume_puppy asapm asapm blinky freememapplet freememapplet freememapplet_xlib gparted gparted gtklp hardinfo hpijs lxtask memtest memtester pprocess pschedule sysprof_DEV usbview xload '
+++ PKG_CAT_Setup=' net_setup net_setup_retro petget '
+++ PKG_CAT_Utility=' alltray clamav cutecom floppy gadmin-rsync gexec glade2bas_DEV hiawatha isomaster lxrad lxrad_DEV lzma minicom most pbackup picocom pmirror rxvt rxvt rxvt-unicode snotes urxvt-unicode xarchive xarchiver xfdiff-cut xfprot xterm '
+++ PKG_CAT_Filesystem=' gdmap gfnrename gwhere mc nautilus pdrive pfind prename uxplor worker xfe zfind '
+++ PKG_CAT_Graphic=' autoq3d autotrace blender dia dia-gnomeless eog flphoto fotoxx gcolor2 gimageview gimp gimp-help gphoto2 gpicview gqview grabc gview inkscape inkscape inkscapelite inkview mtpaint scale2x varicad xfig xpaint xv '
+++ PKG_CAT_Document=' abiword abiword-dictionary-en abiword-plugins adobereader aiksaurus amaya bluefish chmsee cssed e3 emacs epdfview geany gedit ghex gv jed joe jove leafpad leafpad link-grammar lyx medit mp nano pdfedit scite scribus xman xpdf zedit '
+++ PKG_CAT_Calculate=' acct calcoo cgtkcalc expensetracker galculator gmeasures gnumeric grisbi homebank moneymanagerx ycalc xcalc '
+++ PKG_CAT_Personal=' datakiosk didiwiki dlume evolution fpm2 notecase osmo pplog pstopwatch ptimer '
+++ PKG_CAT_Network=' autoconnect bind file_sharing-curlftpfs-mpscan fwbuilder gfilemanager gnome-ppp gpptp john linux_firewall monkey mtr nmap pnethood pppoeconf_pup pure_ftpd pwireless rp_pppoe_cli superscan wifi-radar wireshark wvdial '
+++ PKG_CAT_Internet=' alpine axel ayttm bareftp bitchx dillo ekiga elinks elm epic4 fetchmail filezilla firefox flashplayer flock gajim gcurl getmail gftp gtkmoz gurlchecker jags lftp ihu licq links lynx mailx mcabber mldonkey mozilla-firefox mozilla-thunderbird msmtp mutt ncftp netsurf nn pan pctorrent pidgin pidgin_perl psip puppy-podcast-grabber pwget seamonkey seamonkey seamonkey_addons sendmail skipstone ssh_gui sylpheed urlgfe wengophone xchat '
+++ PKG_CAT_Multimedia=' amarok amp asunder audacious audacity aumix cdw cinelerra dkop gecko-mediaplayer grafburn gtkam gxine madplay mhwaveedit mpg321 mplayer mplayer_codecs_basic mplayer_codecs_full mplayer-fonts mplayerplug-in pburn pburn_theme_pburn_original pcdripper pdvdrsab pmetatagger pmusic pmusic_THEME_pmusic_original pupdvdtool ripoff sgmixer simpleburn timidity++ workbone xfmedia xfreecd xine-ui xsane zmixer '
+++ PKG_CAT_Fun=' frozen-bubble gnuchess gtans lincity picpuz rubix supertux tile vitetris wesnoth wormux xinvaders xsoldier '
+++ PKG_CAT_Develop=' anjuta boo clisp cmake cvs gambas lua mercurial mono nant ocaml nasm poedit ruby subversion svn vala valgrind '
+++ PKG_CAT_BuildingBlock=' 915resolution a2ps a52dec acl alsa-lib alsa-utils atk audiofile aufs autocutsel autologin bash bbc_provided bc bcrypt bdb bin boehm-gc bogofilter bridge-utils busybox buttondialog bzip2 cairo cairomm cddetect cdp cdparanoia cdrdao cdrkit cdrtools chmlib coreutils cpio ctorrent cups cups cups_pdf curl ddcprobe device_mapper dhcp dhcpcd dhcp_client dialog dialog dictd_client dietlibc diffstat diffutils disktype dmidecode docbook-xml dosfstools dotpuphandler dpkg-deb dvdauthor dvd+rwtools e2fsprogs ed edid eject elspci enchant exiv2 expat faac faad2 ffmpeg file findutils flac foomatic-filters freetype fribidi fuse gail gawk gcc gdbm getdir gettext ghostscript ghostscript gifsicle gins glib glibc glibc_i18n_en glibc_locales glibmm gnome_menus goffice goffice7 grep grub gtk+ gtk+ gtkdialog gtkdialog2 gtkdialog3 gtklist04mu gtklogfileviewer gtkmm guess_fs gutenprint gutenprint gxmessage gzip hdparm hicolor-icon-theme hotplug2stdout hsfmodem id3lib ifplugd ifplugd_old inotail inotify-tools installwatch iptables jasper kbd lame lcms less libao libart libcap libcddb libcdio libdaemon libdvdcss libdvdnav libdvdplay libdvdread libexif libexif-gtk libexo libexo_lib libgd libgif libglade libgnomecanvas libgnomecanvasmm libgnomecups libgnomecups libgnomeprint libgnomeprint libgnomeprintui libgphoto2 libgsf libid3tag libidl libjpeg libmad libmng libogg libpng librsvg libsigc++ libsndfile libstdc++ libtiff libtool libungif libusb libvorbis libxfce4util libxfcegui4 libxml libxml_python libxscrnsaver libxslt libxslt_python linux-header metamail mimencode mirdir mktemp modem_stats module-init-tools module_init_tools mp3info mut2 ncompress ncurses ndiswrapper nenscript netpbm net-tools normalize ntfs-3g ntfsprogs openssh_client openssl pango parted pciutils pcmcia-cs pcmciautils pcre perl perl-compress-zlib perl-digest-sha1 perl-extutils-depends perl-extutils-pkgconfig perl-html-parser perl-uri perl-xml-parser perl-xml-simple pfilesearch pixman poppler popt ppp pptp procinfo procps programchooser psmisc pup_dock puppybasic puppyinputdetect puppyserialdetect qt4 readline reiserfsprogs replaceit rman rsync samba samba_client sane-backends sdparm sed setserial setvol sgml-base since sqlite squashfs_tools squashfs-tools startup-notification sysfsutils syslinux sysvinit tar time truncate udev udev_cut unclutter unionfs_utils unzip util-linux vamps vcdimager vorbis-tools waitmax wavplay wget wireless-tools wpa_supplicant wpa_supplicant wpa_supplicant wv wvdial x264 xclip xcut xdg_puppy xdialog xine-lib xine-plugin xmessage xorg_base xorg_really_base xorg_xfbdev xorg_xorg_base xorg_xorg_dri xorg_xorg_full_dri xorg_xorg_servers xorg_xvesa xvidcore yaf_splash zenity zip zlib '
+++ PKG_CAT_help=' linux-faqs linux-howtos man-pages '
+++ PKG_NAME_ALIASES='dirac,schroedinger hunspell,myspell mp,mped mplayer,mplayer_* rxvt-unicode,urxvt,urxvt-unicode cxxlibs,glibc*,libc-* gdk-pixbuf,gdk-pixbuf0 glib,glib12 glibc-solibs,glibcsolibs alsalib,alsa-lib,alsa-lib2* gtk+,gtk+2* gtkdialog,gtkdialog3 alsautils,alsa-utils,alsa-utils2* libungif,libgif,giflib zip,infozip dbus*,libdbus*,libdbus-glib* e3,e3_utf8 hal,libhal* mesa,mesa_*,libgl1-mesa*,mesa-common* libxcb,libxcb_base sane,sane-backends samba,samba-tng,samba_*,mountcifs SDL,libsdl seamonkey*,nss,nspr skype,skype_static udev,udev_*,libudev*,libgudev* util-linux-ng,util-linux,utillinuxng vlc,vlc_nogui,VLC_Plus_Extras xf86-video-ati,xf86-video-ati-* xfdiff,xfdiff-cut xorg_base,xorg_base_t2,x11-common,x-dev,xorg,xorg73_base_t2 acl,libacl* xdg_puppy,xdg-utils perl_tiny,perl-base,perl-modules,perlapi* xorg-util-macros,util-macros'
+++ case $DISTRO_COMPAT_VERSION in
+++ PKG_NAME_IGNORE='fbset petget rgb sysfiles sysklogd'
+++ case $DISTRO_BINARY_COMPAT in
+++ PKG_NAME_IGNORE='adduser debconf passwd fbset petget rgb sysfiles sysklogd'
+++ PKG_PET_THEN_BLACKLIST_COMPAT_KIDS=ffmpeg
+++ PKG_REPOS_ENABLED=' Packages-puppy-stretch-official Packages-puppy-noarch-official Packages-puppy-common-official Packages-devuan-ascii-contrib Packages-devuan-ascii-main '
++ '[' -f /var/packages/DISTRO_COMPAT_REPOS ']'
++ . /var/packages/DISTRO_COMPAT_REPOS
+++ PKG_DOCS_DISTRO_COMPAT='z|http://packages.devuan.org/merged/dists/ascii/main/binary-i386/Packages.xz|Packages-devuan-ascii-main z|http://packages.devuan.org/merged/dists/ascii/contrib/binary-i386/Packages.xz|Packages-devuan-ascii-contrib z|http://packages.devuan.org/merged/dists/ascii/non-free/binary-i386/Packages.xz|Packages-devuan-ascii-non-free'
+++ REPOS_DISTRO_COMPAT='z|http://packages.devuan.org/merged|Packages-devuan-ascii-*'
++ CP_SUFFIX=WITHDEPS_ascii
++ case "$DISTRO_TARGETARCH" in
++ DBIN_ARCH=i486
++ case $DISTRO_COMPAT_VERSION in
++ DDB_COMP=xz
++ which gcc
++ cp -f /var/packages/woof-installed-packages '/var/packages/layers-installed packages'
++ '[' 13 -eq 3 -o 13 -eq 7 -o 13 -eq 13 ']'
++ DIRECTSAVEPATH=/initrd/pup_ro1
++ '[' -L /initrd/pup_ro1 ']'
+++ readlink /initrd/pup_ro1
++ DIRECTSAVEPATH=/initrd/mnt/dev_save/tiny_puduan/ascii/PreAlpha12/asciisave
++ . /root/.pkg/pkgrc
+++ WORKDIR=/root/pkg
+++ REPONAME=ascii-main
+++ EX=deb
+++ REPOFILE=Packages-devuan-ascii-main
+++ REPOURL1=http://deb.devuan.org/merged/
+++ REPOURL2=
+++ REPOURL3=
+++ REPOURL4=
+++ PKGSEARCH=list_pkg_names
+++ PKGSEARCHEXACT='pkg -ne'
+++ DEPSEARCH=list_all_pkg_names
+++ DEPSEARCHEXACT='pkg -nea'
+++ REPOFALLBACKS='noarch common ascii ascii-backports ascii-contrib ascii-multimedia ascii-non-free stretch-main stretch-backports stretch-contrib stretch-multimedia dpup upup '
+++ PKGSCOPE=one
+++ DEPSCOPE=all
+++ BLEDGE=no
+++ RDCHECK=yes
+++ AUTOCLEAN=yes
+++ BUILDTOOL=petbuild
++ '[' '!' -d /root/pkg ']'
++ '[' '!' -d /root/pkg ']'
++ WORKDIR=/root/pkg
++ '[' -z true ']'
++ '[' '!' -d /tmp/pkg/root ']'
++ '[' '!' -d /tmp/pkg/root ']'
++ PKG_NAME_ALIASES='mozilla-firefox,firefox gtk+,gtk2 gtk2,gtk+2 dirac,schroedinger hunspell,myspell mp,mped mplayer,mplayer_*,mplayer-*,mplayer2,smplayer,gmplayer mrxvt,rxvt-unicode,xterm,urxvt,urxvt-unicode cxxlibs,glibc*,libc-* glibc-solibs,glibcsolibs alsalib,alsa-lib,alsa-lib2* alsautils,alsa-utils,alsa_utils,alsa-utils2* libungif,libgif,giflib zip,infozip dbus,libdbus*,libdbus-glib* hal,libhal* mesa,mesa_*,libgl1-mesa*,mesa-common* libxcb,libxcb_base sane,sane-backends samba,samba-tng,samba_*,mountcifs SDL_*,libsdl_* SDL,libsdl skype,skype_static util_linux_ng,util-linux-ng,util-linux,util_linux,utillinuxng vlc,vlc-nogui,vlc_nogui,VLC_Plus_Extras xf86-video-ati,xf86-video-ati-*,ati_fglrx xfdiff,xfdiff-cut xorg_base,xorg_base_t2,x11-common,x-dev,xorg,xorg73_base_t2 acl,libacl* xdg_puppy,xdg-utils perl_tiny,perl-base,perl-modules,perlapi* xorg-util-macros,util-macros portaudio,libportaudio jack-audio-connection-kit,libjack libjasper,jasper imlib2,libimlib2 imlib,libimlib'
++ '[' '!' -f /tmp/pkg/root/pkg_aliases ']'
++ rm -f /tmp/pkg/error130
++ '[' '!' -f /root/.pkg/firstrun -a --repo-update = '' ']'
++ set -a
++ declare -ga REPO_DB_PATHS
++ read REPO_FILE_NAME
+++ repo_file_list
+++ . /root/.pkg/pkgrc
++++ WORKDIR=/root/pkg
++++ REPONAME=ascii-main
++++ EX=deb
++++ REPOFILE=Packages-devuan-ascii-main
++++ REPOURL1=http://deb.devuan.org/merged/
++++ REPOURL2=
++++ REPOURL3=
++++ REPOURL4=
++++ PKGSEARCH=list_pkg_names
++++ PKGSEARCHEXACT='pkg -ne'
++++ DEPSEARCH=list_all_pkg_names
++++ DEPSEARCHEXACT='pkg -nea'
++++ REPOFALLBACKS='noarch common ascii ascii-backports ascii-contrib ascii-multimedia ascii-non-free stretch-main stretch-backports stretch-contrib stretch-multimedia dpup upup '
++++ PKGSCOPE=one
++++ DEPSCOPE=all
++++ BLEDGE=no
++++ RDCHECK=yes
++++ AUTOCLEAN=yes
++++ BUILDTOOL=petbuild
+++ local list=
+++ local repo_file=
++++ cut -f3 '-d|' /root/.pkg/sources
+++ local 'repo_files=Packages-devuan-ascii-main
+Packages-puppy-noarch-official
+Packages-puppy-common-official
+Packages-devuan-ascii-contrib
+Packages-devuan-ascii-non-free'
++++ grep '^ascii-main|' /root/.pkg/sources
++++ cut -f8 '-d|'
++++ grep -v '^$'
+++ local 'current_fallback_list=noarch common ascii ascii-backports ascii-contrib ascii-multimedia ascii-non-free stretch-main stretch-backports stretch-contrib stretch-multimedia dpup upup '
+++ for line in $current_fallback_list
++++ grep '^noarch|' /root/.pkg/sources
++++ cut -f3 '-d|'
+++ repo_file=Packages-puppy-noarch-official
+++ '[' Packages-puppy-noarch-official '!=' '' ']'
+++ list='Packages-puppy-noarch-official '
+++ for line in $current_fallback_list
++++ grep '^common|' /root/.pkg/sources
++++ cut -f3 '-d|'
+++ repo_file=Packages-puppy-common-official
+++ '[' Packages-puppy-common-official '!=' '' ']'
+++ list='Packages-puppy-noarch-official Packages-puppy-common-official '
+++ for line in $current_fallback_list
++++ grep '^ascii|' /root/.pkg/sources
++++ cut -f3 '-d|'
+++ repo_file=
+++ '[' '' '!=' '' ']'
+++ for line in $current_fallback_list
++++ grep '^ascii-backports|' /root/.pkg/sources
++++ cut -f3 '-d|'
+++ repo_file=
+++ '[' '' '!=' '' ']'
+++ for line in $current_fallback_list
++++ grep '^ascii-contrib|' /root/.pkg/sources
++++ cut -f3 '-d|'
+++ repo_file=Packages-devuan-ascii-contrib
+++ '[' Packages-devuan-ascii-contrib '!=' '' ']'
+++ list='Packages-puppy-noarch-official Packages-puppy-common-official Packages-devuan-ascii-contrib '
+++ for line in $current_fallback_list
++++ grep '^ascii-multimedia|' /root/.pkg/sources
++++ cut -f3 '-d|'
+++ repo_file=
+++ '[' '' '!=' '' ']'
+++ for line in $current_fallback_list
++++ grep '^ascii-non-free|' /root/.pkg/sources
++++ cut -f3 '-d|'
+++ repo_file=Packages-devuan-ascii-non-free
+++ '[' Packages-devuan-ascii-non-free '!=' '' ']'
+++ list='Packages-puppy-noarch-official Packages-puppy-common-official Packages-devuan-ascii-contrib Packages-devuan-ascii-non-free '
+++ for line in $current_fallback_list
++++ cut -f3 '-d|'
++++ grep '^stretch-main|' /root/.pkg/sources
+++ repo_file=
+++ '[' '' '!=' '' ']'
+++ for line in $current_fallback_list
++++ grep '^stretch-backports|' /root/.pkg/sources
++++ cut -f3 '-d|'
+++ repo_file=
+++ '[' '' '!=' '' ']'
+++ for line in $current_fallback_list
++++ grep '^stretch-contrib|' /root/.pkg/sources
++++ cut -f3 '-d|'
+++ repo_file=
+++ '[' '' '!=' '' ']'
+++ for line in $current_fallback_list
++++ grep '^stretch-multimedia|' /root/.pkg/sources
++++ cut -f3 '-d|'
+++ repo_file=
+++ '[' '' '!=' '' ']'
+++ for line in $current_fallback_list
++++ grep '^dpup|' /root/.pkg/sources
++++ cut -f3 '-d|'
+++ repo_file=
+++ '[' '' '!=' '' ']'
+++ for line in $current_fallback_list
++++ grep '^upup|' /root/.pkg/sources
++++ cut -f3 '-d|'
+++ repo_file=
+++ '[' '' '!=' '' ']'
+++ for repo_file in $repo_files
++++ echo 'Packages-puppy-noarch-official Packages-puppy-common-official Packages-devuan-ascii-contrib Packages-devuan-ascii-non-free '
++++ grep 'Packages-devuan-ascii-main '
+++ '[' Packages-devuan-ascii-main '!=' '' -a '' = '' -a Packages-devuan-ascii-main '!=' Packages-devuan-ascii-main ']'
+++ for repo_file in $repo_files
++++ echo 'Packages-puppy-noarch-official Packages-puppy-common-official Packages-devuan-ascii-contrib Packages-devuan-ascii-non-free '
++++ grep 'Packages-puppy-noarch-official '
+++ '[' Packages-puppy-noarch-official '!=' '' -a 'Packages-puppy-noarch-official Packages-puppy-common-official Packages-devuan-ascii-contrib Packages-devuan-ascii-non-free ' = '' -a Packages-puppy-noarch-official '!=' Packages-devuan-ascii-main ']'
+++ for repo_file in $repo_files
++++ echo 'Packages-puppy-noarch-official Packages-puppy-common-official Packages-devuan-ascii-contrib Packages-devuan-ascii-non-free '
++++ grep 'Packages-puppy-common-official '
+++ '[' Packages-puppy-common-official '!=' '' -a 'Packages-puppy-noarch-official Packages-puppy-common-official Packages-devuan-ascii-contrib Packages-devuan-ascii-non-free ' = '' -a Packages-puppy-common-official '!=' Packages-devuan-ascii-main ']'
+++ for repo_file in $repo_files
++++ echo 'Packages-puppy-noarch-official Packages-puppy-common-official Packages-devuan-ascii-contrib Packages-devuan-ascii-non-free '
++++ grep 'Packages-devuan-ascii-contrib '
+++ '[' Packages-devuan-ascii-contrib '!=' '' -a 'Packages-puppy-noarch-official Packages-puppy-common-official Packages-devuan-ascii-contrib Packages-devuan-ascii-non-free ' = '' -a Packages-devuan-ascii-contrib '!=' Packages-devuan-ascii-main ']'
+++ for repo_file in $repo_files
++++ echo 'Packages-puppy-noarch-official Packages-puppy-common-official Packages-devuan-ascii-contrib Packages-devuan-ascii-non-free '
++++ grep 'Packages-devuan-ascii-non-free '
+++ '[' Packages-devuan-ascii-non-free '!=' '' -a 'Packages-puppy-noarch-official Packages-puppy-common-official Packages-devuan-ascii-contrib Packages-devuan-ascii-non-free ' = '' -a Packages-devuan-ascii-non-free '!=' Packages-devuan-ascii-main ']'
+++ echo Packages-devuan-ascii-main
++ RF_FILE_PATH=/var/packages/repo/Packages-devuan-ascii-main
++ '[' -e /var/packages/repo/Packages-devuan-ascii-main ']'
++ REPO_DB_PATHS+=("$RF_FILE_PATH")
++ read REPO_FILE_NAME
+++ echo 'Packages-puppy-noarch-official Packages-puppy-common-official Packages-devuan-ascii-contrib Packages-devuan-ascii-non-free '
+++ tr ' ' '\n'
+++ grep -v '^$'
++ RF_FILE_PATH=/var/packages/repo/Packages-puppy-noarch-official
++ '[' -e /var/packages/repo/Packages-puppy-noarch-official ']'
++ REPO_DB_PATHS+=("$RF_FILE_PATH")
++ read REPO_FILE_NAME
++ RF_FILE_PATH=/var/packages/repo/Packages-puppy-common-official
++ '[' -e /var/packages/repo/Packages-puppy-common-official ']'
++ REPO_DB_PATHS+=("$RF_FILE_PATH")
++ read REPO_FILE_NAME
++ RF_FILE_PATH=/var/packages/repo/Packages-devuan-ascii-contrib
++ '[' -e /var/packages/repo/Packages-devuan-ascii-contrib ']'
++ REPO_DB_PATHS+=("$RF_FILE_PATH")
++ read REPO_FILE_NAME
++ RF_FILE_PATH=/var/packages/repo/Packages-devuan-ascii-non-free
++ '[' -e /var/packages/repo/Packages-devuan-ascii-non-free ']'
++ REPO_DB_PATHS+=("$RF_FILE_PATH")
++ read REPO_FILE_NAME
++ '[' '!' -f /var/packages/repo/Packages-devuan-ascii-main -o '!' -f /root/.pkg/sources ']'
++ '[' '!' -f /var/packages/user-installed-packages ']'
++ first_run
++ '[' '!' -f /root/.pkg/firstrun ']'
++ return 0
++ '[' 1 '!=' 0 ']'
++ I=1
+++ echo 1
+++ wc -c
++ '[' '!' -z 1 -a 1 -le 2 ']'
++ for x in "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
++ case "$x" in
++ for x in "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
++ case "$x" in
++ for x in "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
++ case "$x" in
++ for x in "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
++ case "$x" in
++ for x in "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
++ case "$x" in
++ for x in "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
++ case "$x" in
++ for x in "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
++ case "$x" in
++ for x in "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
++ case "$x" in
++ for x in "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
++ case "$x" in
+++ shift
+++ echo
++ opt=
++ opt=
++ opt=
++ opt=
++ case $1 in
++ update_repo ''
+++ check_net
+++ '[' -f /tmp/pkg/root/internetsuccess ']'
+++ echo 0
+++ exit 0
++ NET=0
++ '[' 0 -eq 1 ']'
++ rm -f /tmp/pkg/root/update_repo_results
++ echo 'Updating system repositories, please wait..'
+Updating system repositories, please wait..
++ echo
+
++ mkdir -p /var/local/petget/
++ chmod 777 /var/local/petget/
++ echo false
++ DISPLAY=
++ SETUPCALLEDFROM=ppm
++ /usr/local/petget/0setup
++ '[' 0 -eq 0 ']'
+++ which logger
++ '[' /usr/bin/logger '!=' '' ']'
++ logger '/usr/sbin/pkg Repo files updated by  1.9.22'
++ echo -e 'Repo files updated:'
+Repo files updated:
++ grep '^Processing' /tmp/pkg/root/update_repo_results
++ cut -f2 '-d '
+Packages-devuan-ascii-main
+Packages-devuan-ascii-contrib
+Packages-devuan-ascii-non-free
+Packages-devuan-ascii_updates-main
+Packages-devuan-ascii_updates-contrib
+Packages-devuan-ascii_updates-non-free
++ rm -f /tmp/pkg/root/update_repo_results
++ '[' -f /root/.pkg/sources-user ']'
++ '[' -f /etc/apt/sources.list ']'
++ '[' -f /etc/slackpkg/mirrors ']'
++ '[' -f /root/.pkg/sources-user ']'
++ '[' -f /etc/apt/sources.list ']'
++ '[' -f /etc/slackpkg/mirrors ']'
++ echo
+
++ exit 0
++ cleanup 1 0
++ rm -f '/tmp/pkg/root/missing_dep*' '/tmp/pkg/root/installed_pkg*' '/tmp/pkg/root/all_dep*' /tmp/pkg/root/DEP_DONE /tmp/pkg/list_deps_busy /tmp/pkg/root/pkg_file_list /tmp/pkg/root/dependents_list /tmp/pkg/root/DEP_DONE /tmp/pkg/root/ldd_file_list
++ rm -rf /tmp/pkg/build_pkg/
++ '[' -f /tmp/pkg/error130 -a 0 = 130 ']'
++ mkdir -p /tmp/pkg
++ '[' 1 '!=' none ']'
++ lineno='line 1, '
++ case "$2" in
++ msg='Error code = 0'
++ '[' 0 '!=' 0 ']'
++ exit 0

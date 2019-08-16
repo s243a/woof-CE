@@ -54,7 +54,7 @@ case $DISTRO_COMPAT_VERSION in
 esac
 case $DISTRO_BINARY_COMPAT in #110705
  debian|devuan|ubuntu|trisquel|raspbian) #130614
-  PKG_NAME_IGNORE="adduser debconf passwd ${PKG_NAME_IGNORE}"
+  PKG_NAME_IGNORE="adduser debconf passwd libc6 ${PKG_NAME_IGNORE}"
  ;;
 esac
 
