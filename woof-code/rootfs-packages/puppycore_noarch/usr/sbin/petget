@@ -1,7 +1,37 @@
-#!/bin/sh
-PKG_PATH="`which pkg`"
-if [ ! -z "$PKG_PATH"]; then
-  "$PKG_PATH" -i "$@"
+#!/bin/bash
+#set -x
+#rm /root/petget.log
+#exec &> >(tee -a /root/petget.log)
+PKG_PATH_sc0ttman="`which pkg`"
+PKG_PATH="$(realpath "$1")"
+PKG_NAME="$(basename "$PKG_PATH")"
+export PWD="$(realpath "${PWD}")"
+confirm_download(){
+  #confirm want to install... #Based on: https://github.com/puppylinux-woof-CE/woof-CE/blob/849a9faa7ea8cac74e04d04e4f99f4425652c26b/woof-code/rootfs-skeleton/usr/local/petget/petget#L166
+  if [ "$DISPLAY" ]; then
+   . /usr/lib/gtkdialog/box_yesno "$(gettext 'Puppy Package Manager')" "$(gettext 'Do you want to install this package:')" "<b>${FULLPKGNAME}</b>"
+   if [ "$EXIT" != "yes" ]; then
+     exit 0
+   fi
+  else
+    dialog --yesno "$(gettext 'Do you want to install this package:') $FULLPKGNAME" 0 0
+    if [ $? -ne 0 ];then
+      exit 0
+    fi
+  fi	
+}
+echo_commands(){
+  echo ". /etc/profile"	
+  echo "cd \"$(realpath "$PWD")\""
+  echo "bash -x $PKG_PATH_sc0ttman i \"$PKG_PATH\"  #2>&1 | tee -a /root/petget.log"
+  echo ""
+}
+if [ ! -z "$PKG_PATH_sc0ttman" ]; then
+  confirm_download
+  #echo_commands > /tmp/bla
+  bash <(echo_commands) 
+  #bash -x /tmp/bla 2>&1 | tee /root/petget.log
+  #"$PKG_PATH_sc0ttman" -i "$PKG_PATH"  2>&1 | tee -a /root/petget.log
 else
   CUR_DIR=dirname "$(readlink -f "$0")" #https://stackoverflow.com/questions/59895/get-the-source-directory-of-a-bash-script-from-within-the-script-itself
   cd "$CUR_DIR"
