@@ -4586,6 +4586,7 @@ pkg_install(){                    # install downloaded package ($1) FUNCLIST
 
   if [ -f "$1" ];then
     PKGFILE="$1"
+    CURDIR="$(dirname "$(realpath "$1")")"
     PKGNAME=`basename "$1" .$pkg_ext`
   else
     # get the real file name (inc path) from the given PKGFILE and pkg_ext (which may be empty)
