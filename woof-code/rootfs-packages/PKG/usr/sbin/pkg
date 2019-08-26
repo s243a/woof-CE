@@ -6228,7 +6228,7 @@ list_deps(){                      # list all deps of PKG ($1), space separated o
             local already_done=`grep -m1 "^${subdep}\$" ${TMPDIR}/DEP_DONE 2>/dev/null`
             [ "$already_done" != '' ] && continue
 
-            if [ "$HIDE_BUILTINS" = true ]; then
+            if [ "$HIDE_BUILTINS" = true ] || [ -z "$HIDE_BUILTINS" ]; then
               is_builtin=`is_builtin_pkg "$subdep"`
               [ "$is_builtin" = true ] && continue
               is_in_devx=`is_devx_pkg "$subdep"`
@@ -6281,7 +6281,7 @@ list_deps(){                      # list all deps of PKG ($1), space separated o
   [ "$deps" != "" ] && echo "$deps" | sed -e 's/^ //g' | tr ' ' '\n' | sort -u | tr '\n' ' '
 
   # clean up
-  if [ list_deps_count -eq 0 ]; then
+  if [ $list_deps_count -eq 1 ]; then
   rm "${TMPDIR}/installed_pkg"* 2>/dev/null
   fi
   rm "${TMPDIR}/missing_dep"*  "${TMPDIR}/all_dep"* "${TMPDIR}/DEP_DONE" "/tmp/pkg/list_deps_busy" 2>/dev/null
