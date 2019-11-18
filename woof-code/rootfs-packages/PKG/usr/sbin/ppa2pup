@@ -6,7 +6,15 @@
 # @TODO1 - fix last few fields of package entries (should contain the supported ubuntu distro, not current system)
 
 . /etc/DISTRO_SPECS
-
+if [ -d ~/.packages/repo ]; then
+  REPO_DIR=`realpath  ~/.packages/repo` || \
+  REPO_DIR=`readlink ~/.packages/repo` || \
+  REPO_DIR=~/.packages/repo
+elif [ -d /var/packages/repo ]; then
+  REPO_DIR=/var/packages/repo
+else
+  REPO_DIR=~/.packages
+fi
 #if [ "$DISTRO_BINARY_COMPAT" != "ubuntu" ] && [ "$DISTRO_BINARY_COMPAT" != "debian" ];then
 #  echo "Sorry, you must be running a .deb compatible Puppy Linux"
 #  echo "to use this tool. Your Puppy is based on '$DISTRO_BINARY_COMPAT'"
@@ -166,8 +174,14 @@ do
   then
 
     # check if this repo is already installed (find its name in Pkg sources files)
-    PPA_NAME="$(grep -m1 "^${distro_ver}-${stream:-main}|" /root/.pkg/sources-all | cut -f1 -d'|' 2>/dev/null)"
-
+    if [ -z "$repo_url" ]; then
+      PPA_NAME="$(grep -m1 "^${distro_ver}-${stream:-main}|" /root/.pkg/sources-all | cut -f1 -d'|' 2>/dev/null)"
+    else
+      PPA_NAME="$(grep "^${distro_ver}-${stream:-main}|" /root/.pkg/sources-all | grep -m1 "$repo_url"  | cut -f1 -d'|' 2>/dev/null)"
+      if [ -z "$PPA_NAME" ]; then
+         PPA_NAME="$(grep "^${distro_ver}-${stream:-main}-" /root/.pkg/sources-all | grep -m1 "$repo_url"  | cut -f1 -d'|' 2>/dev/null)"
+      fi
+    fi
     # get repo name and filename
     if [ "$PPA_NAME" = "" ];then
       echo
@@ -190,119 +204,160 @@ do
   echo "   $repo_name"
   echo
   echo "Repo file to create:"
-  echo "   ~/.packages/$repo_filename"
+  echo "  $REPO_DIR/$repo_filename"
   echo
 
-  # break Packages file into separate files
-  number=1
-  cat /tmp/ppa_Packages | while read line
-  do
+  ## break Packages file into separate files
+  #number=1
+  #cat /tmp/ppa_Packages | while read line
+  #do
+  #
+  #  echo "$line" | grep -qE '^Priority|^Installed-Size|^Maintainer|^MD5|^SHA|^Description-md5|^Suggests|^Provides|^Source|^Conflicts|^Breaks' && continue
+  #  echo "$line" >> /tmp/ppa_pkgs/pkginfo$number
+  #  [ "$line" = "" ] && number=$(($number + 1))
+  #
+  #  #[ $number -gt 5 ] && break # for testing only
+  #
+  #done
+  
 
-    echo "$line" | grep -qE '^Priority|^Installed-Size|^Maintainer|^MD5|^SHA|^Description-md5|^Suggests|^Provides|^Source|^Conflicts|^Breaks' && continue
-    echo "$line" >> /tmp/ppa_pkgs/pkginfo$number
-    [ "$line" = "" ] && number=$(($number + 1))
-
-    #[ $number -gt 5 ] && break # for testing only
-
-  done
-
-
-  rm /tmp/$repo_filename ~/.packages/$repo_filename &>/dev/null
+  rm /tmp/$repo_filename $REPO_DIR/$repo_filename &>/dev/null
 
   # go through each file and make a pet.spec entry from it,
   # and append that entry tp /tmp/ppa_pkgs/$repo_filename
-  for pkginfo_file in $(ls -1 /tmp/ppa_pkgs/)
-  do
+#---------------New AWK Version------------------------------------------- 
 
-    [ ! -f /tmp/ppa_pkgs/$pkginfo_file ] && continue
+			cat /tmp/ppa_Packages | awk -v PKGOS="$distro" -v PKGOSVER="$distro_ver" -v REPOFNM="$repo_filename" \
+'function fixdepends(s,   a,p,sout) {
+	split(s,a,",") 
+	for (p in a) {
+		gsub(/[ \t]*\(.*\)|[ \t]\|.*|:any/,"",a[p])
+		sout = sout "," a[p]
+	}
+	sub(/^,/,"",sout) ; return sout;
+}
 
-    pkginfo="`cat /tmp/ppa_pkgs/$pkginfo_file 2>/dev/null`"
-    [ "$pkginfo" = "" ] && continue
+/^Package:/     { sub(/^Package: /,"");  PKG=$0; }
+/^Version:/     { sub(/^Version: /,"");  PKGVER=$0; }
+/^Filename:/    { sub(/^Filename: /,""); PKGPATH=$0; sub(/.*\//,""); PKGFILE=$0; }
+/^Priority:/    { sub(/^Priority: /,""); PKGPRIO=$0; }
+/^Section:/     { sub(/^Section: /,"");  PKGSECTION=$0; }
+/^Installed-Size:/ { sub(/^Installed-Size: /,"");  PKGSIZE=$0; }
+/^MD5sum:/      { sub(/^MD5sum: /,"");   PKGMD5=$0; }
+/^Depends:/     { sub(/^Depends: /,"");     PKGDEP=fixdepends($0) "," PKGDEP; }
+/^Pre-Depends:/ { sub(/^Pre-Depends: /,""); PKGDEP=fixdepends($0) "," PKGDEP; }
+/^Description:/ { sub(/^Description: /,""); PKGINFO=substr($0,1,200); }
+#/^$/            { print PKG "|" PKGVER "|" PKGFILE "|" repo_url "/" PKGPATH "|" PKGPRIO "|" PKGSECTION "|" PKGMD5 "|" PKGDEP ;
+/^$/            { print PKG _ PKGVER "|" PKG "|" PKGVER "||" PKGSECTION "|" PKGSIZE "|" PKGFILE  "|" PKGPATH "|" PKGDEP "|" PKGINFO "|" PKGOS "|" PKGOSVER "|"  PKGMD5 "|"  PKGPRIO "|" REPOFNM  ;
+	
+                  PKG=""; PKGVER=""; PKGSECTION=""; PKGSIZE=""; PKGFILE=""; PKGPATH=""; PKGDEP=""; PKGINFO=""; PKGPRIO="";  PKGMD5="";  PKGDEP="";  }
+#"$pkg_name|$pkgname_only|$pkg_ver|$pkg_build_no|$pkg_cat|$pkg_size|$pkg_path|$pkg_fname|$pkg_deps|$pkg_desc|$pkg_os|$pkg_os_ver|"                
+' > /tmp/$repo_filename
 
-    # convert deps list from:
-    #
-    #  nginx-full (<< 1.14.0-0+bionic0.1~) | libc6 (>= 2.4), libpam0g (>= 0.99.7.1)
-    #
-    # into:
-    #
-    #  +nginx-full-1.14.0-0+bionic0,+libc6-2.4,+libpam0g-0.99.7.1
-    #
+#  pkg_desc="$(echo  "$pkginfo" | grep -m1 '^Descripti' | cut -f2-200 -d' ')"
 
-    pkgdeps=`echo "$pkginfo" | grep '^Depends: '`
+#			# remove duplicates, use the "later" version if duplicate packages are found
+#			< $REPO_DIR/$LOCAL_PKGDB > /tmp/t.$$ \
+#			awk -F"|" '{if (!a[$1]) b[n++]=$1; a[$1]=$0} END {for (i=0;i<n;i++) {print a[b[i]]}}'
+#			mv /tmp/t.$$ $REPO_DIR/$LOCAL_PKGDB
+#		fi
+#		if [ -z "$WITH_APT_DB" ] || [ $DRY_RUN ]; then rm -f $CHROOT_DIR$APT_PKGDB_DIR/"$apt_pkgdb"; fi
+#	done
 
-    newpkgdeps="$(echo "$pkgdeps" \
-      | sed \
-        -e 's/  / /g'     \
-        -e 's/ (= 2:/_/g' \
-        -e 's/ (= 1:/_/g' \
-        -e 's/ (<< /-/g'  \
-        -e 's/ (= /-/g'   \
-        -e 's/ (>= /-/g'  \
-        -e 's/ (<= /-/g'  \
-        -e 's/) / /g'     \
-        -e 's/), /,/g'    \
-        -e 's/)//g'       \
-        -e 's/, /,/g'     \
-        -e 's/ | /,/g'    \
-        -e 's/| /,/g'     \
-        -e 's/ |/,/g'     \
-        -e "s/,$//g"      \
-        -e 's/\.1~//g'    \
-        -e 's/\.2~//g'    \
-        -e 's/,/,+/g'     \
-        -e 's/-2:/_/g'    \
-        -e 's/-1:/_/g'    \
-        -e 's/Depends: /Depends: +/g' \
-      2>/dev/null)"
-
-    # replace olddeps entry with new one in the file
-    if [ ! -z "pkgdeps" ] && [ ! -z "$newpkgdeps" ] && [ -f /tmp/ppa_pkgs/$pkginfo_file ]
-    then
-
-      sed -i "s/${pkgdeps}/${newpkgdeps}/" /tmp/ppa_pkgs/$pkginfo_file 2>/dev/null
-
-    fi
-
-
-    # deps should now be in the right format in the file itself,
-    # update our info var
-    pkginfo="$(cat /tmp/ppa_pkgs/$pkginfo_file)"
-
-    # so lets build pet.specs entry:
-    # like this one:
-    #   pkgname-1.2.3-4|pkgname|1.2.3|4|Category|54kb|/path/to/pkg|pkgname-1.2.3.pet|+dep1,+dep2|the description|debian|stretch||
-
-    case $DISTRO_BINARY_COMPAT in
-      debian|ubuntu|trisquel|devuan) ver_sep='_';;
-      *) ver_sep='-';;
-    esac
-
-    pkg_build_no=''  # need to get this out of version
-    pkg_name="$(echo  "$pkginfo" | grep -m1 '^Package: ' | cut -f2 -d' ')"
-
-    pkgname_only="$pkg_name"
-    pkg_ver="$(echo   "$pkginfo" | grep -m1 '^Version: ' | sed -e 's/Version: [0-9]://g' -e 's/Version: //g')"
-    pkg_name="$pkg_name${ver_sep}$pkg_ver"
-    pkg_cat="$(echo   "$pkginfo" | grep -m1 '^Section: ' | cut -f2 -d' ')"
-    pkg_size="$(echo  "$pkginfo" | grep -m1 '^Size: '    | cut -f2 -d' ')"
-    pkg_size="$(($pkg_size / 1024))K"
-    pkg_path="$(echo "$pkginfo" | grep -m1 '^Filename: '| cut -f2 -d' ')"
-    pkg_fname="$(basename "$pkg_path")"
-    pkg_path="$(dirname "$pkg_path")"
-    pkg_deps="$(echo "$pkginfo" | grep -m1 '^Depends: ' | cut -f2 -d' ')"
-    pkg_desc="$(echo  "$pkginfo" | grep -m1 '^Descripti' | cut -f2-200 -d' ')"
-    pkg_os="$DISTRO_BINARY_COMPAT"
-    pkg_os_ver="$DISTRO_COMPAT_VERSION"
-
-    entry="$pkg_name|$pkgname_only|$pkg_ver|$pkg_build_no|$pkg_cat|$pkg_size|$pkg_path|$pkg_fname|$pkg_deps|$pkg_desc|$pkg_os|$pkg_os_ver|"
-
-    echo "$entry" >> /tmp/$repo_filename
-
-  done
-
-
-  rm /tmp/ppa_pkgs/* /tmp/${repo_filename}_sorted 2>/dev/null
-
+  
+#---------------Replace with AWK Version-------------------------------------------    
+  #for pkginfo_file in $(ls -1 /tmp/ppa_pkgs/)
+  #do
+  #
+  #  [ ! -f /tmp/ppa_pkgs/$pkginfo_file ] && continue
+  #
+  #  pkginfo="`cat /tmp/ppa_pkgs/$pkginfo_file 2>/dev/null`"
+  #  [ "$pkginfo" = "" ] && continue
+  #
+  #  # convert deps list from:
+  #  #
+  #  #  nginx-full (<< 1.14.0-0+bionic0.1~) | libc6 (>= 2.4), libpam0g (>= 0.99.7.1)
+  #  #
+  #  # into:
+  #  #
+  #  #  +nginx-full-1.14.0-0+bionic0,+libc6-2.4,+libpam0g-0.99.7.1
+  #  #
+  #
+  #  pkgdeps=`echo "$pkginfo" | grep '^Depends: '`
+  #
+  #  newpkgdeps="$(echo "$pkgdeps" \
+  #    | sed \
+  #      -e 's/  / /g'     \
+  #      -e 's/ (= 2:/_/g' \
+  #      -e 's/ (= 1:/_/g' \
+  #      -e 's/ (<< /-/g'  \
+  #      -e 's/ (= /-/g'   \
+  #      -e 's/ (>= /-/g'  \
+  #      -e 's/ (<= /-/g'  \
+  #      -e 's/) / /g'     \
+  #      -e 's/), /,/g'    \
+  #      -e 's/)//g'       \
+  #      -e 's/, /,/g'     \
+  #      -e 's/ | /,/g'    \
+  #      -e 's/| /,/g'     \
+  #      -e 's/ |/,/g'     \
+  #      -e "s/,$//g"      \
+  #      -e 's/\.1~//g'    \
+  #      -e 's/\.2~//g'    \
+  #      -e 's/,/,+/g'     \
+  #      -e 's/-2:/_/g'    \
+  #      -e 's/-1:/_/g'    \
+  #      -e 's/Depends: /Depends: +/g' \
+  #    2>/dev/null)"
+  #
+  #  # replace olddeps entry with new one in the file
+  #  if [ ! -z "pkgdeps" ] && [ ! -z "$newpkgdeps" ] && [ -f /tmp/ppa_pkgs/$pkginfo_file ]
+  #  then
+  #
+  #    sed -i "s/${pkgdeps}/${newpkgdeps}/" /tmp/ppa_pkgs/$pkginfo_file 2>/dev/null
+  #
+  #  fi
+  #
+  #
+  #  # deps should now be in the right format in the file itself,
+  #  # update our info var
+  #  pkginfo="$(cat /tmp/ppa_pkgs/$pkginfo_file)"
+  #
+  #  # so lets build pet.specs entry:
+  #  # like this one:
+  #  #   pkgname-1.2.3-4|pkgname|1.2.3|4|Category|54kb|/path/to/pkg|pkgname-1.2.3.pet|+dep1,+dep2|the description|debian|stretch||
+  #
+  #  case $DISTRO_BINARY_COMPAT in
+  #    debian|ubuntu|trisquel|devuan) ver_sep='_';;
+  #    *) ver_sep='-';;
+  #  esac
+  #
+  #  pkg_build_no=''  # need to get this out of version
+  #  pkg_name="$(echo  "$pkginfo" | grep -m1 '^Package: ' | cut -f2 -d' ')"
+  #
+  #  pkgname_only="$pkg_name"
+  #  pkg_ver="$(echo   "$pkginfo" | grep -m1 '^Version: ' | sed -e 's/Version: [0-9]://g' -e 's/Version: //g')"
+  #  pkg_name="$pkg_name${ver_sep}$pkg_ver"
+  #  pkg_cat="$(echo   "$pkginfo" | grep -m1 '^Section: ' | cut -f2 -d' ')"
+  #  pkg_size="$(echo  "$pkginfo" | grep -m1 '^Size: '    | cut -f2 -d' ')"
+  #  pkg_size="$(($pkg_size / 1024))K"
+  #  pkg_path="$(echo "$pkginfo" | grep -m1 '^Filename: '| cut -f2 -d' ')"
+  #  pkg_fname="$(basename "$pkg_path")"
+  #  pkg_path="$(dirname "$pkg_path")"
+  #  pkg_deps="$(echo "$pkginfo" | grep -m1 '^Depends: ' | cut -f2 -d' ')"
+  #  pkg_desc="$(echo  "$pkginfo" | grep -m1 '^Descripti' | cut -f2-200 -d' ')"
+  #  pkg_os="$DISTRO_BINARY_COMPAT"
+  #  pkg_os_ver="$DISTRO_COMPAT_VERSION"
+  #
+  #  entry="$pkg_name|$pkgname_only|$pkg_ver|$pkg_build_no|$pkg_cat|$pkg_size|$pkg_path|$pkg_fname|$pkg_deps|$pkg_desc|$pkg_os|$pkg_os_ver|"
+  #
+  #  echo "$entry" >> /tmp/$repo_filename
+  #
+  #done
+  #
+  #
+  #rm /tmp/ppa_pkgs/* /tmp/${repo_filename}_sorted 2>/dev/null
+#------------------End Code Replaced with AWK Version---------------------------------
 
   # sort & move the repo file
   sort -u /tmp/$repo_filename > /tmp/${repo_filename}_sorted 2>/dev/null
@@ -313,7 +368,9 @@ do
     exit 1
   fi
 
-  mv  /tmp/${repo_filename}_sorted  ~/.packages/$repo_filename
+  #mv  /tmp/${repo_filename}_sorted  $REPO_DIR/$repo_filename
+  cut -f1-12 /tmp/${repo_filename}_sorted > $REPO_DIR/$repo_filename
+  
   echo "Success! File created."
   echo
 
