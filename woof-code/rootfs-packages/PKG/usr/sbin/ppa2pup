@@ -248,7 +248,7 @@ do
 /^Pre-Depends:/ { sub(/^Pre-Depends: /,""); PKGDEP=fixdepends($0) "," PKGDEP; }
 /^Description:/ { sub(/^Description: /,""); PKGINFO=substr($0,1,200); }
 #/^$/            { print PKG "|" PKGVER "|" PKGFILE "|" repo_url "/" PKGPATH "|" PKGPRIO "|" PKGSECTION "|" PKGMD5 "|" PKGDEP ;
-/^$/            { print PKG _ PKGVER "|" PKG "|" PKGVER "||" PKGSECTION "|" PKGSIZE "|" PKGFILE  "|" PKGPATH "|" PKGDEP "|" PKGINFO "|" PKGOS "|" PKGOSVER "|"  PKGMD5 "|"  PKGPRIO "|" REPOFNM  ;
+/^$/            { print PKG "_" PKGVER "|" PKG "|" PKGVER "||" PKGSECTION "|" PKGSIZE "|" PKGFILE  "|" PKGPATH "|" PKGDEP "|" PKGINFO "|" PKGOS "|" PKGOSVER "|"  PKGMD5 "|"  PKGPRIO "|" REPOFNM  ;
 	
                   PKG=""; PKGVER=""; PKGSECTION=""; PKGSIZE=""; PKGFILE=""; PKGPATH=""; PKGDEP=""; PKGINFO=""; PKGPRIO="";  PKGMD5="";  PKGDEP="";  }
 #"$pkg_name|$pkgname_only|$pkg_ver|$pkg_build_no|$pkg_cat|$pkg_size|$pkg_path|$pkg_fname|$pkg_deps|$pkg_desc|$pkg_os|$pkg_os_ver|"                
@@ -369,8 +369,12 @@ do
   fi
 
   #mv  /tmp/${repo_filename}_sorted  $REPO_DIR/$repo_filename
-  cut -f1-12 /tmp/${repo_filename}_sorted > $REPO_DIR/$repo_filename
-  
+  set -x
+  cut -d'|' -f1-12 /tmp/${repo_filename}_sorted > $REPO_DIR/$repo_filename
+  [ -z "$PKGS_DIR" ] && export PKGS_DIR="$(realpath "${HOME}/.packages")"
+  [ -z "$MD5_DIR" ] && export MD5_DIR="$PKGS_DIR/md5_dir" && mkdir -p "$MD5_DIR"
+  cut -d'|' -f1,2,7,13 /tmp/${repo_filename}_sorted > "$MD5_DIR/${repo_filename//Packages/PKG_SUMS}"
+  set +x
   echo "Success! File created."
   echo
 
