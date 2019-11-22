@@ -239,18 +239,20 @@ do
 
 /^Package:/     { sub(/^Package: /,"");  PKG=$0; }
 /^Version:/     { sub(/^Version: /,"");  PKGVER=$0; }
-/^Filename:/    { sub(/^Filename: /,""); PKGPATH=$0; sub(/.*\//,""); PKGFILE=$0; }
+/^Filename:/    { sub(/^Filename: /,""); PKGPATH=$0; sub(/\/[^\/]*$/,"",PKGPATH); sub(/.*\//,""); PKGFILE=$0; }
 /^Priority:/    { sub(/^Priority: /,""); PKGPRIO=$0; }
 /^Section:/     { sub(/^Section: /,"");  PKGSECTION=$0; }
 /^Installed-Size:/ { sub(/^Installed-Size: /,"");  PKGSIZE=$0; }
 /^MD5sum:/      { sub(/^MD5sum: /,"");   PKGMD5=$0; }
+/^SHA1:/      { sub(/^SHA1: /,"");   SHA1=$0; }
+/^SHA256:/      { sub(/^SHA256: /,"");   SHA256=$0; }
 /^Depends:/     { sub(/^Depends: /,"");     PKGDEP=fixdepends($0) "," PKGDEP; }
 /^Pre-Depends:/ { sub(/^Pre-Depends: /,""); PKGDEP=fixdepends($0) "," PKGDEP; }
 /^Description:/ { sub(/^Description: /,""); PKGINFO=substr($0,1,200); }
 #/^$/            { print PKG "|" PKGVER "|" PKGFILE "|" repo_url "/" PKGPATH "|" PKGPRIO "|" PKGSECTION "|" PKGMD5 "|" PKGDEP ;
-/^$/            { print PKG "_" PKGVER "|" PKG "|" PKGVER "||" PKGSECTION "|" PKGSIZE "|" PKGFILE  "|" PKGPATH "|" PKGDEP "|" PKGINFO "|" PKGOS "|" PKGOSVER "|"  PKGMD5 "|"  PKGPRIO "|" REPOFNM  ;
+/^$/            { print PKG "_" PKGVER "|" PKG "|" PKGVER "||" PKGSECTION "|" PKGSIZE "|" PKGPATH "|" PKGFILE  "|" PKGDEP "|" PKGINFO "|" PKGOS "|" PKGOSVER "|"  PKGMD5 "|" SHA1 "|" SHA256 "|" PKGPRIO "|" REPOFNM  ;
 	
-                  PKG=""; PKGVER=""; PKGSECTION=""; PKGSIZE=""; PKGFILE=""; PKGPATH=""; PKGDEP=""; PKGINFO=""; PKGPRIO="";  PKGMD5="";  PKGDEP="";  }
+                  PKG=""; PKGVER=""; PKGSECTION=""; PKGSIZE=""; PKGFILE=""; PKGPATH=""; PKGDEP=""; PKGINFO=""; PKGPRIO="";  PKGMD5=""; SHA1=""; SHA256=""; PKGDEP="";  }
 #"$pkg_name|$pkgname_only|$pkg_ver|$pkg_build_no|$pkg_cat|$pkg_size|$pkg_path|$pkg_fname|$pkg_deps|$pkg_desc|$pkg_os|$pkg_os_ver|"                
 ' > /tmp/$repo_filename
 
@@ -372,8 +374,12 @@ do
   set -x
   cut -d'|' -f1-12 /tmp/${repo_filename}_sorted > $REPO_DIR/$repo_filename
   [ -z "$PKGS_DIR" ] && export PKGS_DIR="$(realpath "${HOME}/.packages")"
-  [ -z "$MD5_DIR" ] && export MD5_DIR="$PKGS_DIR/md5_dir" && mkdir -p "$MD5_DIR"
-  cut -d'|' -f1,2,7,13 /tmp/${repo_filename}_sorted > "$MD5_DIR/${repo_filename//Packages/PKG_SUMS}"
+  [ -z "$HASHES_DIR" ] && export HASHES_DIR="$PKGS_DIR/hashes" && mkdir -p "$HASHES_DIR"
+  cut -d'|' -f1,2,7,8,13 /tmp/${repo_filename}_sorted > "$HASHES_DIR/${repo_filename//Packages/PKG_SUMS}"
+  cut -d'|' -f1,2,7,8,13,14,15 /tmp/${repo_filename}_sorted | sort -d -k 4 > /tmp/${repo_filename}_sorted_md5 
+  awk -F '|' '{print $5 "|" $3 "|" $4}' /tmp/${repo_filename}_sorted_md5 > "$HASHES_DIR/${repo_filename//Packages/MD5}"
+  #cut -d'|' -f4,5 /tmp/${repo_filename}_sorted_md5 > "$HASHES_DIR/${repo_filename//Packages/SHA1}"
+  cut -d'|' -f4,7 /tmp/${repo_filename}_sorted_md5 > "$HASHES_DIR/${repo_filename//Packages/SHA256}"
   set +x
   echo "Success! File created."
   echo
