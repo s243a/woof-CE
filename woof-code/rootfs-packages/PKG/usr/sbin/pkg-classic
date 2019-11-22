@@ -30,7 +30,7 @@ dep_id=0 #
 # get current locale settings
 USER_LANG=$LANG
 USER_LC_ALL=$LC_ALL
-
+export HTTPS_CHECK=all
 SELF=$(basename $0)        # this script
 QTAG=''                    # gets set to (y/n) if ASK=-true
 LANG=C                     # speed up
@@ -118,6 +118,8 @@ fi
 #mk_spec_file_list_arry
 #echo "SPEC_DB_PATHS=${SPEC_DB_PATHS[@]}"
 
+
+
 #mk_all_repo_file_list_arry(){
  declare -gA ALL_REPO_DB_PATHS=()
  #ALL_REPO_DB_PATHS=()
@@ -138,6 +140,10 @@ fi
 #mk_all_repo_file_list_arry
 #echo "exited: mk_all_repo_file_list_arry()"
 #echo "ALL_REPO_DB_PATHS=${ALL_REPO_DB_PATHS[@]}"
+
+  [ -z "$PKGS_DIR" ] && export PKGS_DIR="$(realpath "${HOME}/.packages")"
+  [ -z "$HASHES_DIR" ] && export HASHES_DIR="$PKGS_DIR/hashes" && mkdir -p "$HASHES_DIR"
+
 
 #Moved after the function repo_file_list
 #mk_repo_file_list_arry
@@ -242,6 +248,9 @@ fi
 # get repo details, workdir, search settings and so on.. you could
 # you can also add any ENVIRONMENT VARS above to PKGRC, to override the defaults
 . ${PKGRC}
+[ -z "$HTTPS_CHECK" ] && HTTPS_CHECK=all
+CHECKSUM_DIR=/var/packages/checksums
+export HTTPS_CHECK="$HTTPS_CHECK"
 
 # set and create workdir if no valid dir set
 [ ! -d "$WORKDIR" ] && mkdir -p "$WORKDIR"
@@ -606,6 +615,38 @@ get_pkg_name_only(){              # return pkg name only from $1, with no versio
 
   # the sed bit changes 'liblzma5+20120614' to 'liblzma5'
   [ "$pkg_name_only" != '' ] && echo $pkg_name_only | sed -e 's/++/+++/g' -e 's/+[a-z0-9].*//g' || return 1
+}
+check_md5sum(){
+	local file_path="$1"
+	local repo_filename="$(basename $2)"
+	local md5sums_path="$HASHES_DIR/${repo_filename//Packages/MD5}"
+	local fname="$(basename "$md5sums_path")"
+	local fsum="$(md5sum "$file_path" | cut -f1 -d' ')"
+	#for aRepoFile in "$USER_INST_PKGS_FILE" "$WOOF_INST_PKGS_FILE" "${REPO_DB_PATHS[@]}"; do
+	#  md5sum "$file_path"
+	#done
+	#if [ -z "$(cut -f4 "$md5sums_path" | grep fsum -m1)" ]; then
+	if [ -z "$(grep "$fsum" "$md5sums_path" | cut -f1)" ]; then
+	  return 1
+	else
+	  return 0
+	fi
+}
+check_SHA256(){
+	local file_path="$1"
+	local repo_filename="$(basename $2)"
+	local SHA256_path="$HASHES_DIR/${repo_filename//Packages/SHA256}"
+	local fname="$(basename "$SHA256_path")"
+	local fsum="$(sha256sum "$file_path" | cut -f1 -d' ')"
+	#for aRepoFile in "$USER_INST_PKGS_FILE" "$WOOF_INST_PKGS_FILE" "${REPO_DB_PATHS[@]}"; do
+	#  md5sum "$file_path"
+	#done
+	#if [ -z "$(cut -f4 "$md5sums_path" | grep fsum -m1)" ]; then
+	if [ -z "$(grep "$fsum" "$SHA256_path" | cut -f1)" ]; then
+	  return 1
+	else
+	  return 0
+	fi
 }
 
 
@@ -1476,7 +1517,32 @@ FALLBACKS='$fallback_repos'" > "${repo_dir}/install"
   echo
 }
 
-
+check_https_cert(){
+  if [ "$HTTPS_CHECK" = 'none' ] || [ -z "$HTTPS_CHECK" ]; then
+    echo --no-check-certificate 
+  elif [ ! "$HTTPS_CHECK" = all ]; then
+    local repo_name="$1"
+    local repo_file_url="$2"
+    local check_cert=-1
+    #TODO add further certificate checking logic here. 
+    #TODO: First check for a config file
+    #Then use hardcoded defaults:
+    if [ $check_cert -eq -1 ]; then
+      case "$repo_file_url" in
+      https://*tor*)
+        check_cert=1 ;;
+      https://*nodesource*)
+        check_cert=1 ;;
+      *)
+        check_cert=0 ;; #TODO: have some config variable for the default checkcert value
+      esac
+    fi
+    if [ check_cert -eq 0 ]; then
+      echo --no-check-certificate
+    fi
+  fi
+	
+}
 add_pkg_repo() {                  # add a Pkg-created repo, called by add_repo() FUNCLIST
   [ ! "$1" ] && return 1
   mkdir -p /tmp/pkg/
@@ -1511,9 +1577,10 @@ add_pkg_repo() {                  # add a Pkg-created repo, called by add_repo()
   local repo_name="$(echo "$repo_entry" | cut -f1 -d'|')"
   local repo_filename="$(echo "$repo_entry" | cut -f3 -d'|')"
   local repo_file_url="$(echo ${1} | sed 's#/install$##')/${repo_filename}"
-
+  local repo_check_cert=$(check_https_cert "$repo_name" "$repo_file_url")
   # download the repo file
-  wget --no-check-certificate -O "/tmp/pkg/$repo_filename" -4 "$repo_file_url" &>/dev/null
+  
+  wget $repo_check_cert -O "/tmp/pkg/$repo_filename" -4 "$repo_file_url" &>/dev/null
   if [ -z /tmp/pkg/$repo_filename ] || [ ! -f /tmp/pkg/$repo_filename ]; then
     echo "Error: Repo file $repo_filename not downloaded!"
     return 1
@@ -1822,8 +1889,8 @@ update_repo(){                    # update the current repo from a file stored o
   chmod 777 /var/local/petget/
   echo 'false' > /var/local/petget/db_verbose
 
-  # now call petget 0setup.. [add argument]
-  /usr/local/petget/0setup x &>$TMPDIR/update_repo_results
+  # now call petget 0setup.. the ENV options prevent popup windows, and need for user input
+  #DISPLAY='' SETUPCALLEDFROM=ppm /usr/local/petget/0setup &>$TMPDIR/update_repo_results
 
   # if the repos updated ok
   if [ $? -eq 0 ]; then
@@ -4516,10 +4583,29 @@ pkg_download(){                   # download a pkg ($1) to WORKDIR FUNCLIST
 
             # if file downloaded ok
             if [ -f "${WORKDIR}/${PKG_FILENAME}" ]; then
+               if check_SHA256 "${WORKDIR}/${PKG_FILENAME}" "$REPO_DB_FILE_DIR/$repo_file"; then
+                 echo -e "${green}Downloaded:${endcolour} ${WORKDIR}/${PKG_FILENAME}"
+                 DONE=true
+                 break              
+               else
+                 #error "Failed md5sum check '${WORKDIR}/${PKG_FILENAME}'."
+                 echo "Failed md5sum check '${WORKDIR}/${PKG_FILENAME}'."
+
+                 # remove the download
+                 rm "${WORKDIR}/${PKG_FILENAME}" &>/dev/null
+                 DONE=true
+                 exit 6                
+               fi
+            fi
+            # if file downloaded ok
+            if [ -f "${WORKDIR}/${PKG_FILENAME}" ]; then
+              #TODO check md5sum here. 
+              
               echo -e "${green}Downloaded:${endcolour} ${WORKDIR}/${PKG_FILENAME}"
               DONE=true
               break
 
+            #TODO: Maybe we can try a mirror here if the download fails. 
             else # file NOT downloaded ok
 
               error "Failed to download '${WORKDIR}/${PKG_FILENAME}'."
