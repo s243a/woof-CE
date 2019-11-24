@@ -1620,7 +1620,6 @@ add_pkg_repo() {                  # add a Pkg-created repo, called by add_repo()
   return $RETVAL
 }
 
-
 add_repo(){                       # add Pkg/Ubuntu/Debian/Slackware third-party repos FUNCLIST
 
   local slack_repo_url
@@ -1869,7 +1868,26 @@ update_sources(){                 # create the list of available repos FUNCLIST
   [ -f ${HOME}/.pkg/sources ] && echo "Sources updated." && . ${PKGRC}
 }
 
-
+parse_sources_list_opts(){
+	local line="${1/#deb /}" #Remove
+	
+	#stripped="$(echo $line | sed -e '^[[^\[]*\]*$//g')"
+	
+	#local opt_sect="$(sed -r 's|^(\[[^\[]*\]*).*$|/1|')"
+	#opt_sect={$opt_sect:1:-1}
+	
+	  if [ ${line:0:1} = "[" ]; then
+        local ind=`expr index "$line" "]"`
+        local ind2=$((ind - 1))
+        local line=${line:1:$ind2} 
+      fi
+	
+	set -- $line
+	for opt in "$@"; do
+	  opt="$(echo $opt | tr "-" "_")"
+	  echo "export SOURCES_LIST_OPT__$opt"
+	done	
+}
 update_repo(){                    # update the current repo from a file stored online FUNCLIST
 
   # check internet, net connection required
@@ -1946,20 +1964,32 @@ update_repo(){                    # update the current repo from a file stored o
     # ...(use grep -h, to remove the preppended filenames if grepping multiple files)
     # ...remove any arch stuff from the entries, ppa2pup will handle that,
     # ...convert spaces to | chars, so we can process each line as a whole later
+    #local apt_sources_list="$(grep -h '^deb ' /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null \
+    #  | sed \
+    #    -e "s/^deb //g" \
+    #    -e "s/^tor+//g" \
+    #    -e 's/\[arch=[a-z,0-9].*\] //g' \
+    #    -e 's/ /|/g'\
+    #)"
     local apt_sources_list="$(grep -h '^deb ' /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null \
       | sed \
-        -e "s/^deb //g" \
-        -e "s/^tor+//g" \
-        -e 's/\[arch=[a-z,0-9].*\] //g' \
-        -e 's/ /|/g'\
+      -e "s/^deb //g" \
+      -e "s/^tor+//g" \
+      -e 's/ /|/g'\
     )"
-
     # for each repo in $apt_sources_list, use `ppa2pup` to update the repo
     for line in $apt_sources_list
     do
       [ "$line" = "" ] && continue
       [ "$line" = "\n" ] && continue
-
+      if [ ${line:0:1} = "[" ]; then
+        local ind=`expr index "$line" "]"`
+        local ind2=$((ind - 1))
+        local line_opts=${line:1:$ind2} 
+      else
+        local line_opts=''
+      fi
+   
       local ppa_repo_url="$(echo ${line//|/ } | cut -f1 -d" ")"
       local ppa_repo_name=$(cat ~/.pkg/sources-all | grep -m1 $ppa_repo_url | cut -f1 -d'|')
 
@@ -1981,7 +2011,12 @@ update_repo(){                    # update the current repo from a file stored o
 
       if [ "$ANSWER" = 'y' ] || [ "$ANSWER" = 'Y' ]; then
         echo "Please wait..."
-        ppa2pup ${line//|/ } 1>/dev/null && echo -e "${green}Success${endcolour}: Updated repo '$ppa_repo_name'"
+        (
+          if [ ! -z "$line_opts" ]; then
+           eval parse_sources_list_opts "$line_opts"           
+          fi 
+          ppa2pup ${line//|/ } 1>/dev/null && echo -e "${green}Success${endcolour}: Updated repo '$ppa_repo_name'"
+        )
         retval=$?
       fi
     done

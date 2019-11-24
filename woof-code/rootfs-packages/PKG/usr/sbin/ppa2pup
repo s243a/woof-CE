@@ -1,10 +1,18 @@
 #!/bin/bash
-
+set -x
 # ppa2pup
 # convert an Ubuntu PPA repo file, into a Puppy compatible repo file.
-
+TMPDIR=/tmp/pkg/${whoami}
 # @TODO1 - fix last few fields of package entries (should contain the supported ubuntu distro, not current system)
-
+if [ -z "$PGP_VERIFY_CMD" ]; then
+  if [ ! -z `which gpgv` ]; then
+    PGP_VERIFY_CMD="$(which gpgv)"
+  elif [ ! -z `which gpg` ]; then
+    PGP_VERIFY_CMD="$(which gpg) --verify"
+  else
+    echo "ppa2pup: No pgp verify command" 1>&2
+  fi
+fi
 . /etc/DISTRO_SPECS
 if [ -d ~/.packages/repo ]; then
   REPO_DIR=`realpath  ~/.packages/repo` || \
@@ -21,6 +29,20 @@ fi
 #  exit 1
 #fi
 
+function get_distro(){
+	local a_repo_url=$1
+	local a_distro_ver=$2	
+	local a_stream=$3
+
+	cat /root/.pkg/sources-all | awk -v VER="$a_distro_ver" -v  STREAM="$a_stream" -v URL="$a_repo_url" \
+	'BEGIN{FS="|"}
+     /^.+$/ {
+     if ( (index($4,URL) > 0 ) && ( index($3, VER "-" STREAM) > 0 )  ) {
+       split($3, array , "-" )
+       print array[2]
+     }
+    }'
+}
 
 if [ ! "$1" ] || [ "$1" = "-h" ] || [ "$1" = "-help" ]
 then
@@ -63,27 +85,32 @@ then
 fi
 
 
+RELEASE_DIR=/tmp/ppa_release
+
 # create a dir to work in
-mkdir -p /tmp/ppa_pkgs
+#mkdir -p /tmp/ppa_pkgs
+mkdir -p "$RELEASE_DIR"
 
 # remove any old files
-rm /tmp/ppa_pkgs/* 2>/dev/null
-
+#rm /tmp/ppa_pkgs/* 2>/dev/null
+#rm -rf "$RELEASE_DIR"/* 2>/dev/null
 
 # we need to find the correct Packages.gz for the distro (debian/ubuntu),
 # distro version (stretch/bionic/etc), and architecture (i386/amd64)
-
-arch='i386'
-case $(uname -m) in
-  i*86) arch='i386'  ;;
-  *64)  arch='amd64' ;;
-esac
-
+if [ -z "$SOURCES_LIST_OPT__arch" ]; then
+  arch='i386'
+  case $(uname -m) in
+    i*86) arch='i386'  ;;
+    *64)  arch='amd64' ;;
+  esac
+else
+  arch="$SOURCES_LIST_OPT__arch"
+fi
 
 
 if [[ "$1" =~ 'ppa:' ]]
 then
-
+   repo_type=ppa
   # we got a 'PPA' URL, lets parse it and get the Packages.gz
   ppaname="${1/*\//}"
   username="${1/\/*/}"
@@ -92,40 +119,44 @@ then
 
   # get username, but strip special chars
   PPA_NAME="${username//[-_:]/}"
-
+  
   distro=${2:-$DISTRO_BINARY_COMPAT}
   distro_ver=${3:-$DISTRO_COMPAT_VERSION}
-  repo_name="$distro_ver-$PPA_NAME"
-  repo_filename="Packages-$distro-$distro_ver-${PPA_NAME}"
+  #repo_name="$distro_ver-$PPA_NAME"
+  #repo_filename="Packages-$distro-$distro_ver-${PPA_NAME}"
   repo_stream=${4:-main}
-  repo_stream2=''
-  repo_stream3=''
-  repo_stream4=''
-  [ "$5" != '' ] && repo_stream2=${5}
-  [ "$6" != '' ] && repo_stream3=${6}
-  [ "$7" != '' ] && repo_stream4=${7}
-
+  #repo_stream2=''
+  #repo_stream3=''
+  #repo_stream4=''
+  #[ "$5" != '' ] && repo_stream2=${5}
+  #[ "$6" != '' ] && repo_stream3=${6}
+  #[ "$7" != '' ] && repo_stream4=${7}
+  repo_streams=( $repo_stream ${@:5} )
 
   URL=http://ppa.launchpad.net/${username}/${ppaname}/${distro}/dists/${distro_ver}/${repo_stream}/binary-${arch}/Packages.gz
   repo_url=http://ppa.launchpad.net/${username}/${ppaname}/${distro}/
 
 elif [[ "$1" =~ 'http://' ]] || [[ "$1" =~ 'https://' ]];then
-
+  repo_type=debian
   # we got a Debian repo source URL, lets parse it and get the Packages.gz
 
-  distro=${DISTRO_BINARY_COMPAT}
+
   distro_ver=${2:-$DISTRO_COMPAT_VERSION}
   repo_url=$(echo $1 | sed -e 's#/$##g')/
-  repo_stream=${3:-main}
-  repo_stream2=''
-  repo_stream3=''
-  repo_stream4=''
-  [ "$4" != '' ] && repo_stream2=${4}
-  [ "$5" != '' ] && repo_stream3=${5}
-  [ "$6" != '' ] && repo_stream4=${6}
+  repo_stream=${3:-main}  
+  #distro="$(get_distro $repo_url $distro_ver $repo_stream)" 
+  #distro=${distro:-$DISTRO_BINARY_COMPAT}   
 
+  #repo_stream2=''
+  #repo_stream3=''
+  #repo_stream4=''
+  #[ "$4" != '' ] && repo_stream2=${4}
+  #[ "$5" != '' ] && repo_stream3=${5}
+  #[ "$6" != '' ] && repo_stream4=${6}
+  repo_streams=( $repo_stream ${@:5} )
+  
   URL=$(echo $1 | sed -e 's#/$##g')/dists/${distro_ver}/${repo_stream}/binary-${arch}/Packages.gz
-
+  ARCH_PATH="/binary-${arch}/Packages.gz"
 else
 
   # didnt get ppa:foo/bar, exit with usage
@@ -135,40 +166,8 @@ else
 fi
 
 
-for stream in $repo_stream $repo_stream2 $repo_stream3 $repo_stream4
-do
 
-  [ "$stream" = '' ] && continue
-
-  rm /tmp/ppa_Packages /tmp/ppa_Packages.gz 2>/dev/null
-  download_failed=false
-
-  download_url=${URL//$repo_stream/$stream}
-
-  wget --quiet $download_url -O /tmp/ppa_Packages.gz 1>/dev/null \
-    || download_failed=true
-
-  if [ ! -f /tmp/ppa_Packages.gz ] || [ $download_failed = true ];then
-    echo
-    echo "ERROR: the PPA repo '$repo_name' not found for $distro $distro_ver:"
-    echo
-    echo "  $download_url"
-    echo
-    echo "You could try a different version of the repo."
-    echo
-    $0 -h
-    exit 1
-  fi
-
-
-  gunzip /tmp/ppa_Packages.gz
-
-
-  # if Packages file is empty, dont create a repo for it
-  if [ -z /tmp/ppa_Packages ] || [ ! -s /tmp/ppa_Packages ];then
-    continue
-  fi
-
+function set_names(){
   # if we didn't get the name from the ppa:foo/bar style URL
   if [[ ! "$1" =~ 'ppa:' ]]
   then
@@ -191,10 +190,138 @@ do
     PPA_NAME="$( echo "${PPA_NAME// /-}" | tr '_' '-' | tr '[:upper:]' '[:lower:]' )"
 
     repo_name="$PPA_NAME"
+    distro="$(get_distro $repo_url $distro_ver $repo_stream)" 
+    distro=${distro:-$DISTRO_BINARY_COMPAT}   
     repo_filename="Packages-$distro-${PPA_NAME}"
 
   fi
+}
+#set_names $1 
 
+PACKAGES_GZ="ppa_Packages.gz"
+PACKAGES_GZ_PATH="$RELEASE_DIR/$PACKAGES_GZ"
+PACKAGES_PATH="$RELEASE_DIR/${PACKAGES_GZ%.*}" #Remove extension
+
+
+for stream in ${repo_streams[@]} #$repo_stream $repo_stream2 $repo_stream3 $repo_stream4
+do
+  if [ repo_type=debian ]; then
+    distro="$(get_distro $repo_url $distro_ver $stream)" 
+    distro="$(get_distro $repo_url $distro_ver $repo_stream)"
+  fi   
+  set_names $1 
+  [ "$stream" = '' ] && continue
+
+  rm /"$PACKAGES_PATH" "$PACKAGES_GZ_PATH" 2>/dev/null
+  download_failed=false
+
+  download_url=${URL//$repo_stream/$stream}
+  
+  wget --quiet $download_url -O "$PACKAGES_GZ_PATH" 1>/dev/null \
+    || download_failed=true
+
+  if [ ! -f "$PACKAGES_GZ_PATH" ] || [ $download_failed = true ];then
+    echo
+    echo "ERROR: the PPA repo '$repo_name' not found for $distro $distro_ver:"
+    echo
+    echo "  $download_url"
+    echo
+    echo "You could try a different version of the repo."
+    echo
+    $0 -h
+    exit 1
+  fi
+
+
+  gunzip "$PACKAGES_GZ_PATH"
+  
+
+  # if Packages file is empty, dont create a repo for it
+  if [ -z "$PACKAGES_PATH" ] || [ ! -s "$PACKAGES_PATH" ];then
+    continue
+  fi
+
+
+  if [ ! -z "$SOURCES_LIST_OPT__signed_by" ]; then
+    meta_url=${download_url//$ARCH_PATH/}
+    "$RELEASE_DIR"
+    mkdir -p "$RELEASE_DIR/$repo_name"
+    rm -f "$RELEASE_DIR/$repo_name/*" 2>/dev/null
+    meta_download_failed=false
+    wget --quiet "${meta_url}/Release" -O "$RELEASE_DIR/$repo_name/Release" 1>/dev/null && \
+    wget --quiet"${meta_url}/Release.gpg" -O "$RELEASE_DIR/$repo_name/Release.gpg" 1>/dev/null || \
+      meta_download_failed=true   
+    if [ "$meta_download_failed" = false ]; then
+      if ( cd $RELEASE_DIR/$repo_name;
+           $PGP_VERIFY_CMD --keyring "$SOURCES_LIST_OPT__signed_by" Release.pgp Release; ); then
+         pgp_verified=maybe
+         ReleaseFile="$RELEASE_DIR/$repo_name/InRelease"    
+      else
+         pgp_verified=false
+      fi
+    else
+      meta_download_failed=false
+      wget --quiet "${meta_url}/InRelease" -O "$RELEASE_DIR/$repo_name/InRelease" 1>/dev/null \
+        || meta_download_failed=true        
+      if [ "$meta_download_failed" = false ]; then
+        if ( cd $RELEASE_DIR/$repo_name;
+          $PGP_VERIFY_CMD --keyring "$SOURCES_LIST_OPT__signed_by" InRelease ); then
+          pgp_verified=maybe
+          ReleaseFile="$RELEASE_DIR/$repo_name/InRelease"  
+        else
+          pgp_verified=false
+        fi         
+      fi  
+    fi
+    if [ "$pgp_verified" = false ]; then   
+      if [ ! -z "$SOURCES_LIST_OPT__Trusted" ] && [ "$SOURCES_LIST_OPT__Trusted" = yes ]; then
+        FAIL_CLASS=WARNING
+      else
+        FAIL_CLASS=ERROR
+      fi    
+      echo
+      echo "$FAIL_CLASS: could not verify pgp signature of Release/InRelease file"
+      echo
+      echo "  ${meta_url}"
+      if [ ! "$SOURCES_LIST_OPT__Trusted" ]; then #Maybe should exit if this 
+        exit 1
+      fi
+    fi         
+    if [ ! -z "$ReleaseFile" ]; then
+      if [ SOURCES_LIST_OPT__Allow_Insecure = yes ]; then   
+        hash_function=( sha256sum md5sum sha1sum none )
+      elif [ "$SOURCES_LIST_OPT__allow_weak" = yes ]; then
+        hash_function=( sha256sum md5sum sha1sum )
+      else
+        hash_function=( sha256sum )
+      fi  
+      for a_hash_fn in "${hash_function[@]}"; do
+        case "$a_hash_fn" in
+        sha256sum)
+          fsum="$(sha256sum "$file_path" | cut -f1 -d' ')"
+          if [ $(grep -m -c "$fsum" "$ReleaseFile" ) -gt 0 ]; then
+            break
+          fi ;; 
+        md5sum)
+          fsum="$(md5sum "$file_path" | cut -f1 -d' ')"
+          if [ $(grep -m -c "$fsum" "$ReleaseFile" ) -gt 0 ]; then
+            echo "WARNING: weak checksum for $repo_name"
+            break
+          fi ;; 
+        sha1sum)
+          fsum="$(sha1sum "$file_path" | cut -f1 -d' ')"
+          if [ $(grep -m -c "$fsum" "$ReleaseFile" ) -gt 0 ]; then
+            echo "WARNING: weak checksum for $repo_name"
+            break
+          fi ;; 
+        none)
+          fsum="$(md5sum "$file_path" | cut -f1 -d' ')"
+          echo "WARNING: repo metadata unverified"
+          break ;;
+        esac
+      done
+    fi
+  fi
   echo
   echo "Found URL:"
   echo
@@ -207,27 +334,14 @@ do
   echo "  $REPO_DIR/$repo_filename"
   echo
 
-  ## break Packages file into separate files
-  #number=1
-  #cat /tmp/ppa_Packages | while read line
-  #do
-  #
-  #  echo "$line" | grep -qE '^Priority|^Installed-Size|^Maintainer|^MD5|^SHA|^Description-md5|^Suggests|^Provides|^Source|^Conflicts|^Breaks' && continue
-  #  echo "$line" >> /tmp/ppa_pkgs/pkginfo$number
-  #  [ "$line" = "" ] && number=$(($number + 1))
-  #
-  #  #[ $number -gt 5 ] && break # for testing only
-  #
-  #done
   
 
   rm /tmp/$repo_filename $REPO_DIR/$repo_filename &>/dev/null
 
-  # go through each file and make a pet.spec entry from it,
-  # and append that entry tp /tmp/ppa_pkgs/$repo_filename
+
 #---------------New AWK Version------------------------------------------- 
 
-			cat /tmp/ppa_Packages | awk -v PKGOS="$distro" -v PKGOSVER="$distro_ver" -v REPOFNM="$repo_filename" \
+			cat "$PACKAGES_PATH" | awk -v PKGOS="$distro" -v PKGOSVER="$distro_ver" -v REPOFNM="$repo_filename" \
 'function fixdepends(s,   a,p,sout) {
 	split(s,a,",") 
 	for (p in a) {
@@ -249,117 +363,12 @@ do
 /^Depends:/     { sub(/^Depends: /,"");     PKGDEP=fixdepends($0) "," PKGDEP; }
 /^Pre-Depends:/ { sub(/^Pre-Depends: /,""); PKGDEP=fixdepends($0) "," PKGDEP; }
 /^Description:/ { sub(/^Description: /,""); PKGINFO=substr($0,1,200); }
-#/^$/            { print PKG "|" PKGVER "|" PKGFILE "|" repo_url "/" PKGPATH "|" PKGPRIO "|" PKGSECTION "|" PKGMD5 "|" PKGDEP ;
 /^$/            { print PKG "_" PKGVER "|" PKG "|" PKGVER "||" PKGSECTION "|" PKGSIZE "|" PKGPATH "|" PKGFILE  "|" PKGDEP "|" PKGINFO "|" PKGOS "|" PKGOSVER "|"  PKGMD5 "|" SHA1 "|" SHA256 "|" PKGPRIO "|" REPOFNM  ;
 	
                   PKG=""; PKGVER=""; PKGSECTION=""; PKGSIZE=""; PKGFILE=""; PKGPATH=""; PKGDEP=""; PKGINFO=""; PKGPRIO="";  PKGMD5=""; SHA1=""; SHA256=""; PKGDEP="";  }
-#"$pkg_name|$pkgname_only|$pkg_ver|$pkg_build_no|$pkg_cat|$pkg_size|$pkg_path|$pkg_fname|$pkg_deps|$pkg_desc|$pkg_os|$pkg_os_ver|"                
 ' > /tmp/$repo_filename
 
-#  pkg_desc="$(echo  "$pkginfo" | grep -m1 '^Descripti' | cut -f2-200 -d' ')"
 
-#			# remove duplicates, use the "later" version if duplicate packages are found
-#			< $REPO_DIR/$LOCAL_PKGDB > /tmp/t.$$ \
-#			awk -F"|" '{if (!a[$1]) b[n++]=$1; a[$1]=$0} END {for (i=0;i<n;i++) {print a[b[i]]}}'
-#			mv /tmp/t.$$ $REPO_DIR/$LOCAL_PKGDB
-#		fi
-#		if [ -z "$WITH_APT_DB" ] || [ $DRY_RUN ]; then rm -f $CHROOT_DIR$APT_PKGDB_DIR/"$apt_pkgdb"; fi
-#	done
-
-  
-#---------------Replace with AWK Version-------------------------------------------    
-  #for pkginfo_file in $(ls -1 /tmp/ppa_pkgs/)
-  #do
-  #
-  #  [ ! -f /tmp/ppa_pkgs/$pkginfo_file ] && continue
-  #
-  #  pkginfo="`cat /tmp/ppa_pkgs/$pkginfo_file 2>/dev/null`"
-  #  [ "$pkginfo" = "" ] && continue
-  #
-  #  # convert deps list from:
-  #  #
-  #  #  nginx-full (<< 1.14.0-0+bionic0.1~) | libc6 (>= 2.4), libpam0g (>= 0.99.7.1)
-  #  #
-  #  # into:
-  #  #
-  #  #  +nginx-full-1.14.0-0+bionic0,+libc6-2.4,+libpam0g-0.99.7.1
-  #  #
-  #
-  #  pkgdeps=`echo "$pkginfo" | grep '^Depends: '`
-  #
-  #  newpkgdeps="$(echo "$pkgdeps" \
-  #    | sed \
-  #      -e 's/  / /g'     \
-  #      -e 's/ (= 2:/_/g' \
-  #      -e 's/ (= 1:/_/g' \
-  #      -e 's/ (<< /-/g'  \
-  #      -e 's/ (= /-/g'   \
-  #      -e 's/ (>= /-/g'  \
-  #      -e 's/ (<= /-/g'  \
-  #      -e 's/) / /g'     \
-  #      -e 's/), /,/g'    \
-  #      -e 's/)//g'       \
-  #      -e 's/, /,/g'     \
-  #      -e 's/ | /,/g'    \
-  #      -e 's/| /,/g'     \
-  #      -e 's/ |/,/g'     \
-  #      -e "s/,$//g"      \
-  #      -e 's/\.1~//g'    \
-  #      -e 's/\.2~//g'    \
-  #      -e 's/,/,+/g'     \
-  #      -e 's/-2:/_/g'    \
-  #      -e 's/-1:/_/g'    \
-  #      -e 's/Depends: /Depends: +/g' \
-  #    2>/dev/null)"
-  #
-  #  # replace olddeps entry with new one in the file
-  #  if [ ! -z "pkgdeps" ] && [ ! -z "$newpkgdeps" ] && [ -f /tmp/ppa_pkgs/$pkginfo_file ]
-  #  then
-  #
-  #    sed -i "s/${pkgdeps}/${newpkgdeps}/" /tmp/ppa_pkgs/$pkginfo_file 2>/dev/null
-  #
-  #  fi
-  #
-  #
-  #  # deps should now be in the right format in the file itself,
-  #  # update our info var
-  #  pkginfo="$(cat /tmp/ppa_pkgs/$pkginfo_file)"
-  #
-  #  # so lets build pet.specs entry:
-  #  # like this one:
-  #  #   pkgname-1.2.3-4|pkgname|1.2.3|4|Category|54kb|/path/to/pkg|pkgname-1.2.3.pet|+dep1,+dep2|the description|debian|stretch||
-  #
-  #  case $DISTRO_BINARY_COMPAT in
-  #    debian|ubuntu|trisquel|devuan) ver_sep='_';;
-  #    *) ver_sep='-';;
-  #  esac
-  #
-  #  pkg_build_no=''  # need to get this out of version
-  #  pkg_name="$(echo  "$pkginfo" | grep -m1 '^Package: ' | cut -f2 -d' ')"
-  #
-  #  pkgname_only="$pkg_name"
-  #  pkg_ver="$(echo   "$pkginfo" | grep -m1 '^Version: ' | sed -e 's/Version: [0-9]://g' -e 's/Version: //g')"
-  #  pkg_name="$pkg_name${ver_sep}$pkg_ver"
-  #  pkg_cat="$(echo   "$pkginfo" | grep -m1 '^Section: ' | cut -f2 -d' ')"
-  #  pkg_size="$(echo  "$pkginfo" | grep -m1 '^Size: '    | cut -f2 -d' ')"
-  #  pkg_size="$(($pkg_size / 1024))K"
-  #  pkg_path="$(echo "$pkginfo" | grep -m1 '^Filename: '| cut -f2 -d' ')"
-  #  pkg_fname="$(basename "$pkg_path")"
-  #  pkg_path="$(dirname "$pkg_path")"
-  #  pkg_deps="$(echo "$pkginfo" | grep -m1 '^Depends: ' | cut -f2 -d' ')"
-  #  pkg_desc="$(echo  "$pkginfo" | grep -m1 '^Descripti' | cut -f2-200 -d' ')"
-  #  pkg_os="$DISTRO_BINARY_COMPAT"
-  #  pkg_os_ver="$DISTRO_COMPAT_VERSION"
-  #
-  #  entry="$pkg_name|$pkgname_only|$pkg_ver|$pkg_build_no|$pkg_cat|$pkg_size|$pkg_path|$pkg_fname|$pkg_deps|$pkg_desc|$pkg_os|$pkg_os_ver|"
-  #
-  #  echo "$entry" >> /tmp/$repo_filename
-  #
-  #done
-  #
-  #
-  #rm /tmp/ppa_pkgs/* /tmp/${repo_filename}_sorted 2>/dev/null
-#------------------End Code Replaced with AWK Version---------------------------------
 
   # sort & move the repo file
   sort -u /tmp/$repo_filename > /tmp/${repo_filename}_sorted 2>/dev/null
@@ -371,7 +380,7 @@ do
   fi
 
   #mv  /tmp/${repo_filename}_sorted  $REPO_DIR/$repo_filename
-  set -x
+  #set -x
   cut -d'|' -f1-12 /tmp/${repo_filename}_sorted > $REPO_DIR/$repo_filename
   [ -z "$PKGS_DIR" ] && export PKGS_DIR="$(realpath "${HOME}/.packages")"
   [ -z "$HASHES_DIR" ] && export HASHES_DIR="$PKGS_DIR/hashes" && mkdir -p "$HASHES_DIR"
@@ -380,7 +389,7 @@ do
   awk -F '|' '{print $5 "|" $3 "|" $4}' /tmp/${repo_filename}_sorted_md5 > "$HASHES_DIR/${repo_filename//Packages/MD5}"
   #cut -d'|' -f4,5 /tmp/${repo_filename}_sorted_md5 > "$HASHES_DIR/${repo_filename//Packages/SHA1}"
   cut -d'|' -f4,7 /tmp/${repo_filename}_sorted_md5 > "$HASHES_DIR/${repo_filename//Packages/SHA256}"
-  set +x
+  #set +x
   echo "Success! File created."
   echo
 
@@ -390,7 +399,7 @@ do
 
   # if already added to ~/.pkg/sources[-all], remove it
   if [ "$(cat ~/.pkg/sources     | grep -m1 "^$repo_name|")" != "" ] || \
-     [ "$(cat ~/.pkg/sources-all | grep -m1 "^$repo_name|")" != "" ];then
+     [ "$(cat ~/.pkg/sources-all | grep -m1 "^$repo_name|")" != "" ]; then
     cat ~/.pkg/sources | grep -v "^$repo_name|" > /tmp/pkgsources
     cat ~/.pkg/sources-all | grep -v "^$repo_name|" > /tmp/pkgsources-all
     mv /tmp/pkgsources ~/.pkg/sources
