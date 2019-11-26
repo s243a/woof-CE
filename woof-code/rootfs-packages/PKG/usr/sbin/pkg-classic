@@ -4357,6 +4357,7 @@ pkg_download(){                   # download a pkg ($1) to WORKDIR FUNCLIST
   . ${PKGRC}
 
   local pkg_ext=''        # extension of pkg, empty if not a supported pkg ext
+  local PKG_FNAME_GUESS
   local PKGNAME=''        # the pkgname with version
   local ORIG_PKGNAME=''   # keeps the original pkg name ($1)
   local PKG_FILENAME=''   # package file name (field 8 of repo, with extension)
@@ -4383,7 +4384,7 @@ pkg_download(){                   # download a pkg ($1) to WORKDIR FUNCLIST
 
   # the file to save to.. not reliable till we checked the repos
   PKGFILE="${WORKDIR}/${PKGNAME}.$pkg_ext"
-
+  PKG_FNAME_GUESS=PKGFILE
   # set download options
   [ "$FORCE" = true  ] && CONTINUE='' || CONTINUE='-c'
   [ "$ASK"  != true  ] && QTAG=''
@@ -4615,7 +4616,7 @@ pkg_download(){                   # download a pkg ($1) to WORKDIR FUNCLIST
             # clean up output
             [ "$QUIET" != true ] && echo -ne "\b\b\b\b"
             echo
-
+            ln -s "${PKG_FILENAME}" "$PKG_FNAME_GUESS" #TODO use relative symbolic links + symbolic link cleanup. 
             # if file downloaded ok
             if [ -f "${WORKDIR}/${PKG_FILENAME}" ]; then
                if check_SHA256 "${WORKDIR}/${PKG_FILENAME}" "$REPO_DB_FILE_DIR/$repo_file"; then

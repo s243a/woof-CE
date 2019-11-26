@@ -171,7 +171,8 @@ function set_names(){
   # if we didn't get the name from the ppa:foo/bar style URL
   if [[ ! "$1" =~ 'ppa:' ]]
   then
-
+    unset PPA_NAME
+    unset distro
     # check if this repo is already installed (find its name in Pkg sources files)
     if [ -z "$repo_url" ]; then
       PPA_NAME="$(grep -m1 "^${distro_ver}-${stream:-main}|" /root/.pkg/sources-all | cut -f1 -d'|' 2>/dev/null)"
@@ -185,9 +186,11 @@ function set_names(){
     if [ "$PPA_NAME" = "" ];then
       echo
       read -e -p "Enter a repo name, such as '${distro_ver}-${stream:-main}':  " -i "${distro_ver}-${stream:-main}" PPA_NAME
+      read -e -p "Enter a distro name name, such as '$DISTRO_BINARY_COMPAT':  " -i "$DISTRO_BINARY_COMPAT" distro
     fi
     # replace any spaces or underscores with dashes, all lower case
     PPA_NAME="$( echo "${PPA_NAME// /-}" | tr '_' '-' | tr '[:upper:]' '[:lower:]' )"
+    distro="$( echo "${distro// /-}" | tr '_' '-' | tr '[:upper:]' '[:lower:]' )"
 
     repo_name="$PPA_NAME"
     distro="$(get_distro $repo_url $distro_ver $repo_stream)" 
@@ -342,15 +345,44 @@ do
 #---------------New AWK Version------------------------------------------- 
 
 			cat "$PACKAGES_PATH" | awk -v PKGOS="$distro" -v PKGOSVER="$distro_ver" -v REPOFNM="$repo_filename" \
-'function fixdepends(s,   a,p,sout) {
+'function get_inequality(s){
+	switch(s){
+		case "<":
+		  return "lt"
+		  break
+		case ">":
+		  return "gt"
+		  break
+		case "<=":
+		  return "le"
+		  break
+		case ">=":
+		  return "ge"
+		  break
+		case "=":
+		  return "eq"
+		  break
+
+    }
+    return ""
+}
+function fixdepends(s,   p,a,dep_i,dep_split,pkg_i,ver_i,v,ineq,sout) {
 	split(s,a,",") 
 	for (p in a) {
-		gsub(/[ \t]*\(.*\)|[ \t]\|.*|:any/,"",a[p])
-		sout = sout "," a[p]
+		match(a[p],/^[ \t]*([^ \t]+)[ \t]*(\((.*)\))?/,dep_split)
+		pkg_i = dep_split[1]
+		sout = sout ",+" pkg_i
+		if ( length(dep_split) > 1 ){
+		  ver_i=dep_split[3]
+		  split(ver_i,v," ")
+		  ineq=get_inequality(v[1])
+		  if ( length(v) > 1 ){
+		    sout = sout "&" ineq v[2]
+		  }
+	    }
 	}
 	sub(/^,/,"",sout) ; return sout;
 }
-
 /^Package:/     { sub(/^Package: /,"");  PKG=$0; }
 /^Version:/     { sub(/^Version: /,"");  PKGVER=$0; }
 /^Filename:/    { sub(/^Filename: /,""); PKGPATH=$0; sub(/\/[^\/]*$/,"",PKGPATH); sub(/.*\//,""); PKGFILE=$0; }
