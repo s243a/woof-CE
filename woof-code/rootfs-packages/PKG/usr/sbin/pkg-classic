@@ -4362,6 +4362,9 @@ pkg_download(){                   # download a pkg ($1) to WORKDIR FUNCLIST
   local ORIG_PKGNAME=''   # keeps the original pkg name ($1)
   local PKG_FILENAME=''   # package file name (field 8 of repo, with extension)
   local PKGFILE=''        # full path to package file
+  #Create a new global variable rather than using PKGFILE, so that we minimize the amount of places that global variables are used.
+  pkg_download_rtn='' #See also: https://gitlab.com/sc0ttj/Pkg/merge_requests/13/diffs?commit_id=140125efbe963755de53da77a740db5b01dc567b
+
   local NET=''            # 1 or 0 if net connection available
   local curr_repo=''      # name of current repo in the loop
   local curr_repo_ext=''  # pkg ext for the current repo in the loop
@@ -4399,7 +4402,9 @@ pkg_download(){                   # download a pkg ($1) to WORKDIR FUNCLIST
     #NET="`check_net`"; [ $NET -eq 1 ] && echo "You need an internet connection" && exit 2
 
     # for each repo, starting with current repo
-    repo_file_list | while read repo_file
+    #repo_file_list | while read repo_file
+    #Use process subtition instead (although "for in" should also work. See: https://gitlab.com/sc0ttj/Pkg/merge_requests/13/diffs?commit_id=140125efbe963755de53da77a740db5b01dc567b )
+    while read repo_file
     do
 
       # the file with our repo URL info
@@ -4437,7 +4442,24 @@ pkg_download(){                   # download a pkg ($1) to WORKDIR FUNCLIST
         PKGFILE="${WORKDIR}/${PKG_FILENAME}"
 
         # skip if downloaded already, print msg
-        [ -f "$PKGFILE" -a "$FORCE" = false ] && DONE=true && echo -e "Already downloaded ${magenta}${PKG_FILENAME}${endcolour}" && continue
+        #[ -f "$PKGFILE" -a "$FORCE" = false ] && DONE=true && echo -e "Already downloaded ${magenta}${PKG_FILENAME}${endcolour}" && continue
+        if [ -f "$PKGFILE" -a "$FORCE" = false ]; then
+          if check_SHA256 "${WORKDIR}/${PKG_FILENAME}" "$REPO_DB_FILE_DIR/$repo_file"; then
+            DONE=true 
+            echo -e "Already downloaded ${magenta}${PKG_FILENAME}${endcolour}" 
+            pkg_download_rtn="$PKG_FILENAME"
+            continue
+          else
+            #error "Failed md5sum check '${WORKDIR}/${PKG_FILENAME}'."
+            echo "Failed md5sum check '${WORKDIR}/${PKG_FILENAME}'."
+
+            # remove the download
+            rm "${WORKDIR}/${PKG_FILENAME}" &>/dev/null
+            DONE=true
+            exit 6       
+          fi
+        fi
+
 
         # update the package name, based on PKG_FILENAME
         PKGNAME="$(basename "$PKG_FILENAME" .$curr_repo_ext)"
@@ -4620,6 +4642,7 @@ pkg_download(){                   # download a pkg ($1) to WORKDIR FUNCLIST
             # if file downloaded ok
             if [ -f "${WORKDIR}/${PKG_FILENAME}" ]; then
                if check_SHA256 "${WORKDIR}/${PKG_FILENAME}" "$REPO_DB_FILE_DIR/$repo_file"; then
+                 pkg_download_rtn="$PKG_FILENAME"
                  echo -e "${green}Downloaded:${endcolour} ${WORKDIR}/${PKG_FILENAME}"
                  DONE=true
                  break              
@@ -4676,7 +4699,8 @@ pkg_download(){                   # download a pkg ($1) to WORKDIR FUNCLIST
       # if download not successful, keep going to next repo
       [ "$DONE" = true ] && continue
 
-    done #done while read list of repo files
+    done < <( repo_file_list )
+    #done while read list of repo files
 
   fi
 }
@@ -5704,21 +5728,22 @@ pkg_get(){                        # find, download and install $1 and its deps F
 
       # DOWNLOAD PKG
       pkg_download "$pkg_name"
+      PKGFILE="$pkg_download_rtn"
 
-      [ ! -f "$PKGFILE" ] && PKGFILE="`find "$CURDIR" -maxdepth 1 -type f -name "${pkg_name}.*${pkg_ext}"`"
-      # try grabbing $CURDIR/pkgname.pkg_ext
-      [ ! -f "$PKGFILE" ] && PKGFILE="`find "$CURDIR" -maxdepth 1 -type f -name "${pkg_name}*.${pkg_ext}"`"
-      # now try grabbing $CURDIR/pkgname.*
-      [ ! -f "$PKGFILE" ] && PKGFILE="`find "$CURDIR" -maxdepth 1 -type f -name "${pkg_name}.*"`"
-      # maybe try $CURDIR/pkgname-*.*
-      [ ! -f "$PKGFILE" ] && PKGFILE="`find "$CURDIR" -maxdepth 1 -type f -name "${pkg_name}-*.*"`"
-      # maybe try $CURDIR/pkgname_*.*
-      [ ! -f "$PKGFILE" ] && PKGFILE="`find "$CURDIR" -maxdepth 1 -type f -name "${pkg_name}_*.*"`"
-      # maybe try $CURDIR/pkgname*.*
-      [ ! -f "$PKGFILE" ] && PKGFILE="`find "$CURDIR" -maxdepth 1 -type f -name "${pkg_name}*.*"`"
-
-      # add extension if Pkg returned an erroneous or user dir
-      [ -d "$PKGFILE" ] && PKGFILE="${PKGFILE}.$pkg_ext"
+      #[ ! -f "$PKGFILE" ] && PKGFILE="`find "$CURDIR" -maxdepth 1 -type f -name "${pkg_name}.*${pkg_ext}"`"
+      ## try grabbing $CURDIR/pkgname.pkg_ext
+      #[ ! -f "$PKGFILE" ] && PKGFILE="`find "$CURDIR" -maxdepth 1 -type f -name "${pkg_name}*.${pkg_ext}"`"
+      ## now try grabbing $CURDIR/pkgname.*
+      #[ ! -f "$PKGFILE" ] && PKGFILE="`find "$CURDIR" -maxdepth 1 -type f -name "${pkg_name}.*"`"
+      ## maybe try $CURDIR/pkgname-*.*
+      #[ ! -f "$PKGFILE" ] && PKGFILE="`find "$CURDIR" -maxdepth 1 -type f -name "${pkg_name}-*.*"`"
+      ## maybe try $CURDIR/pkgname_*.*
+      #[ ! -f "$PKGFILE" ] && PKGFILE="`find "$CURDIR" -maxdepth 1 -type f -name "${pkg_name}_*.*"`"
+      ## maybe try $CURDIR/pkgname*.*
+      #[ ! -f "$PKGFILE" ] && PKGFILE="`find "$CURDIR" -maxdepth 1 -type f -name "${pkg_name}*.*"`"
+      # 
+      ## add extension if Pkg returned an erroneous or user dir
+      #[ -d "$PKGFILE" ] && PKGFILE="${PKGFILE}.$pkg_ext"
 
       # if we found the package to install in CURDIR
       if [ -f "${PKGFILE}" ]; then
@@ -6688,7 +6713,9 @@ get_deps(){                       # find, get and install the deps of pkgname ($
         if [ "${NO_INSTALL}" = false ]; then
 
           # get the actual file we just downloaded to WORKDIR
-          DEPFILE="`find "$WORKDIR" -maxdepth 1 -type f -name "$DEPNAME*" 2>/dev/null`"
+          #DEPFILE="`find "$WORKDIR" -maxdepth 1 -type f -name "$DEPNAME*" 2>/dev/null`"
+          DEPFILE="$pkg_download_rtn"
+
 
           #INSTALL THE DEP, if it was downloaded
           [ "`is_local_pkg "$DEPFILE" 2>/dev/null`" = true ] && pkg_install "$DEPFILE" 2>/dev/null
